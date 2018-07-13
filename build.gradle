@@ -1,0 +1,20 @@
+apply plugin: 'groovy'
+
+targetCompatibility = 1.8
+sourceCompatibility = 1.8
+
+group = 'gratum'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.9'
+}
