@@ -195,7 +195,7 @@ public class Pipeline implements Source {
         }
 
         Pipeline parent = this
-        Pipeline other = new Pipeline( statistic )
+        Pipeline other = new Pipeline( this.name )
         other.src = new Source() {
             @Override
             void start(Closure closure) {

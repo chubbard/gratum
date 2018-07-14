@@ -55,18 +55,20 @@ class PipelineTest {
 
     @Test
     public void testSimpleGroupBy() {
-        // todo should we return the statistics for the original pipeline or should we return separate stats for the groupby?
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-                .groupBy(["Sex"])
-                .addStep("Assert groupBy(Sex)") {Map row ->
-            if( row.Sex == "male" ) {
-                assertEquals( 266, row.count )
-            } else if( row.Sex == "female" ) {
-                assertEquals( 152, row.count )
+            .branch { Pipeline p ->
+                p.groupBy(["Sex"])
+                        .addStep("Assert groupBy(Sex)") { Map row ->
+                    if (row.Sex == "male") {
+                        assertEquals(266, row.count)
+                    } else if (row.Sex == "female") {
+                        assertEquals(152, row.count)
+                    }
+                    return row
+                }
+                null
             }
-            return row
-        }
-        .go()
+            .go()
 
         assertEquals("Assert rows loaded == 418", 418, statistic.loaded )
         assertEquals("Assert rows rejected == 0", 0, statistic.rejections )
