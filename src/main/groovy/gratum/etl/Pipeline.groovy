@@ -328,7 +328,7 @@ public class Pipeline implements Source {
                         current.rejectionReason = rejection.reason
                         current.rejectionStep = rejection.step
                         statistic.reject( rejection?.category ?: RejectionCategory.REJECTION)
-                        rejections.process( current, lineNumber )
+                        rejections?.process( current, lineNumber )
                         return true
                     }
                     current = ret

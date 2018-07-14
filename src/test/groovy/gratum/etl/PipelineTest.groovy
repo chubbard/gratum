@@ -63,7 +63,19 @@ class PipelineTest {
 
     @Test
     public void renameFields() {
-
+        Pipeline.csv("src/test/resources/titanic.csv")
+            .addStep("Test Sex Exists") { Map row ->
+                assertTrue("Assert row.Sex exists", row.containsKey("Sex"))
+                assertTrue("Assert row.Age exists", row.containsKey("Age"))
+                return row
+            }
+            .renameFields([Sex: "gender", "Age": "age"])
+            .addStep("Test Sex renamed to gender and Age to age") { Map row ->
+                assertTrue( row.containsKey("gender") )
+                assertTrue( row.containsKey("age") )
+                return row
+            }
+            .start()
     }
 
     @Test
