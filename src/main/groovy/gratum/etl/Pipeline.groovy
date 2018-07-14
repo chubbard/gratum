@@ -129,7 +129,7 @@ public class Pipeline implements Source {
     }
 
     public Pipeline renameFields( Map fieldNames ) {
-        addField("renameFields(${fieldNames}") { Map row ->
+        addStep("renameFields(${fieldNames}") { Map row ->
             for( String src : fieldNames.keySet() ) {
                 String dest = fieldNames.get( src )
                 row[dest] = row.remove( src )
@@ -206,7 +206,7 @@ public class Pipeline implements Source {
                         return acc
                     }
 
-                    r["count"] = "${rows.size()}"
+                    r["count"] = rows.size()
 
                     if( add ) {
                         rows.eachWithIndex { Map<String,String> current, int i ->
