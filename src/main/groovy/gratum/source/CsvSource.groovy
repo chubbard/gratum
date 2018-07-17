@@ -2,6 +2,7 @@ package gratum.source
 
 import gratum.csv.CSVFile
 import gratum.csv.CSVReader
+import gratum.etl.Pipeline
 
 
 /**
@@ -16,6 +17,12 @@ public class CsvSource implements Source {
 
     CsvSource( Reader reader, String separator = ",") {
         csvFile = new CSVFile( reader, separator )
+    }
+
+    public static Pipeline csv( String filename, String separator = "," ) {
+        Pipeline pipeline = new Pipeline( filename )
+        pipeline.src = new CsvSource( new File(filename), separator )
+        return pipeline
     }
 
     @Override

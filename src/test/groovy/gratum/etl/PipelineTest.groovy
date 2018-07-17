@@ -3,7 +3,7 @@ package gratum.etl
 import org.junit.Test
 
 import static junit.framework.TestCase.*
-import static gratum.etl.Pipeline.*
+import static gratum.source.CsvSource.*
 
 /**
  * Created by charliehubbard on 7/13/18.

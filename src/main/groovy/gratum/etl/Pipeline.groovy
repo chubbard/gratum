@@ -1,7 +1,6 @@
 package gratum.etl
 
 import gratum.csv.CSVFile
-import gratum.source.CsvSource
 import gratum.source.Source
 
 public class Pipeline implements Source {
@@ -291,7 +290,6 @@ public class Pipeline implements Source {
         return this
     }
 
-    @Override
     public void start(Closure closure = null) {
         if( closure ) addStep("tail", closure)
 
@@ -345,12 +343,6 @@ public class Pipeline implements Source {
 
     private String keyOf( Map row, List<String> columns ) {
         return columns.collect { key -> row[key] }.join(":")
-    }
-
-    public static Pipeline csv( String filename, String separator = "," ) {
-        Pipeline pipeline = new Pipeline( filename )
-        pipeline.src = new CsvSource( new File(filename), separator )
-        return pipeline
     }
 
     public static Rejection reject( String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
