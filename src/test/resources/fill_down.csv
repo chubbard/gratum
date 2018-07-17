@@ -1,0 +1,12 @@
+id,first_name,last_name,sex,date_of_birth,job_id,job,date_of_hire
+100,Robert,Tatum,male,1985-04-03,1000,Chef,2008-10-15
+100,,,,,1001,Head Chef,2010-11-21
+100,,,,,1002,Manager,2013-03-12
+101,Janet,Rogers,female,1975-05-21,1002,Restaurant Manager,2009-02-12
+101,,,,,1003,Food Buyer,2011-06-17
+101,,,,,1004,Director of Franchises,2015-07-17
+102,Chelsea,Hart,female,2000-08-22,1005,Front,2016-09-12
+102,,,,,1003,Food Buyer,2011-06-17
+102,,,,,1004,Director of Franchises,2015-07-17
+
+

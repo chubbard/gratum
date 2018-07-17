@@ -116,7 +116,30 @@ class PipelineTest {
 
     @Test
     public void testFillDownBy() {
+        int count = 0
+        csv("src/test/resources/fill_down.csv")
+            .addStep("Assert fields are missing data.") { Map row ->
+                if( !row.first_name ) {
+                    count++
+                    assertTrue("Assert first_name is empty or null", !row.first_anem)
+                    assertTrue("Assert last_name is empty or null", !row.last_name)
+                    assertTrue("Assert date_of_birth is empty or null", !row.date_of_birth)
+                }
+                return row
+            }
+            .fillDownBy { Map row, Map previousRow ->
+                return row.id == previousRow.id
+            }
+            .addStep("Assert values were filled down") { Map row ->
+                row.each { String key, Object value ->
+                    assertNotNull( "Assert ${key} is filled in with a value", value )
+                    assertTrue("Assert that ${key} is non-empty", !(value as String).isEmpty() )
+                }
+                return row
+            }
+            .go()
 
+        assertTrue("Assert that we encountered rows that weren't filled in", count > 0 )
     }
 
     @Test
