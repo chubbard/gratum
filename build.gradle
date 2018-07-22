@@ -54,6 +54,13 @@ publishing {
         }
     }
     repositories {
+        maven {
+            url sonatypeUrl
+            credentials {
+                username = sonatypeUsername
+                password = sonatypePassword
+            }
+        }
         mavenLocal()
     }
 }
