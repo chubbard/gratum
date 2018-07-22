@@ -1,10 +1,12 @@
 apply plugin: 'groovy'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
 
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
 group = 'gratum'
-version = '1.0-SNAPSHOT'
+version = '0.1'
 
 repositories {
     mavenCentral()
@@ -21,6 +23,45 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
 
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            //artifact jar
+            artifact source: sourceJar, classifier: 'sources', extension: 'zip'
+            pom {
+                name = project.name
+                description = project.description
+                url = 'https://github.com/chubbard/gratum'
+                licenses {
+                    name = "The Apache License, Version 2.0"
+                    url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                }
+                developers {
+                    developer {
+                        id = "chubbard"
+                        name = "Charlie Hubbard"
+                        email = "gratum@fuseanalytics.com"
+                    }
+                }
+                scm {
+                    connection = "scm:https://github.com/chubbard/gratum.git"
+                    developerConnection = "scm:https://github.com/chubbard/gratum.git"
+                    url = "https://github.com/chubbard/gratum.git"
+                }
+            }
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
+}
+
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.9'
+    gradleVersion = '4.9'
+}
+
+task sourceJar(type: Jar) {
+    classifier "sources"
 }
