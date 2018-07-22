@@ -57,8 +57,8 @@ publishing {
         maven {
             url sonatypeUrl
             credentials {
-                username = sonatypeUsername
-                password = sonatypePassword
+                username = sonatype.username
+                password = sonatype.password
             }
         }
         mavenLocal()
