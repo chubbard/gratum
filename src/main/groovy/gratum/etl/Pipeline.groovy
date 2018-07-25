@@ -10,6 +10,7 @@ public class Pipeline implements Source {
     List<Map<String,Object>> processChain = []
     List<Closure> doneChain = []
     Pipeline rejections
+    boolean complete = false
 
     Pipeline(String name) {
         this.statistic = new LoadStatistic([filename: name])
@@ -79,6 +80,13 @@ public class Pipeline implements Source {
         }
     }
 
+    public Pipeline trim() {
+        addStep("trim()") { Map row ->
+            row.each { String key, Object value -> row[key] = (value as String).trim() }
+            return row
+        }
+    }
+
     public Pipeline branch( Closure<Void> split) {
         Pipeline branch = new Pipeline( name )
 
@@ -90,7 +98,19 @@ public class Pipeline implements Source {
         }
     }
 
-    public Pipeline join( Pipeline other, def columns ) {
+    public Pipeline branch(Map<String,Object> condition, Closure<Void> split) {
+        Pipeline branch = new Pipeline( name )
+        split(branch)
+
+        addStep( "branch(${condition})" ) { Map row ->
+            if( matches( condition, row )) {
+                branch.process( row )
+            }
+            return row
+        }
+    }
+
+    public Pipeline join( Pipeline other, def columns, boolean left = false ) {
         Map<String,List<Map>> cache =[:]
         other.addStep("join(${other.name}, ${columns}).cache") { Map row ->
             String key = keyOf(row, rightColumn(columns) )
@@ -100,11 +120,33 @@ public class Pipeline implements Source {
         }
 
         addStep("join(${this.name}, ${columns})") { Map row ->
+            if( !other.complete ) {
+                other.go()
+            }
             String key = keyOf( row, leftColumn(columns) )
 
             // todo how do we handle row multiplication when we want to add more than 1 item to the process chain,
             // right now this is going to k
-            return cache.containsKey(key) ? row.putAll( cache[key].first() ) : null
+            if( left ) {
+                if( cache.containsKey(key) ) {
+                    row.putAll(cache[key].first())
+                    return row
+                } else {
+                    // make sure we add columns even if they are null so sources write out columns we expect.
+                    if( !cache.isEmpty() ) {
+                        String c = cache.keySet().first()
+                        cache[c].first().each { String i, Object v ->
+                            if( !row.containsKey(i) ) row[i] = null
+                        }
+                    }
+                    return row
+                }
+            } else if( cache.containsKey(key) ) {
+                row.putAll(cache[key].first())
+                return row
+            } else {
+                new Rejection("Could not join on ${columns}", RejectionCategory.IGNORE_ROW )
+            }
         }
 
         return this
@@ -302,10 +344,11 @@ public class Pipeline implements Source {
         statistic.end = System.currentTimeMillis()
 
         statistic.timed("Done Callbacks") {
-            doneChain.each { Closure c ->
-                c()
+            doneChain.each { Closure current ->
+                current()
             }
         }
+        complete = true
     }
 
     public LoadStatistic go(Closure closure = null) {
