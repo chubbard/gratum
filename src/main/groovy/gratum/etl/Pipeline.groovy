@@ -285,13 +285,16 @@ public class Pipeline implements Source {
         }
 
 
+        Pipeline parent = this
         Pipeline next = new Pipeline( statistic )
-        after {
-            int lineNumber = 1
-            for( Map c : ordered ) {
-                next.process( c, lineNumber++ )
+        next.src = new Source() {
+            @Override
+            void start(Closure closure) {
+                parent.start()
+                for( Map c : ordered ) {
+                    closure( c )
+                }
             }
-            return null
         }
 
         return next
@@ -299,49 +302,53 @@ public class Pipeline implements Source {
 
     Pipeline asDouble(String column) {
         addStep("asDouble(${column})") { Map row ->
-            row[column] = Double.parseDouble( row.column )
+            String value = row[column] as String
+            if( value ) row[column] = Double.parseDouble( value )
             return row
         }
     }
 
     Pipeline asInt(String column) {
         addStep("asInt(${column})") { Map row ->
-            row[column] = Integer.parseInt( row.column )
+            String value = row[column] as String
+            if( value ) row[column] = Integer.parseInt(value)
             return row
         }
     }
 
     Pipeline asBoolean(String column) {
         addStep("asBoolean(${column}") { Map row ->
-            String value = row.column
-            switch( value ) {
-                case "Y":
-                case "y":
-                case "yes":
-                case "YES":
-                case "Yes":
-                case "1":
-                case "T":
-                case "t":
-                    row[column] = true
-                    break
-                case "n":
-                case "N":
-                case "NO":
-                case "no":
-                case "No":
-                case "0":
-                case "F":
-                case "f":
-                case "null":
-                case "Null":
-                case "NULL":
-                case null:
-                    row[column] = false
-                    break
-                default:
-                    row[column] = Boolean.parseBoolean(value)
-                    break
+            String value = row[column]
+            if( value ) {
+                switch( value ) {
+                    case "Y":
+                    case "y":
+                    case "yes":
+                    case "YES":
+                    case "Yes":
+                    case "1":
+                    case "T":
+                    case "t":
+                        row[column] = true
+                        break
+                    case "n":
+                    case "N":
+                    case "NO":
+                    case "no":
+                    case "No":
+                    case "0":
+                    case "F":
+                    case "f":
+                    case "null":
+                    case "Null":
+                    case "NULL":
+                    case null:
+                        row[column] = false
+                        break
+                    default:
+                        row[column] = Boolean.parseBoolean(value)
+                        break
+                }
             }
             return row
         }
@@ -350,7 +357,8 @@ public class Pipeline implements Source {
     Pipeline asDate(String column, String format = "yyyy-MM-dd") {
         SimpleDateFormat dateFormat = new SimpleDateFormat(format)
         addStep("asDate(${column}, ${format})") { Map row ->
-            row[column] = dateFormat.format( row.column )
+            String val = row[column] as String
+            if( val ) row[column] = dateFormat.parse( val )
             return row
         }
         return this
