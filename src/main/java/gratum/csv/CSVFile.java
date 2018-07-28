@@ -124,7 +124,7 @@ public class CSVFile {
         String[] rowArray = new String[columnHeaders.length];
         int i = 0;
         for (String columnHeader : columnHeaders) {
-            rowArray[i++] = row.get(columnHeader) == null?"":row.get(columnHeader).toString();
+            rowArray[i++] = row.get(columnHeader) == null ? "" : row.get(columnHeader).toString();
         }
         write(rowArray);
     }
@@ -174,7 +174,7 @@ public class CSVFile {
                     buffer.append(separator);
                 }
                 if( row[i] != null ) {
-                    buffer.append( escape(row[i].toString()) );
+                    buffer.append( escape( format( row[i] ) ) );
                 }else {
                     buffer.append( "\"\"" );
                 }
@@ -182,6 +182,10 @@ public class CSVFile {
             writer.println( buffer.toString() );
             rows++;
         }
+    }
+
+    private String format(Object o) {
+        return o.toString();
     }
 
     private CharSequence escape(String source) {
