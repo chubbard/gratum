@@ -54,21 +54,36 @@ publishing {
         }
     }
     repositories {
-        maven {
-            url sonatypeUrl
-            credentials {
-                username = sonatype.username
-                password = sonatype.password
-            }
-        }
+//        maven {
+//            url ''
+//            credentials {
+//                username = sonatype.username
+//                password = sonatype.password
+//            }
+//        }
         mavenLocal()
     }
+}
+
+//signing {
+//    //sign publishing.publications.maven
+//    required { !version.endsWith("SNAPSHOT") && gradle.taskGraph.hasTask("uploadArchives") }
+//    sign configurations.archives
+//}
+
+//uploadArchives {
+//    repositories {
+//        mavenDeployer {
+//            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+//        }
+//    }
+//}
+
+task sourceJar(type: Jar) {
+    classifier "sources"
 }
 
 task wrapper(type: Wrapper) {
     gradleVersion = '4.9'
 }
 
-task sourceJar(type: Jar) {
-    classifier "sources"
-}
