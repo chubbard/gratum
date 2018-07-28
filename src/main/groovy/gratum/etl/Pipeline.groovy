@@ -3,6 +3,8 @@ package gratum.etl
 import gratum.csv.CSVFile
 import gratum.source.Source
 
+import java.text.SimpleDateFormat
+
 public class Pipeline implements Source {
 
     LoadStatistic statistic
@@ -145,7 +147,7 @@ public class Pipeline implements Source {
                 row.putAll(cache[key].first())
                 return row
             } else {
-                new Rejection("Could not join on ${columns}", RejectionCategory.IGNORE_ROW )
+                reject("Could not join on ${columns}", RejectionCategory.IGNORE_ROW )
             }
         }
 
@@ -263,6 +265,97 @@ public class Pipeline implements Source {
         return other
     }
 
+    public Pipeline sort(String... columns) {
+        // todo sort externally
+
+        TreeSet<Map> ordered = new TreeSet<>(new Comparator<Map>() {
+            @Override
+            int compare(Map o1, Map o2) {
+                for( String key : columns ) {
+                    int value = o1[key] <=> o2[key]
+                    if( value != 0 ) return value;
+                }
+                return 0
+            }
+        })
+
+        addStep("sort(${columns})") { Map row ->
+            ordered << row
+            return row
+        }
+
+
+        Pipeline next = new Pipeline( statistic )
+        after {
+            int lineNumber = 1
+            for( Map c : ordered ) {
+                next.process( c, lineNumber++ )
+            }
+            return null
+        }
+
+        return next
+    }
+
+    Pipeline asDouble(String column) {
+        addStep("asDouble(${column})") { Map row ->
+            row[column] = Double.parseDouble( row.column )
+            return row
+        }
+    }
+
+    Pipeline asInt(String column) {
+        addStep("asInt(${column})") { Map row ->
+            row[column] = Integer.parseInt( row.column )
+            return row
+        }
+    }
+
+    Pipeline asBoolean(String column) {
+        addStep("asBoolean(${column}") { Map row ->
+            String value = row.column
+            switch( value ) {
+                case "Y":
+                case "y":
+                case "yes":
+                case "YES":
+                case "Yes":
+                case "1":
+                case "T":
+                case "t":
+                    row[column] = true
+                    break
+                case "n":
+                case "N":
+                case "NO":
+                case "no":
+                case "No":
+                case "0":
+                case "F":
+                case "f":
+                case "null":
+                case "Null":
+                case "NULL":
+                case null:
+                    row[column] = false
+                    break
+                default:
+                    row[column] = Boolean.parseBoolean(value)
+                    break
+            }
+            return row
+        }
+    }
+
+    Pipeline asDate(String column, String format = "yyyy-MM-dd") {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(format)
+        addStep("asDate(${column}, ${format})") { Map row ->
+            row[column] = dateFormat.format( row.column )
+            return row
+        }
+        return this
+    }
+
     public Pipeline save( String filename, String separator = ",", List<String> columns = null ) {
         CSVFile out = new CSVFile( filename, separator )
         addStep("Save to ${out.file.name}") { Map row ->
@@ -299,28 +392,6 @@ public class Pipeline implements Source {
             printf(".")
             if( line % col ) println()
             row
-        }
-    }
-
-    public Pipeline printStatistics( boolean timings = false ) {
-        after {
-            if( timings ) {
-                println("\n----")
-                println("Step Timings")
-                statistic.stepTimings.each { String step, Long totalTime ->
-                    printf("%s: %,.2f ms%n", step, statistic.avg(step) )
-                }
-            }
-
-            if( statistic.rejections > 0 ) {
-                println("\n----")
-                println("Rejections by category")
-                statistic.rejectionsByCategory.each { RejectionCategory category, Integer count ->
-                    printf( "%s: %,d%n", category, count )
-                }
-            }
-            println("\n----")
-            printf( "==> %s loaded %,d rejected %,d and took %,d ms%n", statistic.filename, statistic.loaded, statistic.rejections,statistic.elapsed )
         }
     }
 

@@ -74,4 +74,31 @@ class LoadStatistic {
         double avg = stepTimings[step] / (loaded + rejections)
         return avg
     }
+
+    public String toString() {
+        return toString(false)
+    }
+    
+    public String toString(boolean timings) {
+        StringWriter out = new StringWriter()
+        PrintWriter pw = new PrintWriter(out)
+        if( timings ) {
+            pw.println("\n----")
+            pw.println("Step Timings")
+            this.stepTimings.each { String step, Long totalTime ->
+                pw.printf("%s: %,.2f ms%n", step, this.avg(step) )
+            }
+        }
+
+        if( this.rejections > 0 ) {
+            pw.println("\n----")
+            pw.println("Rejections by category")
+            this.rejectionsByCategory.each { RejectionCategory category, Integer count ->
+                pw.printf( "%s: %,d%n", category, count )
+            }
+        }
+        pw.println("\n----")
+        pw.printf( "==> %s %nloaded %,d %nrejected %,d %ntook %,d ms%n", this.filename, this.loaded, this.rejections,this.elapsed )
+        return out.toString()
+    }
 }
