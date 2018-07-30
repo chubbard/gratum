@@ -36,7 +36,10 @@ manipulations.  Here is how to get gratum started up in your shell:
 But, to make it easier to get started you'll want to add the following to your 
 `$HOME/.groovy/groovysh.rc` file:
 
-    TBD
+    groovy.grape.Grape.grab(group: 'gratum', module: 'gratum')
+    import gratum.etl.*
+    import gratum.source.*
+    import static gratum.source.CsvSource.*
 
 ## Examples
 
