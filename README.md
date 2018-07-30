@@ -9,6 +9,18 @@ gratum with a couple of beliefs about data transformations.
 
 ## Installation
 
+For Gradle:
+
+     compile group: 'gratum', name: 'gratum', version: '0.1'
+
+For Maven:
+
+      <dependency>
+        <groupId>gratum</groupId>
+        <artifactId>gratum</artifactId>
+        <version>0.1</version>
+      </dependency>
+      
 ## Oh Shell Yeah!
 
 Gratum is meant to be usable in the groovy shell for getting thigns done quickly.  
@@ -27,6 +39,7 @@ But, to make it easier to get started you'll want to add the following to your
     TBD
 
 ## Examples
+
 
 
 ## Digging Deeper
