@@ -163,7 +163,7 @@ class PipelineTest {
             [id: 1, name: 'Bill Rhodes', age: 53 ],
             [id: 2, name: 'Cheryl Lipscome', age: 43],
             [id: 3, name: 'Diana Rogers', age: 34],
-            [id: 4, name: 'Jack Lalanne', age: 25 ]
+            [id: 4, name: 'Jack Lowland', age: 25 ]
         ]).join( from([
             [id:1, hobby: 'Stamp Collecting'],
             [id:1, hobby: 'Bird Watching'],
@@ -180,12 +180,42 @@ class PipelineTest {
 
     @Test
     public void testSort() {
+        String lastHobby;
+        from([
+            [id:1, hobby: 'Stamp Collecting'],
+            [id:1, hobby: 'Bird Watching'],
+            [id:2, hobby: 'Biking'],
+            [id:2, hobby: 'Tennis'],
+            [id:3, hobby: 'Archeology'],
+            [id:3, hobby: 'Treasure Hunting'],
+            [id:4, hobby: 'Crossfit'],
+            [id:4, hobby: 'Obstacle Races']
+        ]).sort("hobby").addStep("Assert order is increasing") { Map row ->
+            if( lastHobby ) assertTrue( "Assert ${lastHobby} < ${row.hobby}", lastHobby.compareTo( row.hobby ) <= 0 )
+            lastHobby = row.hobby;
+            return row
+        }.go()
 
+        assertNotNull("Assert that lastHobby is not null meaning we executing some portion of the assertions above.", lastHobby)
     }
 
     @Test
     public void testUnique() {
+        LoadStatistic stats = from([
+            [id:1, hobby: 'Stamp Collecting'],
+            [id:1, hobby: 'Bird Watching'],
+            [id:2, hobby: 'Biking'],
+            [id:2, hobby: 'Tennis'],
+            [id:3, hobby: 'Archeology'],
+            [id:3, hobby: 'Treasure Hunting'],
+            [id:4, hobby: 'Crossfit'],
+            [id:4, hobby: 'Obstacle Races']
+        ]).unique("id")
+        .go()
 
+        assertEquals( 4, stats.loaded )
+        assertEquals( 4, stats.rejections )
+        assertEquals( 4, stats.getRejections(RejectionCategory.IGNORE_ROW) )
     }
 
     @Test
