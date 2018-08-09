@@ -122,18 +122,19 @@ public class Pipeline implements Source {
             return row
         }
 
-        addStep("join(${this.name}, ${columns})") { Map row ->
+        return inject("join(${this.name}, ${columns})", true) { Map row ->
             if( !other.complete ) {
                 other.go()
             }
             String key = keyOf( row, leftColumn(columns) )
 
-            // todo how do we handle row multiplication when we want to add more than 1 item to the process chain,
-            // right now this is going to k
             if( left ) {
                 if( cache.containsKey(key) ) {
-                    row.putAll(cache[key].first())
-                    return row
+                    return cache[key].collect { Map k ->
+                        Map j = k.clone()
+                        j.putAll(row)
+                        return j
+                    }
                 } else {
                     // make sure we add columns even if they are null so sources write out columns we expect.
                     if( !cache.isEmpty() ) {
@@ -145,14 +146,15 @@ public class Pipeline implements Source {
                     return row
                 }
             } else if( cache.containsKey(key) ) {
-                row.putAll(cache[key].first())
-                return row
+                return cache[key].collect { Map k ->
+                    Map j = k.clone()
+                    j.putAll(row)
+                    return j
+                }
             } else {
                 reject("Could not join on ${columns}", RejectionCategory.IGNORE_ROW )
             }
         }
-
-        return this
     }
 
     public Pipeline fillDownBy( Closure<Boolean> decider ) {
@@ -408,16 +410,24 @@ public class Pipeline implements Source {
         return this
     }
 
-    public Pipeline inject( Closure closure) {
-        Pipeline next = new Pipeline( statistic )
+    public Pipeline inject(String name, boolean reset, Closure closure) {
+        Pipeline next = reset ? new Pipeline(name) : new Pipeline( statistic )
         next.src = new ChainedSource( this )
 
-        addStep("inject()") { Map row ->
+        addStep(name) { Map row ->
             Collection<Map> cc = closure( row )
             ((ChainedSource)next.src).process( cc )
             return row
         }
         return next
+    }
+
+    public Pipeline inject( Closure closure) {
+        this.inject("inject()", false, closure )
+    }
+
+    public Pipeline inject( String name, Closure closure ) {
+        this.inject( name, false, closure )
     }
 
     public void start(Closure closure = null) {
