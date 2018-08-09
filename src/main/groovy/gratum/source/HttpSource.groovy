@@ -10,27 +10,35 @@ import gratum.etl.Pipeline
 class HttpSource implements Source {
 
     String url
+    Closure configuration
 
-    public HttpSource(String url) {
+    public HttpSource(String url, Closure configuration) {
         this.url = url
+        this.configuration = configuration
     }
 
-    public static Pipeline http(String url) {
+    public static Pipeline http(String url, Closure configuration = null) {
         Pipeline pipeline = new Pipeline( url )
-        pipeline.src = new HttpSource(url)
+        pipeline.src = new HttpSource(url, configuration)
         return pipeline
     }
 
-    public static Pipeline https(String url) {
+    public static Pipeline https(String url, Closure configuration = null) {
         Pipeline pipeline = new Pipeline(url)
-        pipeline.src = new HttpSource(url)
+        pipeline.src = new HttpSource(url, configuration)
         return pipeline
     }
 
     @Override
     void start(Closure closure) {
-        def result = HttpBuilder.configure {
-            request.raw = url
+        def response = configure {
+            request.uri = url
+            if( configuration ) {
+                configuration.delegate = delegate
+                configuration()
+            }
         }.get()
+
+        closure( response )
     }
 }

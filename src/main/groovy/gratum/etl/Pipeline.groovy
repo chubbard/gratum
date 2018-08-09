@@ -1,6 +1,7 @@
 package gratum.etl
 
 import gratum.csv.CSVFile
+import gratum.source.ChainedSource
 import gratum.source.Source
 
 import java.text.SimpleDateFormat
@@ -225,41 +226,34 @@ public class Pipeline implements Source {
         return columns.keySet().collect() { key -> key + "->" + columns[key] }.join(',')
     }
 
-    public Pipeline groupBy( List columns, boolean add = false ) {
+    public Pipeline groupBy( String... columns ) {
         Map cache = [:]
         addStep("groupBy(${columns.join(',')})") { Map row ->
-            String key = keyOf(row, columns)
-
-            if( !cache.containsKey(key) ) {
-                cache[key] = []
+            Map current = cache
+            columns.eachWithIndex { String col, int i ->
+                if( !current.containsKey(row[col]) ) {
+                    if( i + 1 < columns.size() ) {
+                        current[row[col]] = [:]
+                        current = (Map)current[row[col]]
+                    } else {
+                        current[row[col]] = []
+                    }
+                } else if( i + 1 < columns.size() ) {
+                    current = (Map)current[row[col]]
+                }
             }
-            cache[key] << row
+
+            current[ row[columns.last()] ] << row
             return row
         }
 
         Pipeline parent = this
-        Pipeline other = new Pipeline( this.name )
+        Pipeline other = new Pipeline( this.statistic )
         other.src = new Source() {
             @Override
             void start(Closure closure) {
                 parent.start() // first start our parent pipeline
-                cache.values().sort { a, b -> b.size() <=> a.size() }.each { List<Map<String,String>> rows ->
-                    Map r = columns.inject([:]) { acc, col ->
-                        acc[col] = rows.first()[col]
-                        return acc
-                    }
-
-                    r["count"] = rows.size()
-
-                    if( add ) {
-                        rows.eachWithIndex { Map<String,String> current, int i ->
-                            current.each { col, v ->
-                                if( !columns.contains(col) ) r["${col}_${i+1}"] = v
-                            }
-                        }
-                    }
-                    closure(r)
-                }
+                closure( cache )
             }
         }
         return other
@@ -284,17 +278,10 @@ public class Pipeline implements Source {
             return row
         }
 
-
-        Pipeline parent = this
-        Pipeline next = new Pipeline( statistic )
-        next.src = new Source() {
-            @Override
-            void start(Closure closure) {
-                parent.start()
-                for( Map c : ordered ) {
-                    closure( c )
-                }
-            }
+        Pipeline next = new Pipeline(statistic)
+        next.src = new ChainedSource( this )
+        after {
+            ((ChainedSource)next.src).process( ordered )
         }
 
         return next
@@ -381,7 +368,7 @@ public class Pipeline implements Source {
         return this
     }
 
-    public Pipeline print(String... columns) {
+    public Pipeline printRow(String... columns) {
         addStep("print()") { Map row ->
             if( columns ) {
                 println( "[ ${columns.toList().collect { row[it] }.join(',')} ]" )
@@ -409,6 +396,28 @@ public class Pipeline implements Source {
             return row
         }
         return this
+    }
+
+    Pipeline unique(String column) {
+        Set<Object> unique = [:] as HashSet
+        addStep("unique(${column})") { Map row ->
+            if( unique.contains(row[column]) ) return reject("Non-unique row returned", RejectionCategory.IGNORE_ROW)
+            unique.add( row[column] )
+            return row
+        }
+        return this
+    }
+
+    public Pipeline inject( Closure closure) {
+        Pipeline next = new Pipeline( statistic )
+        next.src = new ChainedSource( this )
+
+        addStep("inject()") { Map row ->
+            Collection<Map> cc = closure( row )
+            ((ChainedSource)next.src).process( cc )
+            return row
+        }
+        return next
     }
 
     public void start(Closure closure = null) {

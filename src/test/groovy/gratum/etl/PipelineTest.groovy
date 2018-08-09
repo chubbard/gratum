@@ -4,6 +4,8 @@ import org.junit.Test
 
 import static junit.framework.TestCase.*
 import static gratum.source.CsvSource.*
+import static gratum.source.HttpSource.*
+import static gratum.source.CollectionSource.*
 
 /**
  * Created by charliehubbard on 7/13/18.
@@ -56,21 +58,15 @@ class PipelineTest {
     @Test
     public void testSimpleGroupBy() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-            .branch { Pipeline p ->
-                p.groupBy(["Sex"])
-                        .addStep("Assert groupBy(Sex)") { Map row ->
-                    if (row.Sex == "male") {
-                        assertEquals(266, row.count)
-                    } else if (row.Sex == "female") {
-                        assertEquals(152, row.count)
-                    }
-                    return row
-                }
-                null
+            .groupBy("Sex")
+            .addStep("Assert groupBy(Sex)") { Map row ->
+                assertEquals(266, row.male?.size())
+                assertEquals(152, row.female?.size())
+                return row
             }
             .go()
 
-        assertEquals("Assert rows loaded == 418", 418, statistic.loaded )
+        assertEquals("Assert rows loaded == 418 + 1", 419, statistic.loaded )
         assertEquals("Assert rows rejected == 0", 0, statistic.rejections )
     }
 
@@ -163,7 +159,59 @@ class PipelineTest {
 
     @Test
     public void testJoin() {
+        LoadStatistic stats = from([
+            [id: 1, name: 'Bill Rhodes', age: 53 ],
+            [id: 2, name: 'Cheryl Lipscome', age: 43],
+            [id: 3, name: 'Diana Rogers', age: 34],
+            [id: 4, name: 'Jack Lalanne', age: 25 ]
+        ]).join( from([
+            [id:1, hobby: 'Stamp Collecting'],
+            [id:1, hobby: 'Bird Watching'],
+            [id:2, hobby: 'Biking'],
+            [id:2, hobby: 'Tennis'],
+            [id:3, hobby: 'Archeology'],
+            [id:3, hobby: 'Treasure Hunting'],
+            [id:4, hobby: 'Crossfit'],
+            [id:4, hobby: 'Obstacle Races']
+        ]), ['id'] ).go()
 
+        assertEquals( 8, stats.loaded )
+    }
+
+    @Test
+    public void testSort() {
+
+    }
+
+    @Test
+    public void testUnique() {
+
+    }
+
+    @Test
+    public void testHttp() {
+        String message = null;
+        int actualCount = 0;
+        int expectedCount = 0;
+        LoadStatistic stats = http("http://api.open-notify.org/astros.json").inject { Map json ->
+            expectedCount = json.number
+            message = json.message
+            json.people
+        }.addStep("assert astros in space") { Map row ->
+            actualCount++
+            // assert that we received the data we expected, but we can't really test anything because this will change over time
+            assertNotNull( row.name )
+            assertNotNull( row.craft )
+            return row
+        }.go()
+
+        assertNotNull( "Message should be non-null if we called the service", message )
+        assertEquals( "success", message )
+        assertEquals( expectedCount + 1, stats.loaded )
+        // provided someone is in space!
+        if( expectedCount > 0 ) {
+            assertEquals( expectedCount, actualCount )
+        }
     }
 
 }
