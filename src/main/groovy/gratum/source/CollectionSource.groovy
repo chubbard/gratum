@@ -18,13 +18,13 @@ class CollectionSource implements Source {
     }
 
     public static Pipeline from( Map... src) {
-        Pipeline pipeline = new Pipeline("Array")
+        Pipeline pipeline = new Pipeline("Array(${src.size()})")
         pipeline.src = new CollectionSource( src.toList() )
         return pipeline
     }
 
     public static Pipeline from(Collection<Map> src ) {
-        Pipeline pipeline = new Pipeline("Collection")
+        Pipeline pipeline = new Pipeline("Collection(${src.size()})")
         pipeline.src = new CollectionSource( src )
         return pipeline
     }

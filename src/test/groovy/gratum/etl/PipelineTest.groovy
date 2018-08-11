@@ -13,6 +13,25 @@ import static gratum.source.CollectionSource.*
 
 class PipelineTest {
 
+    List<Map> people = [
+            [id: 1, name: 'Bill Rhodes', age: 53],
+            [id: 2, name: 'Cheryl Lipscome', age: 43],
+            [id: 3, name: 'Diana Rogers', age: 34],
+            [id: 4, name: 'Jack Lowland', age: 25]
+    ]
+
+    Collection<Map> hobbies = [
+            [id:1, hobby: 'Stamp Collecting'],
+            [id:1, hobby: 'Bird Watching'],
+            [id:2, hobby: 'Biking'],
+            [id:2, hobby: 'Tennis'],
+            [id:3, hobby: 'Archeology'],
+            [id:3, hobby: 'Treasure Hunting'],
+            [id:4, hobby: 'Crossfit'],
+            [id:4, hobby: 'Obstacle Races']
+    ]
+
+
     @Test
     public void testSimpleFilter() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
@@ -159,21 +178,7 @@ class PipelineTest {
 
     @Test
     public void testJoin() {
-        LoadStatistic stats = from([
-            [id: 1, name: 'Bill Rhodes', age: 53 ],
-            [id: 2, name: 'Cheryl Lipscome', age: 43],
-            [id: 3, name: 'Diana Rogers', age: 34],
-            [id: 4, name: 'Jack Lowland', age: 25 ]
-        ]).join( from([
-            [id:1, hobby: 'Stamp Collecting'],
-            [id:1, hobby: 'Bird Watching'],
-            [id:2, hobby: 'Biking'],
-            [id:2, hobby: 'Tennis'],
-            [id:3, hobby: 'Archeology'],
-            [id:3, hobby: 'Treasure Hunting'],
-            [id:4, hobby: 'Crossfit'],
-            [id:4, hobby: 'Obstacle Races']
-        ]), ['id'] ).go()
+        LoadStatistic stats = from(people).join( from(hobbies), ['id'] ).go()
 
         assertEquals( 8, stats.loaded )
     }
@@ -181,16 +186,7 @@ class PipelineTest {
     @Test
     public void testSort() {
         String lastHobby;
-        from([
-            [id:1, hobby: 'Stamp Collecting'],
-            [id:1, hobby: 'Bird Watching'],
-            [id:2, hobby: 'Biking'],
-            [id:2, hobby: 'Tennis'],
-            [id:3, hobby: 'Archeology'],
-            [id:3, hobby: 'Treasure Hunting'],
-            [id:4, hobby: 'Crossfit'],
-            [id:4, hobby: 'Obstacle Races']
-        ]).sort("hobby").addStep("Assert order is increasing") { Map row ->
+        from(hobbies).sort("hobby").addStep("Assert order is increasing") { Map row ->
             if( lastHobby ) assertTrue( "Assert ${lastHobby} < ${row.hobby}", lastHobby.compareTo( row.hobby ) <= 0 )
             lastHobby = row.hobby;
             return row
@@ -201,21 +197,33 @@ class PipelineTest {
 
     @Test
     public void testUnique() {
-        LoadStatistic stats = from([
-            [id:1, hobby: 'Stamp Collecting'],
-            [id:1, hobby: 'Bird Watching'],
-            [id:2, hobby: 'Biking'],
-            [id:2, hobby: 'Tennis'],
-            [id:3, hobby: 'Archeology'],
-            [id:3, hobby: 'Treasure Hunting'],
-            [id:4, hobby: 'Crossfit'],
-            [id:4, hobby: 'Obstacle Races']
-        ]).unique("id")
+        LoadStatistic stats = from(hobbies).unique("id")
         .go()
 
         assertEquals( 4, stats.loaded )
         assertEquals( 4, stats.rejections )
         assertEquals( 4, stats.getRejections(RejectionCategory.IGNORE_ROW) )
+    }
+
+    @Test
+    public void testRejections() {
+        List<Map> rejections = []
+
+        LoadStatistic stats = from(hobbies)
+                .addStep("Rejection") { Map row -> row.id > 1 ? row : reject("${row.id} is too small", RejectionCategory.REJECTION) }
+                .onRejection { Pipeline pipeline ->
+                    pipeline.addStep("Save rejections") { Map row ->
+                        rejections << row
+                        return row
+                    }
+                    return null
+                }
+                .go()
+
+        assertEquals( 6, stats.loaded )
+        assertEquals( 2, stats.rejections )
+        assertEquals( 2, stats.getRejections(RejectionCategory.REJECTION) )
+        assertEquals( 2, rejections.size() )
     }
 
     @Test

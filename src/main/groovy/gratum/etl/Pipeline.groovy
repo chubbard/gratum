@@ -6,11 +6,21 @@ import gratum.source.Source
 
 import java.text.SimpleDateFormat
 
+class Step {
+    public String name
+    public Closure step
+
+    Step(String name, Closure step) {
+        this.name = name
+        this.step = step
+    }
+}
+
 public class Pipeline implements Source {
 
     LoadStatistic statistic
     Source src
-    List<Map<String,Object>> processChain = []
+    List<Step> processChain = []
     List<Closure> doneChain = []
     Pipeline rejections
     boolean complete = false
@@ -23,12 +33,24 @@ public class Pipeline implements Source {
         this.statistic = copy
     }
 
+    public static create( String name, Closure startClosure ) {
+        Pipeline pipeline = new Pipeline(name)
+        pipeline.src = new Source() {
+            @Override
+            void start(Closure pipelineClosure) {
+                startClosure( pipelineClosure )
+            }
+        }
+        return pipeline
+    }
+
     public getName() {
         return this.statistic.filename
     }
 
     public Pipeline addStep( String name = null, Closure<Map> step ) {
-        processChain << [ name: name, step: step ]
+        step.delegate = this
+        processChain << new Step( name, step )
         return this
     }
 
@@ -456,7 +478,7 @@ public class Pipeline implements Source {
 
     public boolean process(Map row, int lineNumber = -1) {
         Map current = new LinkedHashMap(row)
-        for (Map step : processChain) {
+        for (Step step : processChain) {
             try {
                 boolean stop = statistic.timed(step.name) {
                     def ret = step.step(current)
