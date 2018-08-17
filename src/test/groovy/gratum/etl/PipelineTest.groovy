@@ -17,7 +17,8 @@ class PipelineTest {
             [id: 1, name: 'Bill Rhodes', age: 53],
             [id: 2, name: 'Cheryl Lipscome', age: 43],
             [id: 3, name: 'Diana Rogers', age: 34],
-            [id: 4, name: 'Jack Lowland', age: 25]
+            [id: 4, name: 'Jack Lowland', age: 25],
+            [id: 5, name: 'Ginger Rogers', age: 83]
     ]
 
     Collection<Map> hobbies = [
@@ -177,10 +178,33 @@ class PipelineTest {
     }
 
     @Test
-    public void testJoin() {
-        LoadStatistic stats = from(people).join( from(hobbies), ['id'] ).go()
+    public void testInnerJoin() {
+        LoadStatistic stats = from(people).join( from(hobbies), ['id'] )
+            .addStep("Assert hobbies") { Map row ->
+                assertNotNull( row.hobby )
+                return row
+            }
+            .go()
 
         assertEquals( 8, stats.loaded )
+        assertEquals( 1, stats.rejections )
+    }
+
+    @Test
+    public void testLeftJoin() {
+        LoadStatistic stats = from(people).join( from(hobbies), ['id'], true )
+            .addStep("Assert optional hobbies") { Map row ->
+                if( row.id < 5 ) {
+                    assertNotNull( row.hobby )
+                } else {
+                    assertNull( row.hobby )
+                }
+                return row
+            }
+            .go()
+
+        assertEquals( 9, stats.loaded )
+        assertEquals( 0, stats.rejections )
     }
 
     @Test

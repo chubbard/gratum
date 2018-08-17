@@ -165,7 +165,7 @@ public class Pipeline implements Source {
                             if( !row.containsKey(i) ) row[i] = null
                         }
                     }
-                    return row
+                    return [row]
                 }
             } else if( cache.containsKey(key) ) {
                 return cache[key].collect { Map k ->
@@ -437,8 +437,14 @@ public class Pipeline implements Source {
         next.src = new ChainedSource( this )
 
         addStep(name) { Map row ->
-            Collection<Map> cc = closure( row )
-            ((ChainedSource)next.src).process( cc )
+            def result = closure( row )
+            if( result instanceof Rejection ) {
+                next.doRejections((Rejection)result, row, name, -1)
+                return result
+            } else {
+                Collection<Map> cc = result
+                ((ChainedSource)next.src).process( cc )
+            }
             return row
         }
         return next
@@ -483,13 +489,7 @@ public class Pipeline implements Source {
                 boolean stop = statistic.timed(step.name) {
                     def ret = step.step(current)
                     if (!ret || ret instanceof Rejection ) {
-                        Rejection rejection = ret ? (Rejection)ret : new Rejection("Unknown reason", RejectionCategory.REJECTION)
-                        rejection.step = step.name
-                        current.rejectionCategory = rejection.category
-                        current.rejectionReason = rejection.reason
-                        current.rejectionStep = rejection.step
-                        statistic.reject( rejection?.category ?: RejectionCategory.REJECTION)
-                        rejections?.process( current, lineNumber )
+                        doRejections(ret, current, step.name, lineNumber)
                         return true
                     }
                     current = ret
@@ -502,6 +502,16 @@ public class Pipeline implements Source {
         }
         statistic.loaded++
         return false // don't stop!
+    }
+
+    private void doRejections(Rejection ret, Map current, String stepName, int lineNumber) {
+        Rejection rejection = ret ?: new Rejection("Unknown reason", RejectionCategory.REJECTION)
+        rejection.step = stepName
+        current.rejectionCategory = rejection.category
+        current.rejectionReason = rejection.reason
+        current.rejectionStep = rejection.step
+        statistic.reject(rejection?.category ?: RejectionCategory.REJECTION)
+        rejections?.process(current, lineNumber)
     }
 
     private String keyOf( Map row, List<String> columns ) {
