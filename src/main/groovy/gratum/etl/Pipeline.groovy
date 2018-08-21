@@ -62,6 +62,12 @@ public class Pipeline implements Source {
     public Pipeline onRejection( Closure<Void> branch ) {
         if( !rejections ) rejections = new Pipeline("Rejections(${name})")
         branch( rejections )
+        after {
+            rejections.doneChain.each { Closure c ->
+                c()
+            }
+            return
+        }
         return this
     }
 
@@ -72,6 +78,7 @@ public class Pipeline implements Source {
             src.addStep("concat(${src.name})") { Map row ->
                 line++
                 original.process( row, line )
+                return row
             }.start()
         }
         return this
@@ -79,7 +86,7 @@ public class Pipeline implements Source {
 
     public Pipeline filter(Closure callback) {
         addStep( "filter()" ) { Map row ->
-            return callback(row) ? row : reject("Row did not match the filter closure.", RejectionCategory.IGNORE_ROW)
+            return callback(row) ? row : reject("Row did not match the filter closure.", RejectionCategory.IGNORE_ROW )
         }
         return this
     }
@@ -286,7 +293,7 @@ public class Pipeline implements Source {
     public Pipeline sort(String... columns) {
         // todo sort externally
 
-        TreeSet<Map> ordered = new TreeSet<>(new Comparator<Map>() {
+        Comparator<Map> comparator = new Comparator<Map>() {
             @Override
             int compare(Map o1, Map o2) {
                 for( String key : columns ) {
@@ -295,10 +302,12 @@ public class Pipeline implements Source {
                 }
                 return 0
             }
-        })
+        }
 
+        List<Map> ordered = []
         addStep("sort(${columns})") { Map row ->
-            ordered << row
+            int index = Collections.binarySearch( ordered, row, comparator )
+            ordered.add( Math.abs(index + 1), row )
             return row
         }
 
