@@ -423,9 +423,19 @@ public class Pipeline implements Source {
         }
     }
 
+    public Pipeline setField(String fieldName, Object value ) {
+        addStep("setField(${fieldName})") { Map row ->
+            row[fieldName] = value
+            return row
+        }
+        return this
+    }
+
     public Pipeline addField(String fieldName, Closure fieldValue) {
         addStep("addField(${fieldName})") { Map row ->
-            row[fieldName] = fieldValue(row)
+            Object value = fieldValue(row)
+            if( value instanceof Rejection ) return value
+            row[fieldName] = value
             return row
         }
         return this
