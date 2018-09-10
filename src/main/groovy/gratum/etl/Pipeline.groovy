@@ -508,7 +508,7 @@ public class Pipeline implements Source {
                 boolean stop = statistic.timed(step.name) {
                     def ret = step.step(current)
                     if (!ret || ret instanceof Rejection ) {
-                        doRejections(ret, current, step.name, lineNumber)
+                        doRejections((Rejection)ret, current, step.name, lineNumber)
                         return true
                     }
                     current = ret
