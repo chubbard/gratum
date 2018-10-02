@@ -306,14 +306,16 @@ public class Pipeline implements Source {
 
         List<Map> ordered = []
         addStep("sort(${columns})") { Map row ->
-            int index = Collections.binarySearch( ordered, row, comparator )
-            ordered.add( Math.abs(index + 1), row )
+            //int index = Collections.binarySearch( ordered, row, comparator )
+            //ordered.add( Math.abs(index + 1), row )
+            ordered << row
             return row
         }
 
         Pipeline next = new Pipeline(statistic)
         next.src = new ChainedSource( this )
         after {
+            ordered.sort( comparator )
             ((ChainedSource)next.src).process( ordered )
         }
 
