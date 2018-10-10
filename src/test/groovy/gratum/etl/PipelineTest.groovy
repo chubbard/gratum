@@ -97,7 +97,45 @@ class PipelineTest {
 
     @Test
     public void testConcat() {
+        LoadStatistic stats = from([
+                [name: 'Chuck', atBats: '200', hits: '100', battingAverage: '0.5'],
+                [name: 'Sam', atBats: '300', hits: '125', battingAverage: '0.4166']
+        ]).concat( from([
+                [name: 'Rob', atBats: '100', hits: '75', battingAverage: '0.75'],
+                [name: 'Sean', atBats: '20', hits: 'none', battingAverage: 'none']
+        ])).go()
 
+        assertEquals( 4, stats.loaded )
+        assertEquals( 0, stats.rejections )
+    }
+
+    @Test
+    public void testTrim() {
+        LoadStatistic stats = from([
+                [firstName: 'Roger   ', lastName: '  Smith'],
+                [firstName: '    Jill', lastName: 'Belcher'],
+                [firstName: '\tRick\t', lastName: 'Spade   ']
+        ])
+        .trim()
+        .addStep("Assert all values were trimmed") { Map row ->
+            assertFalse( row.firstName.contains(' '))
+            assertFalse( row.firstName.contains('\t'))
+            assertFalse( row.lastName.contains(' '))
+            assertFalse( row.lastName.contains('\t'))
+            return row
+        }
+        .go()
+    }
+
+    @Test
+    public void testSetField() {
+        LoadStatistic stats = from( people )
+                .setField("completed", true)
+                .addStep("Assert completed is defined") { Map row ->
+                    assertTrue( row.completed )
+                    return row
+                }
+                .go()
     }
 
     @Test
@@ -320,4 +358,45 @@ class PipelineTest {
         assertEquals( 1, stats.rejections )
         assertEquals( 1, stats.getRejections(RejectionCategory.INVALID_FORMAT))
     }
+
+    @Test
+    public void testAsBoolean() {
+        from([
+                [name: 'Chuck', member: 'Y'],
+                [name: 'Sue', member: 'y'],
+                [name: 'Bill', member: 'YES'],
+                [name: 'Don', member: 'yes'],
+                [name: 'Kyle', member: 't'],
+                [name: 'Greg', member: 'T'],
+                [name: 'Jill', member: 'true'],
+                [name: 'Kate', member: 'TRUE'],
+                [name: 'Lily', member: '1']
+        ])
+        .asBoolean('member')
+        .addStep("Assert all are boolean true") { Map row ->
+            assertTrue( row.member instanceof Boolean )
+            assertTrue( row.member )
+            return row
+        }.go()
+
+        from([
+                [name: 'Pat', member: 'N'],
+                [name: 'Chuck', member: 'n'],
+                [name: 'Sue', member: 'NO'],
+                [name: 'Bill', member: 'no'],
+                [name: 'Kyle', member: 'f'],
+                [name: 'Greg', member: 'F'],
+                [name: 'Jill', member: 'false'],
+                [name: 'Kate', member: 'FALSE'],
+                [name: 'Lily', member: '0']
+        ])
+        .asBoolean('member')
+        .addStep("Assert all are boolean true") { Map row ->
+            assertTrue( row.member instanceof Boolean )
+            assertFalse( row.member )
+            return row
+        }.go()
+
+    }
+
 }

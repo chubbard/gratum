@@ -318,6 +318,7 @@ public class Pipeline implements Source {
         after {
             ordered.sort( comparator )
             ((ChainedSource)next.src).process( ordered )
+            null
         }
 
         return next
