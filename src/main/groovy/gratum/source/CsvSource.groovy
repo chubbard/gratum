@@ -25,6 +25,12 @@ public class CsvSource implements Source {
         return pipeline
     }
 
+    public static Pipeline csv(String name, InputStream stream, String separator = ",") {
+        Pipeline pipeline = new Pipeline(name)
+        pipeline.src = new CsvSource( new InputStreamReader(stream), separator )
+        return pipeline
+    }
+
     @Override
     void start(Closure callback) {
         CSVReader csvReader = new CSVReader() {

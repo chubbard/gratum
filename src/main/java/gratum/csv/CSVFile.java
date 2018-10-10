@@ -15,6 +15,7 @@ public class CSVFile {
     private static final String CSV_PATTERN = "(\"(([^\\\"]??(\\\\\\\")?)*)\"|[^{0}]*){0}?";
 
     private File file;
+    private Reader reader;
     private String separator;
     private boolean header = true;
     private PrintWriter writer;
@@ -37,6 +38,12 @@ public class CSVFile {
         linePattern = Pattern.compile(MessageFormat.format(CSV_PATTERN, Pattern.quote(separator)));
     }
 
+    public CSVFile(Reader reader, String separator) {
+        this.reader = reader;
+        this.separator = separator;
+        linePattern = Pattern.compile(MessageFormat.format(CSV_PATTERN, Pattern.quote(separator)));
+    }
+
     public CSVFile(PrintWriter out, String separator) {
         this.writer = out;
         this.separator = separator;
@@ -53,12 +60,16 @@ public class CSVFile {
     }
 
     public int parse( CSVReader callback ) throws IOException {
-        BOMInputStream bom = new BOMInputStream( new FileInputStream(file) );
-        Reader reader = bom.hasBOM() ? new InputStreamReader(bom, bom.getBOMCharsetName()) : new InputStreamReader(bom, "UTF-8");
-        return parse(reader, callback);
+        if( file != null ) {
+            BOMInputStream bom = new BOMInputStream(new FileInputStream(file));
+            Reader reader = bom.hasBOM() ? new InputStreamReader(bom, bom.getBOMCharsetName()) : new InputStreamReader(bom, "UTF-8");
+            return parse(reader, callback);
+        } else {
+            return parse(reader,callback);
+        }
     }
 
-    public int parse(Reader reader, CSVReader callback) throws IOException {
+    protected int parse(Reader reader, CSVReader callback) throws IOException {
         LineNumberReader lineNumberReader = new LineNumberReader(reader);
         int lines = 1;
         List<String> headers = null;

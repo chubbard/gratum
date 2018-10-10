@@ -276,4 +276,19 @@ class PipelineTest {
         }
     }
 
+    @Test
+    public void testAsDate() {
+        LoadStatistic stats = from([
+                [name: 'Chuck', dateOfBirth: '1992-08-11'],
+                [name: 'Sam', dateOfBirth: '1980-04-12'],
+                [name: 'Rob', dateOfBirth: 'unknown'],
+                [name: 'Sean' ]
+        ]).asDate('dateOfBirth')
+        .go()
+
+        assertEquals( 3, stats.loaded )
+        assertEquals( 1, stats.rejections )
+        assertEquals( 1, stats.getRejections(RejectionCategory.INVALID_FORMAT) )
+    }
+
 }

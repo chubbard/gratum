@@ -4,6 +4,7 @@ import gratum.csv.CSVFile
 import gratum.source.ChainedSource
 import gratum.source.Source
 
+import java.text.ParseException
 import java.text.SimpleDateFormat
 
 class Step {
@@ -330,6 +331,11 @@ public class Pipeline implements Source {
         }
     }
 
+    /**
+     * Parses the string value at given fieldname into a java.lang.Integer value.
+     * @param column containing a string to be turned into a java.lang.Integer
+     * @return A Pipeline where all rows contain a java.lang.Integer at given fieldName
+     */
     Pipeline asInt(String column) {
         addStep("asInt(${column})") { Map row ->
             String value = row[column] as String
@@ -338,6 +344,11 @@ public class Pipeline implements Source {
         }
     }
 
+    /**
+     * Parses the string value at given fieldname into a java.lang.Boolean value.  It understands values like: Y/N, YES/NO, TRUE/FALSE, 1/0, T/F.
+     * @param column containing a string to be turned into a java.lang.Boolean
+     * @return A Pipeline where all rows contain a java.lang.Boolean at given fieldName
+     */
     Pipeline asBoolean(String column) {
         addStep("asBoolean(${column}") { Map row ->
             String value = row[column]
@@ -376,16 +387,36 @@ public class Pipeline implements Source {
         }
     }
 
+    /**
+     * Parses the string at the given column name into a Date object using the given format.  Any value not
+     * parseable by the format is rejected.
+     * @param column The field to use to find the string value to parse
+     * @param format The format of the string to use to parse into a java.util.Date
+     * @return A Pipeline where all rows contain a java.util.Date at given field name
+     */
     Pipeline asDate(String column, String format = "yyyy-MM-dd") {
         SimpleDateFormat dateFormat = new SimpleDateFormat(format)
         addStep("asDate(${column}, ${format})") { Map row ->
             String val = row[column] as String
-            if( val ) row[column] = dateFormat.parse( val )
-            return row
+            try {
+                if (val) row[column] = dateFormat.parse(val)
+                return row
+            } catch( ParseException ex ) {
+                reject( "${row[column]} could not be parsed by format ${format}", RejectionCategory.INVALID_FORMAT )
+            }
         }
         return this
     }
 
+    /**
+     * This writes each row to the specified filename as a CSV separated by the given separator.  It can optionally
+     * select a subset of column names from each row.  If unspecified all columns will be saved.
+     *
+     * @param filename the filename to write the CSV file to
+     * @param separator the field separator to use between each field value (default ",")
+     * @param columns the list of fields to write from each row.  (default null)
+     * @return A Pipeline
+     */
     public Pipeline save( String filename, String separator = ",", List<String> columns = null ) {
         CSVFile out = new CSVFile( filename, separator )
         addStep("Save to ${out.file.name}") { Map row ->
@@ -425,6 +456,12 @@ public class Pipeline implements Source {
         }
     }
 
+    /**
+     * Sets a fieldName in each row to the given value.
+     * @param fieldName The new field name to add
+     * @param value the value of the new field name
+     * @return The Pipeline where each row has a fieldname set to the given value
+     */
     public Pipeline setField(String fieldName, Object value ) {
         addStep("setField(${fieldName})") { Map row ->
             row[fieldName] = value
@@ -432,7 +469,12 @@ public class Pipeline implements Source {
         }
         return this
     }
-
+    /**
+     * Adds a new field to each row with the value returned by the given closure.
+     * @param fieldName The new field name to add
+     * @param fieldValue The closure that returns a value to set the given field's name to.
+     * @return The Pipeline where the fieldname exists in every row
+     */
     public Pipeline addField(String fieldName, Closure fieldValue) {
         addStep("addField(${fieldName})") { Map row ->
             Object value = fieldValue(row)
@@ -443,6 +485,11 @@ public class Pipeline implements Source {
         return this
     }
 
+    /**
+     * Only allows rows that are unique per the given column.
+     * @param column The column name to use for checking uniqueness
+     * @return A Pipeline that only contains the unique rows for the given column
+     */
     Pipeline unique(String column) {
         Set<Object> unique = [:] as HashSet
         addStep("unique(${column})") { Map row ->
@@ -453,6 +500,15 @@ public class Pipeline implements Source {
         return this
     }
 
+    /**
+     * This takes a closure that takes Map and returns a Collection<Map>.  Each member of the returned collection will
+     * be fed into downstream steps.  The reset flag specifies whether the statistics should be reset (true) or the
+     * existing statistics will be carried (false).
+     * @param name The name of the step
+     * @param reset Whether the statistics of this Pipeline will be carried over to downstream, or it will be restarted.
+     * @param closure Takes a Map and returns a Collection<Map> that will be fed into the downstream steps
+     * @return The Pipeline that will received all members of the Collection returned from the closure.
+     */
     public Pipeline inject(String name, boolean reset, Closure closure) {
         Pipeline next = reset ? new Pipeline(name) : new Pipeline( statistic )
         next.src = new ChainedSource( this )
@@ -465,6 +521,29 @@ public class Pipeline implements Source {
             } else {
                 Collection<Map> cc = result
                 ((ChainedSource)next.src).process( cc )
+            }
+            return row
+        }
+        return next
+    }
+
+    /**
+     * This takes a closure that returns a Pipeline which is used to feed the returned Pipeline.  The closure will be called
+     * for each row emitted from this Pipeline so the closure could create multiple Pipelines, and all data from every Pipeline
+     * will be fed into the returned Pipeline.
+     *
+     * @param closure A closure that returns a pipeline that it's data will be fed on to the returned pipeline.
+     *
+     * @return A new pipeilne whose reocrds consist of the records from all Pipelines returned from the closure
+     */
+    public Pipeline exchange(Closure<Pipeline> closure) {
+        Pipeline next = new Pipeline( statistic )
+        next.src = new ChainedSource(this)
+        addStep("exchange()") { Map row ->
+            Pipeline pipeline = closure( row )
+            pipeline.start { Map current ->
+                next.process( current )
+                return current
             }
             return row
         }
