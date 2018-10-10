@@ -326,8 +326,12 @@ public class Pipeline implements Source {
     Pipeline asDouble(String column) {
         addStep("asDouble(${column})") { Map row ->
             String value = row[column] as String
-            if( value ) row[column] = Double.parseDouble( value )
-            return row
+            try {
+                if (value) row[column] = Double.parseDouble(value)
+                return row
+            } catch( NumberFormatException ex) {
+                reject("Could not parse ${value} as a Double", RejectionCategory.INVALID_FORMAT)
+            }
         }
     }
 
@@ -339,8 +343,12 @@ public class Pipeline implements Source {
     Pipeline asInt(String column) {
         addStep("asInt(${column})") { Map row ->
             String value = row[column] as String
-            if( value ) row[column] = Integer.parseInt(value)
-            return row
+            try {
+                if( value ) row[column] = Integer.parseInt(value)
+                return row
+            } catch( NumberFormatException ex ) {
+                reject("Could not parse ${value} to an integer.", RejectionCategory.INVALID_FORMAT)
+            }
         }
     }
 

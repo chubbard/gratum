@@ -291,4 +291,33 @@ class PipelineTest {
         assertEquals( 1, stats.getRejections(RejectionCategory.INVALID_FORMAT) )
     }
 
+    @Test
+    public void testAsInt() {
+        LoadStatistic stats = from([
+                [name: 'Chuck', atBats: '200', hits: '100'],
+                [name: 'Sam', atBats: '300', hits: '125'],
+                [name: 'Rob', atBats: '100', hits: '75'],
+                [name: 'Sean', atBats: '20', hits: 'none']
+        ]).asInt('hits')
+        .go()
+
+        assertEquals( 3, stats.loaded )
+        assertEquals( 1, stats.rejections )
+        assertEquals( 1, stats.getRejections(RejectionCategory.INVALID_FORMAT))
+    }
+
+    @Test
+    public void testAsDouble() {
+        LoadStatistic stats = from([
+                [name: 'Chuck', atBats: '200', hits: '100', battingAverage: '0.5'],
+                [name: 'Sam', atBats: '300', hits: '125', battingAverage: '0.4166'],
+                [name: 'Rob', atBats: '100', hits: '75', battingAverage: '0.75'],
+                [name: 'Sean', atBats: '20', hits: 'none', battingAverage: 'none']
+        ]).asDouble('battingAverage')
+                .go()
+
+        assertEquals( 3, stats.loaded )
+        assertEquals( 1, stats.rejections )
+        assertEquals( 1, stats.getRejections(RejectionCategory.INVALID_FORMAT))
+    }
 }
