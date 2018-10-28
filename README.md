@@ -11,14 +11,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'gratum', name: 'gratum', version: '0.1'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '0.3'
 
 For Maven:
 
       <dependency>
-        <groupId>gratum</groupId>
+        <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>0.1</version>
+        <version>0.3</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -28,7 +28,7 @@ We love awk and sed for quickly manipulating files, but we aren't always working
 unix like systems.  The groovy shell provides us a portable environment to do similar
 manipulations.  Here is how to get gratum started up in your shell:
 
-    groovy:000> :grab 'gratum:gratum'
+    groovy:000> :grab 'com.github.chubbard:gratum'
     groovy:000> import gratum.etl.*
     groovy:000> import static gratum.source.CsvSource.*
     groovy:000> csv('sample.csv').printStatistics.go
@@ -36,7 +36,7 @@ manipulations.  Here is how to get gratum started up in your shell:
 But, to make it easier to get started you'll want to add the following to your 
 `$HOME/.groovy/groovysh.rc` file:
 
-    groovy.grape.Grape.grab(group: 'gratum', module: 'gratum')
+    groovy.grape.Grape.grab(group: 'com.github.chubbard', module: 'gratum')
     import gratum.etl.*
     import gratum.source.*
     import static gratum.source.CsvSource.*
