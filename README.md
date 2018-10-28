@@ -45,7 +45,16 @@ But, to make it easier to get started you'll want to add the following to your
 
 #### Filter by a column on a single value.
 
-    csv('example1.csv').filter([gender: 'Female']).go
+    from([
+            [ name: 'Chuck', gender: 'Male'],
+            [ name: 'Jane', gender: 'Female'],
+            [ name: 'Rob', gender: 'Male'],
+            [ name: 'Charlie', gender: 'Female'],
+            [ name: 'Sue', gender: 'Male'],
+            [ name: 'Jenny', gender: 'Female']
+        ])
+        .filter([gender: 'Female'])
+        .go
     
 #### Filter using a closure
 
@@ -57,10 +66,16 @@ greater than 500.
 
 #### Sort by column
 
-    csv('bank_balance.csv')
-       .asDouble('amount')
-       .filter { Map row -> row.amount > 500 }
-       .sort('amount')
+    from([
+            [ name: 'Chuck', gender: 'Male', age: 40],
+            [ name: 'Jane', gender: 'Female', age: 25],
+            [ name: 'Rob', gender: 'Male', age: 33],
+            [ name: 'Charlie', gender: 'Female', age: 55],
+            [ name: 'Sue', gender: 'Male', age: 65],
+            [ name: 'Jenny', gender: 'Female', age: 43]
+        ])
+       .filter { Map row -> row.age > 50 }
+       .sort('age')
        .go        
 
 ## Digging Deeper
@@ -69,9 +84,18 @@ greater than 500.
 
 So how do Pipelines work?  A pipeline is a series of ordered steps.  Every
 Pipeline has a Source.  A source feeds a Pipeline.  In the example below
-the `csv` method creates the source and attaches it to a Pipeline.
+the `from` method creates the source, attaches it to a Pipeline, and returns
+the Pipeline.  The `CollectionSource.from` method takes in a collection as
+the source for the row data.
 
-    csv('example1.csv')
+    from([
+            [ name: 'Chuck', gender: 'Male'],
+            [ name: 'Jane', gender: 'Female'],
+            [ name: 'Rob', gender: 'Male'],
+            [ name: 'Charlie', gender: 'Female'],
+            [ name: 'Sue', gender: 'Male'],
+            [ name: 'Jenny', gender: 'Female']
+        ])
        .addStep { Map row ->
            println( row )
            return row
@@ -80,10 +104,10 @@ the `csv` method creates the source and attaches it to a Pipeline.
        
 To add a step to the pipeline use the `addStep` method.  The `addStep` method
 takes a closure where the only parameter is a Map object.  That represents a 
-single row or line in a CSV file.  Every closure added with the step must 
-return a value.  The provided the return value is non-null it will be used 
+single row or line we're processing.  Every closure added with the step must 
+return a value.  Provided the return value is non-null it will be used 
 as the parameter to the next step on the Pipeline.  This let's any step act as
-a map like function used in most function programming.  
+a transformation function.  
 
 If a step returns a null then it rejects this row, and no more steps are 
 processed afterwards.  The Pipeline goes to the next row and starts over
@@ -95,9 +119,16 @@ A Pipeline doesn't have to process every row.  This could be on purpose
 or because the data doesn't match expectations, a script error, etc.  Below
 is the example for how to reject a row:
 
-    csv('data.csv')
+    from([
+            [ name: 'Chuck', gender: 'Male', age: 40],
+            [ name: 'Jane', gender: 'Female', age: 25],
+            [ name: 'Rob', gender: 'Male', age: 33],
+            [ name: 'Charlie', gender: 'Female', age: 55],
+            [ name: 'Sue', gender: 'Male', age: 65],
+            [ name: 'Jenny', gender: 'Female', age: 43]
+        ])
        .addStep { Map row ->
-          return row.jobCategory == 'manager' ? row : null 
+          return row.gender == 'Female' ? row : null 
        }
        .go
       
@@ -106,28 +137,80 @@ there is a better way.
 
 What is often most important is the reason for why a rejections occurred.  In
 the examples above we rejected by returning null, but that doesn't tell us
-why something was rejected.  If we wanted to include more information we
-use the reject() method.
+why something was rejected.  Using the `reject` method we can specify more
+detail about why a row was rejected.
 
-    csv('data.csv')
+    from([
+            [ name: 'Chuck', gender: 'Male', age: 40],
+            [ name: 'Jane', gender: 'Female', age: 25],
+            [ name: 'Rob', gender: 'Male', age: 33],
+            [ name: 'Charlie', gender: 'Female', age: 55],
+            [ name: 'Sue', gender: 'Male', age: 65],
+            [ name: 'Jenny', gender: 'Female', age: 43]
+        ])
        .addStep { Map row ->
-          return row.jobCategory == 'manager' ? row : reject('Row was a non-manager', RejectionCategory.IGNORE_ROW) 
+          return row.gender == 'Female' ? row : reject("Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
        }
        .go
 
-This allows you to provide a rejection category and a free form description.
+This allows you to provide a rejection category and a free form description.  Using categories is a great
+way to quickly group types of rejections into more easily managed sets.
 
 ### What's in a name?
 
-Knowing why something was rejected is good, but where it was rejected is 
-important for debugging why a row is rejected.  All steps have a name to 
+Knowing why something was rejected is good, but where it was rejected is important for 
+pinpointing which step produced the rejection.  All steps have a name to 
 identify where in the pipeline a rejection occurs.
 
-    csv('data.csv')
-       .addStep('Filter by manager') { Map row ->
-           return row.jobCategory == 'manager' ? row : reject('Row was a non-manager', RejectionCategory.IGNORE_ROW)
+    from([
+            [ name: 'Chuck', gender: 'Male', age: 40],
+            [ name: 'Jane', gender: 'Female', age: 25],
+            [ name: 'Rob', gender: 'Male', age: 33],
+            [ name: 'Charlie', gender: 'Female', age: 55],
+            [ name: 'Sue', gender: 'Male', age: 65],
+            [ name: 'Jenny', gender: 'Female', age: 43]
+        ])
+       .addStep('Filter by Gender = Female') { Map row ->
+          return row.gender == 'Female' ? row : reject("Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
        }
        .go
+
+The step name is provided as the first argument to the `addStep` method.  When a rejection is returned from 
+a step.  It is added to the Rejection.
+
+### Processing Rejections
+
+Depending on your task you may or may not care about rejections, but eventually you may run into a situation
+where you need to understand why something was rejected.  Hooking into the rejection pipeline is possible
+with the `onRejection` method.  Here is an example:
+
+    from([
+            [ name: 'Chuck', gender: 'Male', age: 40],
+            [ name: 'Jane', gender: 'Female', age: 25],
+            [ name: 'Rob', gender: 'Male', age: 33],
+            [ name: 'Charlie', gender: 'Female', age: 55],
+            [ name: 'Sue', gender: 'Male', age: 65],
+            [ name: 'Jenny', gender: 'Female', age: 43]
+        ])
+        .filter( gender: 'Male' )
+        .onRejection { Pipeline rejections ->
+            rejections.save( 'rejections.csv', '|')
+        }
+       .go
+
+In this example of non-Male rows will be rejected by the `filter` method.  Then the `onRejection` registers
+a closure, but instead of the normal Map argument it takes another Pipeline.  That pipeline is the rejections
+pipeline, and we can add steps and call operations on it just like any normal pipeline.  But what travels over
+that Pipeline are all of the rejected rows from the parent Pipeline.  In this example, we used the `save` 
+method to write out a pipe-delimited text file (ie a CSV).
+
+What's different about the rows that travel through the rejection pipeline is that they have 3 addition columns:
+
+1. **rejectionCategory**
+2. **rejectionReason**
+3. **rejectionStep**
+
+The rest of the columns are the original columns from the row object.
 
 ### Let's go!
 
@@ -143,4 +226,23 @@ It's much easier to use the existing operation methods that are included in the 
 we used an `addStep` to add a step that filtered out rows.  This is so common there is already an operation
 that does this for you called `filter`.  There are plenty of existing methods to perform common operations.
 
+#### Column Manipulation
+
+addField
+
+removeField
+
+renameField
+
+#### Data Types
+
+asInteger
+
+asDouble
+
+asBoolean
+
+#### Filtering
+
+#### 
     

@@ -34,7 +34,15 @@ public class Pipeline implements Source {
         this.statistic = copy
     }
 
-    public static create( String name, Closure startClosure ) {
+    /**
+     * Creates a pipeline where startClosure is the source.  The startClosure is passed another closure that it can use
+     * to pass an indiviual row to the {@see Pipeline}.
+     *
+     * @param name name of the pipeline to create
+     * @param startClosure A closure that is called with a closure.  The startClosure can call the closure argument it's passed to send a row into the pipeline.
+     * @return The pipeline attached to results of the startClosure.
+     */
+    public static Pipeline create( String name, Closure startClosure ) {
         Pipeline pipeline = new Pipeline(name)
         pipeline.src = new Source() {
             @Override
@@ -45,21 +53,50 @@ public class Pipeline implements Source {
         return pipeline
     }
 
+    /**
+     * The name of the pipeline.  This is used by {@see LoadStatistic} to identify what {@see Pipeline} it came from.
+     *
+     * @return The name of the Pipeline
+     */
     public getName() {
         return this.statistic.filename
     }
 
+    /**
+     * Adds a step to the pipeline.  It's passed an optional name to identify the step by, and a closure that represents
+     * the individual step.  It returns the Map to be processed by the next step in the pipeline, typically it simply returns the same
+     * row it was passed.  If it returns null or {@see Rejection} then it will reject this row, stop processing additional
+     * steps, and pass the current row to the rejections pipline.
+     *
+     * @param name The step name
+     * @param step The code used to process each row processed by the {@see Pipeline}.
+     * @return this {@see Pipeline}.
+     */
     public Pipeline addStep( String name = null, Closure<Map> step ) {
         step.delegate = this
         processChain << new Step( name, step )
         return this
     }
 
+    /**
+     * Adds a closure to the end of the Pipeline.  This is called after all rows are processed.  This closure is
+     * invoked without any arguments.
+     *
+     * @param step the Closure that is invoked after all rows have been processed.
+     * @return this {@see Pipeline}.
+     */
     public Pipeline after( Closure<Void> step ) {
         doneChain << step
         return this
     }
 
+    /**
+     * Takes a closure that is passed the rejection {@see Pipeline}.  The closure can reigster steps on the rejection
+     * pipeline.
+     *
+     * @param branch Closure that's passed the rejection the pipeline
+     * @return this {@see Pipeline}
+     */
     public Pipeline onRejection( Closure<Void> branch ) {
         if( !rejections ) rejections = new Pipeline("Rejections(${name})")
         branch( rejections )
@@ -72,6 +109,13 @@ public class Pipeline implements Source {
         return this
     }
 
+    /**
+     * Concatentates the rows from this pipeline and the given pipeline.  The resulting Pipeline will process all
+     * rows from this pipeline and the src pipeline.
+     *
+     * @param src The pipeline
+     * @return Returns a new pipeline that combines all of the rows from this pipeline and the src pipeline.
+     */
     public Pipeline concat( Pipeline src ) {
         Pipeline original = this
         this.after {
@@ -85,6 +129,13 @@ public class Pipeline implements Source {
         return this
     }
 
+    /**
+     * This adds a step to the Pipeline that passes all rows where the given closure returns true to the next step
+     * on the pipeline.  All rows where the closure returns false are rejected.
+     *
+     * @param callback A callback that is passed a row, and returns a boolean.  All rows that return a false are rejected.
+     * @return A Pipeline that contains only the rows that matched the filter.
+     */
     public Pipeline filter(Closure callback) {
         addStep( "filter()" ) { Map row ->
             return callback(row) ? row : reject("Row did not match the filter closure.", RejectionCategory.IGNORE_ROW )
@@ -92,6 +143,17 @@ public class Pipeline implements Source {
         return this
     }
 
+    /**
+     * This adds a step tot he Pipeline that passes all rows where the values of the columns on the given Map are equal
+     * to the columns in the row.  This is a boolean AND between columns.  For example:
+     *
+     * .filter( [ hair: 'Brown', eyeColor: 'Blue' ] )
+     *
+     * In this example all rows where hair = Brown AND eyeColor = Blue are passed through the filter.
+     *
+     * @param columns a Map that contains the columns, and their values that are passed through
+     * @return
+     */
     public Pipeline filter( Map columns ) {
         addStep( "filter ${ nameOf(columns) }" ) { Map row ->
             if(matches(columns, row)) {
@@ -113,6 +175,10 @@ public class Pipeline implements Source {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public Pipeline trim() {
         addStep("trim()") { Map row ->
             row.each { String key, Object value -> row[key] = (value as String).trim() }
