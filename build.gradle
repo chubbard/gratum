@@ -5,8 +5,8 @@ apply plugin: 'signing'
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
-group = 'gratum'
-version = '0.1'
+group = 'com.github.chubbard'
+version = '0.3'
 
 repositories {
     mavenCentral()
@@ -20,16 +20,16 @@ dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.4.5'
     compile 'io.github.http-builder-ng:http-builder-ng-core:1.0.3'
 
+//    testCompile "mysql:mysql-connector-java:5.1.40"
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
 
-
 publishing {
     publications {
-        maven(MavenPublication) {
+        gratum(MavenPublication) {
+            //customizePom(pom)
             from components.java
-            //artifact jar
-            artifact source: sourceJar, classifier: 'sources', extension: 'zip'
+
             pom {
                 name = project.name
                 description = project.description
@@ -51,39 +51,86 @@ publishing {
                     url = "https://github.com/chubbard/gratum.git"
                 }
             }
+
+            pom.withXml {
+                def pomFile = file("${project.buildDir}/generated-pom.xml")
+                writeTo(pomFile)
+                def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+                artifact(pomAscFile) {
+                    classifier = null
+                    extension = 'pom.asc'
+                }
+            }
+
+            // create the signed artifacts
+            project.tasks.signArchives.signatureFiles.each {
+                artifact(it) {
+                    def matcher = it.file =~ /-(sources|javadoc|groovydoc)\.zip\.asc$/
+                    if (matcher.find()) {
+                        classifier = matcher.group(1)
+                    } else {
+                        classifier = null
+                    }
+                    extension = 'jar.asc'
+                }
+            }
         }
     }
+
     repositories {
-//        maven {
-//            url ''
-//            credentials {
-//                username = sonatype.username
-//                password = sonatype.password
-//            }
-//        }
+        maven {
+            url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+            credentials {
+                username sonatypeUsername
+                password sonatypePassword
+            }
+        }
         mavenLocal()
     }
 }
 
-//signing {
-//    //sign publishing.publications.maven
-//    required { !version.endsWith("SNAPSHOT") && gradle.taskGraph.hasTask("uploadArchives") }
-//    sign configurations.archives
-//}
-
-//uploadArchives {
-//    repositories {
-//        mavenDeployer {
-//            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-//        }
-//    }
-//}
-
 task sourceJar(type: Jar) {
     classifier "sources"
+    extension 'zip'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier 'javadoc'
+    extension  'zip'
+}
+
+task groovydocJar(type: Jar, dependsOn: groovydoc ) {
+    classifier 'groovydoc'
+    extension 'zip'
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives groovydocJar
+    archives sourceJar
+}
+
+signing {
+//    //sign publishing.publications.maven
+    required { !version.endsWith("SNAPSHOT") && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+
+model {
+    tasks.generatePomFileForGratumPublication {
+        destination = file("$buildDir/generated-pom.xml")
+    }
+
+    tasks.publishGratumPublicationToMavenLocal {
+        dependsOn project.tasks.signArchives
+    }
+    tasks.publishGratumPublicationToMavenRepository {
+        dependsOn project.tasks.signArchives
+    }
 }
 
 task wrapper(type: Wrapper) {
     gradleVersion = '4.9'
 }
-
