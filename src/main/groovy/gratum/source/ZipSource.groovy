@@ -1,6 +1,6 @@
-package gratum.etl
+package gratum.source
 
-import gratum.source.Source
+import gratum.etl.Pipeline
 
 import java.util.function.Consumer
 import java.util.zip.ZipEntry
@@ -18,7 +18,7 @@ class ZipSource implements Source {
         this.file = zip
     }
 
-    public static Pipeline unzip( File zip ) {
+    public static Pipeline unzip(File zip ) {
         Pipeline pipeline = new Pipeline( zip.name )
         pipeline.src = new ZipSource( zip )
         return pipeline
