@@ -7,6 +7,7 @@ sourceCompatibility = 1.8
 
 group = 'com.github.chubbard'
 version = '0.3'
+//version = '0.5-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -79,7 +80,7 @@ publishing {
 
     repositories {
         maven {
-            url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+            url project.version.endsWith('-SNAPSHOT') ? "https://oss.sonatype.org/content/repositories/snapshots/" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
             credentials {
                 username sonatypeUsername
                 password sonatypePassword
