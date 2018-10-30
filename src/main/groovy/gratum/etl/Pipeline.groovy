@@ -36,7 +36,7 @@ public class Pipeline implements Source {
 
     /**
      * Creates a pipeline where startClosure is the source.  The startClosure is passed another closure that it can use
-     * to pass an indiviual row to the {@see Pipeline}.
+     * to pass an indiviual row to the Pipeline.
      *
      * @param name name of the pipeline to create
      * @param startClosure A closure that is called with a closure.  The startClosure can call the closure argument it's passed to send a row into the pipeline.
@@ -54,7 +54,7 @@ public class Pipeline implements Source {
     }
 
     /**
-     * The name of the pipeline.  This is used by {@see LoadStatistic} to identify what {@see Pipeline} it came from.
+     * The name of the pipeline.  This is used by {@link LoadStatistic} to identify what Pipeline it came from.
      *
      * @return The name of the Pipeline
      */
@@ -65,12 +65,12 @@ public class Pipeline implements Source {
     /**
      * Adds a step to the pipeline.  It's passed an optional name to identify the step by, and a closure that represents
      * the individual step.  It returns the Map to be processed by the next step in the pipeline, typically it simply returns the same
-     * row it was passed.  If it returns null or {@see Rejection} then it will reject this row, stop processing additional
+     * row it was passed.  If it returns null or {@link Rejection} then it will reject this row, stop processing additional
      * steps, and pass the current row to the rejections pipline.
      *
      * @param name The step name
-     * @param step The code used to process each row processed by the {@see Pipeline}.
-     * @return this {@see Pipeline}.
+     * @param step The code used to process each row processed by the Pipeline.
+     * @return this Pipeline.
      */
     public Pipeline addStep( String name = null, Closure<Map> step ) {
         step.delegate = this
@@ -83,7 +83,7 @@ public class Pipeline implements Source {
      * invoked without any arguments.
      *
      * @param step the Closure that is invoked after all rows have been processed.
-     * @return this {@see Pipeline}.
+     * @return this Pipeline.
      */
     public Pipeline after( Closure<Void> step ) {
         doneChain << step
@@ -91,11 +91,11 @@ public class Pipeline implements Source {
     }
 
     /**
-     * Takes a closure that is passed the rejection {@see Pipeline}.  The closure can reigster steps on the rejection
+     * Takes a closure that is passed the rejection Pipeline.  The closure can register steps on the rejection
      * pipeline.
      *
      * @param branch Closure that's passed the rejection the pipeline
-     * @return this {@see Pipeline}
+     * @return this Pipeline
      */
     public Pipeline onRejection( Closure<Void> branch ) {
         if( !rejections ) rejections = new Pipeline("Rejections(${name})")
@@ -176,8 +176,9 @@ public class Pipeline implements Source {
     }
 
     /**
+     * Returns a Pipeline where all white space is removed from all columns contained within the rows.
      *
-     * @return
+     * @return Pipeline where all rows has white space removed.
      */
     public Pipeline trim() {
         addStep("trim()") { Map row ->
@@ -186,6 +187,13 @@ public class Pipeline implements Source {
         }
     }
 
+    /**
+     * Copies all rows on this Pipeline to another Pipeline that is passed to the given closure.  The given closure
+     * can configure additional steps on the branched Pipeline.  The rows passed through this Pipeline are not modified.
+     *
+     * @param split The closure that is passed a new Pipeline where all the rows from this Pipeline are copied onto.
+     * @return this Pipeline
+     */
     public Pipeline branch( Closure<Void> split) {
         Pipeline branch = new Pipeline( name )
 
@@ -197,6 +205,14 @@ public class Pipeline implements Source {
         }
     }
 
+    /**
+     * Copies all rows on this Pipeline to another Pipeline where the given condition returns is true.  The given
+     * condition works the same way {@link #filter(java.util.Map)} does.  This ia combination of branch and filter.
+     *
+     * @param condition The conditions that must be equal in order for the row to be copied to the branch.
+     * @param split The closure that is passed the branch Pipeline.
+     * @return this Pipeline
+     */
     public Pipeline branch(Map<String,Object> condition, Closure<Void> split) {
         Pipeline branch = new Pipeline( name )
         split(branch)
@@ -209,6 +225,17 @@ public class Pipeline implements Source {
         }
     }
 
+    /**
+     * Returns Pipeline that joins the columns from this Pipeline with the given Pipeline where the columns are
+     * equal.  It will perform a left or right join depending on the left parameter.  A left join will return the
+     * row even if it doesn't find a match row on the right (also known as a left join).  A right join (ie left = false) will not return a
+     * row if it doesn't find a matching row on the right (Also known as an inner join).  Default is left = false.
+     *
+     * @param other The right side Pipeline to use for the join
+     * @param columns The columns to join on
+     * @param left perform a left join (ie true) or a right join (false)
+     * @return A Pipeline where the rows contain all columns from the this Pipeline and right Pipeline joined on the given columns.
+     */
     public Pipeline join( Pipeline other, def columns, boolean left = false ) {
         Map<String,List<Map>> cache =[:]
         other.addStep("join(${other.name}, ${columns}).cache") { Map row ->
@@ -253,6 +280,14 @@ public class Pipeline implements Source {
         }
     }
 
+    /**
+     * This returns a Pipeline where the rows with empty columns are filled in using the values in the previous row depending on
+     * what the given closure returns.  If the closure returns true then any empty column (value == null or value.isEmpty()) will
+     * be populated by the values in the previous row.
+     *
+     * @param decider a Closure which decides if the values from a prior row will be used to fill in missing values in the current row.
+     * @return A Pipeline where the row's empty column values are filled in by the previous row.
+     */
     public Pipeline fillDownBy( Closure<Boolean> decider ) {
         Map previousRow = null
         addStep("fillDownBy()") { Map row ->
@@ -270,6 +305,12 @@ public class Pipeline implements Source {
         return this
     }
 
+    /**
+     * Renames a row's columns in the given map to the values of the corresponding keys.
+     *
+     * @param fieldNames The Map of src column to renamed names.
+     * @return A Pipeline where all of the columns in the keys of the Map are renamed to the Map's corresponding values.
+     */
     public Pipeline renameFields( Map fieldNames ) {
         addStep("renameFields(${fieldNames}") { Map row ->
             for( String src : fieldNames.keySet() ) {
@@ -324,6 +365,16 @@ public class Pipeline implements Source {
         return columns.keySet().collect() { key -> key + "->" + columns[key] }.join(',')
     }
 
+    /**
+     * Returns a Pipeline where the row is grouped by the given columns.  The resulting Pipeline will only
+     * return a single row where the keys of that row will be the first column passed to the groupBy() method.
+     * All other columns given will occur under the respective keys.  This yields a tree like structure where
+     * the height of the tree is equal to the columns.length.  In the leaves of the tree are the rows that
+     * matched all of their parents.
+     *
+     * @param columns The columns to group each row by.
+     * @return A Pipeline that yields a single row that represents the tree grouped by the given columns.
+     */
     public Pipeline groupBy( String... columns ) {
         Map cache = [:]
         addStep("groupBy(${columns.join(',')})") { Map row ->
@@ -357,6 +408,11 @@ public class Pipeline implements Source {
         return other
     }
 
+    /**
+     * Returns a Pipeline where the rows are ordered by the given columns.  The value of each column is
+     * @param columns
+     * @return
+     */
     public Pipeline sort(String... columns) {
         // todo sort externally
 
@@ -562,6 +618,7 @@ public class Pipeline implements Source {
 
     /**
      * Only allows rows that are unique per the given column.
+     *
      * @param column The column name to use for checking uniqueness
      * @return A Pipeline that only contains the unique rows for the given column
      */
