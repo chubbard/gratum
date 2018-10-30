@@ -23,10 +23,11 @@ For Maven:
       
 ## Oh Shell Yeah!
 
-Gratum is meant to be usable in the groovy shell for getting thigns done quickly.  
+Gratum is meant to be usable in the groovy shell for getting things done quickly.  
 We love awk and sed for quickly manipulating files, but we aren't always working on 
-unix like systems.  The groovy shell provides us a portable environment to do similar
-manipulations.  Here is how to get gratum started up in your shell:
+unix like systems.  And writing bash scripts to preserve evertying we're doing is cumbersome.
+The groovy shell provides us a portable environment to do similar manipulations.  
+Here is how to get gratum started up in your shell:
 
     groovy:000> :grab 'com.github.chubbard:gratum'
     groovy:000> import gratum.etl.*
@@ -40,6 +41,9 @@ But, to make it easier to get started you'll want to add the following to your
     import gratum.etl.*
     import gratum.source.*
     import static gratum.source.CsvSource.*
+    import static gratum.source.CollectionSource.*
+    import static gratum.source.HttpSource.*
+    import static gratum.source.ZipSource.*
 
 ## Examples
 
@@ -236,13 +240,19 @@ renameField
 
 #### Data Types
 
-asInteger
+asInt
 
 asDouble
 
 asBoolean
 
 #### Filtering
+
+filter
+
+filter
+
+
 
 #### 
     

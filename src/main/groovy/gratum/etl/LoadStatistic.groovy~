@@ -1,10 +1,7 @@
 package gratum.etl
 
 /**
- * This object contains the statistics on how many items were processed by the Pipeline.  The name of the 
- * {@link gratum.etl.Pipeline} is contained in the filename property.  Things included in this object are
- * number of rows loaded, number of rows rejected, categories and count of each row rejected, the total
- * time spent processing the {@link gratum.etl.Pipeline}, and the time each step took to process the rows.
+ * Created by charliehubbard on 7/11/18.
  */
 class LoadStatistic {
     String filename

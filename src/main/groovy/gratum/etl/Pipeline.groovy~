@@ -619,11 +619,6 @@ public class Pipeline implements Source {
         return this
     }
 
-    /**
-     * Prints the values of the given columns for each row to the console, or all columns if no columns are given.
-     * @param columns The names of the columns to print to the console
-     * @return this Pipeline
-     */
     public Pipeline printRow(String... columns) {
         addStep("print()") { Map row ->
             if( columns ) {
