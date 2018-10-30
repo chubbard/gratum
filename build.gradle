@@ -99,11 +99,13 @@ task sourceJar(type: Jar) {
 task javadocJar(type: Jar, dependsOn: javadoc) {
     classifier 'javadoc'
     extension  'zip'
+    from javadoc.destinationDir
 }
 
 task groovydocJar(type: Jar, dependsOn: groovydoc ) {
     classifier 'groovydoc'
     extension 'zip'
+    from groovydoc.destinationDir
 }
 
 artifacts {
