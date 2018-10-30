@@ -6,8 +6,8 @@ targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
 group = 'com.github.chubbard'
-version = '0.5'
-//version = '0.5-SNAPSHOT'
+//version = '0.5'
+version = '0.5-SNAPSHOT'
 
 repositories {
     mavenCentral()
