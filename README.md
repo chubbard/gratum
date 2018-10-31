@@ -131,12 +131,12 @@ the source for the row data.
             [ name: 'Charlie', gender: 'Female'],
             [ name: 'Sue', gender: 'Male'],
             [ name: 'Jenny', gender: 'Female']
-        ])
-       .addStep { Map row ->
+        ]).
+       addStep { Map row ->
            println( row )
            return row
-       }
-       .go
+       }.
+       go()
        
 To add a step to the pipeline use the `addStep` method.  The `addStep` method
 takes a closure where the only parameter is a Map object.  That represents a 
@@ -162,11 +162,11 @@ is the example for how to reject a row:
             [ name: 'Charlie', gender: 'Female', age: 55],
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
-        ])
-       .addStep { Map row ->
+        ]).
+       addStep { Map row ->
           return row.gender == 'Female' ? row : null 
-       }
-       .go
+       }.
+       go()
       
 The example above shows how a step can reject a row by returning null, but
 there is a better way.  
@@ -183,11 +183,11 @@ detail about why a row was rejected.
             [ name: 'Charlie', gender: 'Female', age: 55],
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
-        ])
-       .addStep { Map row ->
+        ]).
+       addStep { Map row ->
           return row.gender == 'Female' ? row : reject("Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
-       }
-       .go
+       }.
+       go()
 
 This allows you to provide a rejection category and a free form description.  Using categories is a great
 way to quickly group types of rejections into more easily managed sets.
@@ -205,11 +205,11 @@ identify where in the pipeline a rejection occurs.
             [ name: 'Charlie', gender: 'Female', age: 55],
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
-        ])
-       .addStep('Filter by Gender = Female') { Map row ->
+        ]).
+       addStep('Filter by Gender = Female') { Map row ->
           return row.gender == 'Female' ? row : reject("Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
-       }
-       .go
+       }.
+       go()
 
 The step name is provided as the first argument to the `addStep` method.  When a rejection is returned from 
 a step.  It is added to the Rejection.
@@ -227,12 +227,12 @@ with the `onRejection` method.  Here is an example:
             [ name: 'Charlie', gender: 'Female', age: 55],
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
-        ])
-        .filter( gender: 'Male' )
-        .onRejection { Pipeline rejections ->
+        ]).
+        filter( gender: 'Male' ).
+        onRejection { Pipeline rejections ->
             rejections.save( 'rejections.csv', '|')
-        }
-       .go
+        }.
+        go()
 
 In this example of non-Male rows will be rejected by the `filter` method.  Then the `onRejection` registers
 a closure, but instead of the normal Map argument it takes another Pipeline.  That pipeline is the rejections
