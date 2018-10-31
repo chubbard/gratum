@@ -11,7 +11,7 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '0.3'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '0.5'
 
 For Maven:
 
@@ -26,10 +26,29 @@ For Maven:
 Gratum is meant to be usable in the groovy shell for getting things done quickly.  
 We love awk and sed for quickly manipulating files, but we aren't always working on 
 unix like systems.  And writing bash scripts to preserve evertying we're doing is cumbersome.
-The groovy shell provides us a portable environment to do similar manipulations.  
+The groovy shell provides us a portable environment to do similar manipulations.
+
+Make sure you have your `~/.groovy/grapeConfig.xml` setup first.  If you need a little refresher
+here you go:
+
+    <ivysettings>
+        <settings defaultResolver="downloadGrapes"/>
+        <resolvers>
+            <chain name="downloadGrapes">
+                <ibiblio name="local" root="file:${user.home}/.m2/repository/" m2compatible="true"/>    	
+                <ibiblio name="ibiblio" m2compatible="true"/>
+                <ibiblio name="java.net2" root="http://download.java.net/maven/2/" m2compatible="true"/>
+                <!-- uncomment if you want SNAPSHOTS
+                <ibiblio name="maven.snapshot" root="https://oss.sonatype.org/content/repositories/snapshots/" m2compatible="true"/>
+                -->
+            </chain>
+        </resolvers>
+    </ivysettings> 
+  
 Here is how to get gratum started up in your shell:
 
-    groovy:000> :grab 'com.github.chubbard:gratum'
+    groovy:000> mport groovy.grape.Grape
+    groovy:000> Grape.grab(group: 'com.github.chubbard', module:'gratum')
     groovy:000> import gratum.etl.*
     groovy:000> import static gratum.source.CsvSource.*
     groovy:000> csv('sample.csv').go
@@ -56,9 +75,21 @@ But, to make it easier to get started you'll want to add the following to your
             [ name: 'Charlie', gender: 'Female'],
             [ name: 'Sue', gender: 'Male'],
             [ name: 'Jenny', gender: 'Female']
-        ])
-        .filter([gender: 'Female'])
-        .go
+        ]).
+        filter([gender: 'Female']).
+        go()
+
+That should produce the following:
+
+    ----
+    Rejections by category
+    IGNORE_ROW: 3
+    
+    ----
+    ==> Collection(6)
+    loaded 3
+    rejected 3
+    took 3 ms
     
 #### Filter using a closure
 
@@ -77,10 +108,11 @@ greater than 500.
             [ name: 'Charlie', gender: 'Female', age: 55],
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
-        ])
-       .filter { Map row -> row.age > 50 }
-       .sort('age')
-       .go        
+        ]).
+       filter { Map row -> row.age > 50 }.
+       sort('age').
+       printRow().
+       go()        
 
 ## Digging Deeper
 
