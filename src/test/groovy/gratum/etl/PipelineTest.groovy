@@ -14,11 +14,11 @@ import static gratum.source.CollectionSource.*
 class PipelineTest {
 
     List<Map> people = [
-            [id: 1, name: 'Bill Rhodes', age: 53],
-            [id: 2, name: 'Cheryl Lipscome', age: 43],
-            [id: 3, name: 'Diana Rogers', age: 34],
-            [id: 4, name: 'Jack Lowland', age: 25],
-            [id: 5, name: 'Ginger Rogers', age: 83]
+            [id: 1, name: 'Bill Rhodes', age: 53, gender: 'male'],
+            [id: 2, name: 'Cheryl Lipscome', age: 43, gender: 'female'],
+            [id: 3, name: 'Diana Rogers', age: 34, gender: 'female'],
+            [id: 4, name: 'Jack Lowland', age: 25, gender: 'male'],
+            [id: 5, name: 'Ginger Rogers', age: 83, gender: 'female']
     ]
 
     Collection<Map> hobbies = [
@@ -47,7 +47,7 @@ class PipelineTest {
             .go()
 
         assertNotNull( statistic )
-        assertEquals( "Assert that we successfully loaded ", statistic.filename, "src/test/resources/titanic.csv" )
+        assertEquals( "Assert that we successfully loaded ", statistic.name, "src/test/resources/titanic.csv" )
         assertEquals( "Assert that we successfully loaded all male passengers", 266, statistic.loaded )
         assertEquals( "Assert that we rejected non-male passengers", 152, statistic.rejections )
         assertEquals( "Assert the rejection category", 152, statistic.getRejections(RejectionCategory.IGNORE_ROW) )
@@ -69,7 +69,7 @@ class PipelineTest {
         .go()
 
         assertNotNull( statistic )
-        assertEquals( "Assert that we successfully loaded ", statistic.filename, "src/test/resources/titanic.csv" )
+        assertEquals( "Assert that we successfully loaded ", statistic.name, "src/test/resources/titanic.csv" )
         assertEquals( "Assert that we successfully loaded all male passengers", 185, statistic.loaded )
         assertEquals( "Assert that we rejected non-male passengers", 233, statistic.rejections )
         assertEquals( "Assert the rejection category", 233, statistic.getRejections(RejectionCategory.IGNORE_ROW) )
@@ -86,7 +86,7 @@ class PipelineTest {
             }
             .go()
 
-        assertEquals("Assert rows loaded == 418 + 1", 419, statistic.loaded )
+        assertEquals("Assert rows loaded == 1", 1, statistic.loaded )
         assertEquals("Assert rows rejected == 0", 0, statistic.rejections )
     }
 
@@ -307,7 +307,7 @@ class PipelineTest {
 
         assertNotNull( "Message should be non-null if we called the service", message )
         assertEquals( "success", message )
-        assertEquals( expectedCount + 1, stats.loaded )
+        assertEquals( expectedCount, stats.loaded )
         // provided someone is in space!
         if( expectedCount > 0 ) {
             assertEquals( expectedCount, actualCount )
@@ -397,6 +397,18 @@ class PipelineTest {
             return row
         }.go()
 
+    }
+
+    @Test
+    public void testSort2() {
+        LoadStatistic stats = from( people )
+                .filter([gender: 'male'])
+                .sort('age')
+                .go()
+
+        assertEquals( 2, stats.loaded )
+        assertEquals( 3, stats.rejections )
+        assertEquals( people.size(), stats.loaded + stats.rejections )
     }
 
 }

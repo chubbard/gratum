@@ -2,12 +2,12 @@ package gratum.etl
 
 /**
  * This object contains the statistics on how many items were processed by the Pipeline.  The name of the 
- * {@link gratum.etl.Pipeline} is contained in the filename property.  Things included in this object are
+ * {@link gratum.etl.Pipeline} is contained in the name property.  Things included in this object are
  * number of rows loaded, number of rows rejected, categories and count of each row rejected, the total
  * time spent processing the {@link gratum.etl.Pipeline}, and the time each step took to process the rows.
  */
 class LoadStatistic {
-    String filename
+    String name
     Map<RejectionCategory, Integer> rejectionsByCategory = [:]
     Map<String,Long> stepTimings = [:]
     Integer loaded = 0
@@ -101,7 +101,7 @@ class LoadStatistic {
             }
         }
         pw.println("\n----")
-        pw.printf( "==> %s %nloaded %,d %nrejected %,d %ntook %,d ms%n", this.filename, this.loaded, this.rejections,this.elapsed )
+        pw.printf( "==> %s %nloaded %,d %nrejected %,d %ntook %,d ms%n", this.name, this.loaded, this.rejections,this.elapsed )
         return out.toString()
     }
 }

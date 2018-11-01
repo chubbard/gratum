@@ -60,11 +60,7 @@ public class Pipeline implements Source {
     boolean complete = false
 
     Pipeline(String name) {
-        this.statistic = new LoadStatistic([filename: name])
-    }
-
-    Pipeline(LoadStatistic copy) {
-        this.statistic = copy
+        this.statistic = new LoadStatistic([name: name])
     }
 
     /**
@@ -93,7 +89,7 @@ public class Pipeline implements Source {
      * @return The name of the Pipeline
      */
     public getName() {
-        return this.statistic.filename
+        return this.statistic.name
     }
 
     /**
@@ -279,7 +275,7 @@ public class Pipeline implements Source {
             return row
         }
 
-        return inject("join(${this.name}, ${columns})", true) { Map row ->
+        return inject("join(${this.name}, ${columns})") { Map row ->
             if( !other.complete ) {
                 other.go()
             }
@@ -445,7 +441,7 @@ public class Pipeline implements Source {
         }
 
         Pipeline parent = this
-        Pipeline other = new Pipeline( this.statistic )
+        Pipeline other = new Pipeline( statistic.name )
         other.src = new Source() {
             @Override
             void start(Closure closure) {
@@ -453,6 +449,7 @@ public class Pipeline implements Source {
                 closure( cache )
             }
         }
+        other.copyStatistics( this )
         return other
     }
 
@@ -484,9 +481,11 @@ public class Pipeline implements Source {
             return row
         }
 
-        Pipeline next = new Pipeline(statistic)
+        Pipeline next = new Pipeline(statistic.name)
         next.src = new ChainedSource( this )
         after {
+            next.statistic.rejectionsByCategory = this.statistic.rejectionsByCategory
+            next.statistic.start = this.statistic.start
             ordered.sort( comparator )
             ((ChainedSource)next.src).process( ordered )
             null
@@ -696,12 +695,11 @@ public class Pipeline implements Source {
      * be fed into downstream steps.  The reset flag specifies whether the statistics should be reset (true) or the
      * existing statistics will be carried (false).
      * @param name The name of the step
-     * @param reset Whether the statistics of this Pipeline will be carried over to downstream, or it will be restarted.
      * @param closure Takes a Map and returns a Collection<Map> that will be fed into the downstream steps
      * @return The Pipeline that will received all members of the Collection returned from the closure.
      */
-    public Pipeline inject(String name, boolean reset, Closure closure) {
-        Pipeline next = reset ? new Pipeline(name) : new Pipeline( statistic )
+    public Pipeline inject(String name, Closure closure) {
+        Pipeline next = new Pipeline(name)
         next.src = new ChainedSource( this )
 
         addStep(name) { Map row ->
@@ -715,10 +713,22 @@ public class Pipeline implements Source {
             }
             return row
         }
+        next.copyStatistics( this )
         return next
     }
 
-    /**
+    void copyStatistics(Pipeline src) {
+        after {
+            this.statistic.start = src.statistic.start
+            for( RejectionCategory cat : src.statistic.rejectionsByCategory.keySet() ) {
+                if( !this.statistic.rejectionsByCategory.containsKey(cat) ) {
+                    this.statistic.rejectionsByCategory[ cat ] = 0
+                }
+                this.statistic.rejectionsByCategory[ cat ] = this.statistic.rejectionsByCategory[ cat ] + src.statistic.rejectionsByCategory[ cat ]
+            }
+        }
+    }
+/**
      * This takes a closure that returns a Pipeline which is used to feed the returned Pipeline.  The closure will be called
      * for each row emitted from this Pipeline so the closure could create multiple Pipelines, and all data from every Pipeline
      * will be fed into the returned Pipeline.
@@ -728,7 +738,7 @@ public class Pipeline implements Source {
      * @return A Pipeilne whose reocrds consist of the records from all Pipelines returned from the closure
      */
     public Pipeline exchange(Closure<Pipeline> closure) {
-        Pipeline next = new Pipeline( statistic )
+        Pipeline next = new Pipeline( name )
         next.src = new ChainedSource(this)
         addStep("exchange()") { Map row ->
             Pipeline pipeline = closure( row )
@@ -738,6 +748,7 @@ public class Pipeline implements Source {
             }
             return row
         }
+        next.copyStatistics( this )
         return next
     }
 
@@ -745,11 +756,7 @@ public class Pipeline implements Source {
      * @param closure A closure that 
      */
     public Pipeline inject( Closure closure) {
-        this.inject("inject()", false, closure )
-    }
-
-    public Pipeline inject( String name, Closure closure ) {
-        this.inject( name, false, closure )
+        this.inject("inject()", closure )
     }
 
     public void start(Closure closure = null) {
@@ -805,7 +812,7 @@ public class Pipeline implements Source {
                 }
                 if (stop) return false
             } catch (Exception ex) {
-                throw new RuntimeException("Line ${lineNumber > 0 ? lineNumber : row}: Error encountered in step ${statistic.filename}.${step.name}", ex)
+                throw new RuntimeException("Line ${lineNumber > 0 ? lineNumber : row}: Error encountered in step ${statistic.name}.${step.name}", ex)
             }
         }
         statistic.loaded++
