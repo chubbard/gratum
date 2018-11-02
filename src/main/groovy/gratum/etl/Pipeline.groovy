@@ -34,10 +34,12 @@ class Step {
  * Example:
  *
  * <pre>
- *      LoadStatistic stats = http("http://api.open-notify.org/astros.json").inject { Map json ->
- *          json.people
- *      }.printRow()
- *      .go()
+ *      LoadStatistic stats = http("http://api.open-notify.org/astros.json").
+ *          inject { Map json -&gt;
+ *              json.people
+ *          }.
+ *          printRow().
+ *          go()
  * </pre>
  *
  * In the above example you can see it using an {@link gratum.source.HttpSource} to fetch JSON data.  
@@ -47,7 +49,15 @@ class Step {
  * the following:
  * 
  * <pre>
- 
+ *    [name:Sergey Prokopyev, craft:ISS]
+ *    [name:Alexander Gerst, craft:ISS]
+ *    [name:Serena Aunon-Chancellor, craft:ISS]
+ *    ===&gt;
+ *    ----
+ *    ==&gt; inject()
+ *    loaded 3
+ *    rejected 0
+ *    took 1 ms
  * </pre>
  */
 public class Pipeline implements Source {
