@@ -25,7 +25,7 @@ For Maven:
 
 Gratum is meant to be usable in the groovy shell for getting things done quickly.  
 We love awk and sed for quickly manipulating files, but we aren't always working on 
-unix like systems.  And writing bash scripts to preserve evertying we're doing is cumbersome.
+unix like systems.  And writing bash scripts to preserve everything we're doing is cumbersome.
 The groovy shell provides us a portable environment to do similar manipulations.
 
 Make sure you have your `~/.groovy/grapeConfig.xml` setup first.  If you need a little refresher
@@ -151,8 +151,8 @@ from the first step.
 
 ### Rejections
 
-A Pipeline doesn't have to process every row.  This could be on purpose
-or because the data doesn't match expectations, a script error, etc.  Below
+A Pipeline does not have to process every row.  This could be on purpose
+or because the data does not match expectations, a script error, etc.  Below
 is the example for how to reject a row:
 
     from([
@@ -212,7 +212,7 @@ identify where in the pipeline a rejection occurs.
        go()
 
 The step name is provided as the first argument to the `addStep` method.  When a rejection is returned from 
-a step.  It is added to the Rejection.
+a step.  The step's name is added to the Rejection.
 
 ### Processing Rejections
 
@@ -248,13 +248,42 @@ What's different about the rows that travel through the rejection pipeline is th
 
 The rest of the columns are the original columns from the row object.
 
-### Let's go!
+### Let's go Already!
 
 In all of the examples our Pipeline chains have ended with a method `go`.  The `go` method is important
 as it starts the processing of the `Source`.  The `go` method executes the processing of the chain, but
 it also returns an instance of `LoadStaistic` which gives us statistics about the processing of the 
 `Source`.  For example, it contains total number of rows that loaded, rows that were rejected, total
 amount of time used while processing the `Source`, step timings, or rejections by categories.
+
+    LoadStatistic stats = from([
+            [ name: 'Chuck', gender: 'Male', age: 40],
+            [ name: 'Jane', gender: 'Female', age: 25],
+            [ name: 'Rob', gender: 'Male', age: 33],
+            [ name: 'Charlie', gender: 'Female', age: 55],
+            [ name: 'Sue', gender: 'Male', age: 65],
+            [ name: 'Jenny', gender: 'Female', age: 43]
+        ]).
+        filter( gender: 'Male' ).
+        go()
+    println( stats ) 
+
+This yields the following:
+
+    ----
+    Rejections by category
+    IGNORE_ROW: 3
+    
+    ----
+    ==> Collection(6) 
+    loaded 3 
+    rejected 3 
+    took 29 ms
+
+The upper section is the rejections by category.  As discussed above rejections have categories so we group
+all rejections by their common categories and list the counts there.  The next section shows total rows
+that loaded, the total rejections, and the total time it took to process the source.  Above those stats is the 
+name of the pipeline.
 
 ### Operations
 
