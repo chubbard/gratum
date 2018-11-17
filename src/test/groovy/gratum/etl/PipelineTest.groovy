@@ -217,15 +217,24 @@ class PipelineTest {
 
     @Test
     public void testInnerJoin() {
+        int rejections = 0
         LoadStatistic stats = from(people).join( from(hobbies), ['id'] )
             .addStep("Assert hobbies") { Map row ->
                 assertNotNull( row.hobby )
                 return row
             }
+            .onRejection { Pipeline pipeline ->
+                pipeline.addStep("Verify rejection") { Map row ->
+                    rejections++
+                    return row
+                }
+                return
+            }
             .go()
 
         assertEquals( 8, stats.loaded )
         assertEquals( 1, stats.rejections )
+        assertEquals( 1, rejections )
     }
 
     @Test

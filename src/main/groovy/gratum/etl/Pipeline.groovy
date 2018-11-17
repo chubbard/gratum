@@ -716,7 +716,7 @@ public class Pipeline implements Source {
             def result = closure( row )
             if( result instanceof Rejection ) {
                 next.doRejections((Rejection)result, row, name, -1)
-                return result
+                return row
             } else {
                 Collection<Map> cc = result
                 ((ChainedSource)next.src).process( cc )
