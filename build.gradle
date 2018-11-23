@@ -34,7 +34,7 @@ publishing {
             //customizePom(pom)
             from components.java
 
-            pom.project {
+            pom {
                 name = project.name
                 description = project.description
                 url = 'https://github.com/chubbard/gratum'
