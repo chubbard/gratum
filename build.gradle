@@ -8,6 +8,9 @@ sourceCompatibility = 1.8
 group = 'com.github.chubbard'
 version = '0.5.1'
 //version = '0.5.1-SNAPSHOT'
+description = """
+A simplified standalone ETL engine for groovy.  Gratum is groovy + datum.
+"""
 
 repositories {
     mavenCentral()
@@ -31,13 +34,15 @@ publishing {
             //customizePom(pom)
             from components.java
 
-            pom {
+            pom.project {
                 name = project.name
                 description = project.description
                 url = 'https://github.com/chubbard/gratum'
                 licenses {
-                    name = "The Apache License, Version 2.0"
-                    url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
                 }
                 developers {
                     developer {
