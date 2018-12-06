@@ -701,11 +701,11 @@ public class Pipeline implements Source {
     }
 
     /**
-     * This takes a closure that takes Map and returns a Collection<Map>.  Each member of the returned collection will
+     * This takes a closure that takes Map and returns a Collection&lt;Map&gt;.  Each member of the returned collection will
      * be fed into downstream steps.  The reset flag specifies whether the statistics should be reset (true) or the
      * existing statistics will be carried (false).
      * @param name The name of the step
-     * @param closure Takes a Map and returns a Collection<Map> that will be fed into the downstream steps
+     * @param closure Takes a Map and returns a Collection&lt;Map&gt; that will be fed into the downstream steps
      * @return The Pipeline that will received all members of the Collection returned from the closure.
      */
     public Pipeline inject(String name, Closure closure) {
