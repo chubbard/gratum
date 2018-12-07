@@ -136,13 +136,13 @@ if (location.href.indexOf('is-external=true') == -1) {
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#after(Closure<Void>)" title="Method in Pipeline">after(Closure&lt;Void&gt;)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
 </dt><dd> <div class="block">Adds a closure to the end of the Pipeline.  </div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#asBoolean(java.lang.String)" title="Method in Pipeline">asBoolean(String)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block">Parses the string value at given fieldname into a java.lang.Boolean value.  </div></dd>
+</dt><dd> <div class="block">Parses the string value at given column into a java.lang.Boolean value.  </div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#asDate(java.lang.String, java.lang.String)" title="Method in Pipeline">asDate(String, String)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
 </dt><dd> <div class="block">Parses the string at the given column name into a Date object using the given format.  </div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#asDouble(java.lang.String)" title="Method in Pipeline">asDouble(String)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block">Returns a Pipeline where the given column is coverted from a string to a java.lang.Double.</div></dd>
+</dt><dd> <div class="block">Return a Pipeline where the given column is converted from a string to a java.lang.Double.</div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#asInt(java.lang.String)" title="Method in Pipeline">asInt(String)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block">Parses the string value at given fieldname into a java.lang.Integer value.</div></dd>
+</dt><dd> <div class="block">Parses the string value at given column into a java.lang.Integer value.</div></dd>
 <dt><span class="strong"><a href="gratum/etl/LoadStatistic.html#avg(java.lang.String)" title="Method in LoadStatistic">avg(String)</a></span> - Method in <a href="gratum/etl/LoadStatistic.html">LoadStatistic</a>
 </dt><dd> <div class="block"></div></dd>
 </dl>
@@ -166,11 +166,11 @@ if (location.href.indexOf('is-external=true') == -1) {
 <dt><span class="strong"><a href="gratum/source/ChainedSource.html#ChainedSource(gratum.etl.Pipeline)" title="Constructor in ChainedSource">ChainedSource(Pipeline)</a></span> - Constructor in <a href="gratum/source/ChainedSource.html">ChainedSource</a>
 </dt><dd> <div class="block"></div></dd>
 <dt><span class="strong"><a href="gratum/source/CollectionSource.html" title="Class in gratum.source">CollectionSource</a></span> - Class in <a href="./gratum/source/package-summary.html">gratum.source</a>
-</dt><dd><div class="block"></div></dd>
+</dt><dd><div class="block">A source that uses a Collection&lt;Map&gt; as its source for rows.  </div></dd>
 <dt><span class="strong"><a href="gratum/source/CollectionSource.html#CollectionSource(Collection<Map>)" title="Constructor in CollectionSource">CollectionSource(Collection&lt;Map&gt;)</a></span> - Constructor in <a href="gratum/source/CollectionSource.html">CollectionSource</a>
 </dt><dd> <div class="block"></div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#concat(gratum.etl.Pipeline)" title="Method in Pipeline">concat(Pipeline)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block">Concatentates the rows from this pipeline and the given pipeline.  </div></dd>
+</dt><dd> <div class="block">Concatenates the rows from this pipeline and the given pipeline.  </div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#copyStatistics(gratum.etl.Pipeline)" title="Method in Pipeline">copyStatistics(Pipeline)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
 </dt><dd> <div class="block"></div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#create(java.lang.String, groovy.lang.Closure)" title="Method in Pipeline">create(String, Closure)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
@@ -214,7 +214,7 @@ if (location.href.indexOf('is-external=true') == -1) {
 </dt><dd> <div class="block">This returns a Pipeline where the rows with empty columns are filled in using the values in the previous row depending on
  what the given closure returns.  </div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#filter(java.util.Map)" title="Method in Pipeline">filter(Map)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block">This adds a step tot he Pipeline that passes all rows where the values of the columns on the given Map are equal
+</dt><dd> <div class="block">This adds a step to the Pipeline that passes all rows where the values of the columns on the given Map are equal
  to the columns in the row.  </div></dd>
 <dt><span class="strong"><a href="gratum/source/CollectionSource.html#from(Collection<Map>)" title="Method in CollectionSource">from(Collection&lt;Map&gt;)</a></span> - Method in <a href="gratum/source/CollectionSource.html">CollectionSource</a>
 </dt><dd> <div class="block"></div></dd>
@@ -246,7 +246,7 @@ if (location.href.indexOf('is-external=true') == -1) {
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#go(Closure<Map>)" title="Method in Pipeline">go(Closure&lt;Map&gt;)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
 </dt><dd> <div class="block">Starts processing the rows returned from the <a href='../../gratum/source/Source.html' title='Source'>Source</a> into the Pipeline.  </div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#groupBy(java.lang.String)" title="Method in Pipeline">groupBy(String)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block">Returns a Pipeline where the row is grouped by the given columns.  </div></dd>
+</dt><dd> <div class="block">Return a Pipeline where the row is grouped by the given columns.  </div></dd>
 </dl>
 
     
@@ -259,7 +259,7 @@ if (location.href.indexOf('is-external=true') == -1) {
 <dt><span class="strong"><a href="gratum/source/HttpSource.html#https(java.lang.String, groovy.lang.Closure)" title="Method in HttpSource">https(String, Closure)</a></span> - Method in <a href="gratum/source/HttpSource.html">HttpSource</a>
 </dt><dd> <div class="block"></div></dd>
 <dt><span class="strong"><a href="gratum/source/HttpSource.html" title="Class in gratum.source">HttpSource</a></span> - Class in <a href="./gratum/source/package-summary.html">gratum.source</a>
-</dt><dd><div class="block">Created by charliehubbard on 7/16/18.</div></dd>
+</dt><dd><div class="block">A source that retrieves data from a URL.  </div></dd>
 <dt><span class="strong"><a href="gratum/source/HttpSource.html#HttpSource(java.lang.String, groovy.lang.Closure)" title="Constructor in HttpSource">HttpSource(String, Closure)</a></span> - Constructor in <a href="gratum/source/HttpSource.html">HttpSource</a>
 </dt><dd> <div class="block"></div></dd>
 </dl>
@@ -270,9 +270,9 @@ if (location.href.indexOf('is-external=true') == -1) {
 <dl>
 
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#inject(groovy.lang.Closure)" title="Method in Pipeline">inject(Closure)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block">@param closure A closure that</div></dd>
+</dt><dd> <div class="block">Delegates to <a href='#inject(java.lang.String, groovy.lang.Closure)'>inject(java.lang.String, groovy.lang.Closure)</a> with a default name.</div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#intersect(gratum.etl.Pipeline, def)" title="Method in Pipeline">intersect(Pipeline, def)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block">Returns a Pipeline where all of the rows from this Pipeline and adds a single column 
+</dt><dd> <div class="block">Return a Pipeline where all of the rows from this Pipeline and adds a single column
  "included" with a true/false value depending on whether the current row is occurs
  in the given Pipeline and the values of the specified columns are equal in both 
  Pipelines.</div></dd>
@@ -286,7 +286,8 @@ if (location.href.indexOf('is-external=true') == -1) {
 <dl>
 
 <dt><span class="strong"><a href="gratum/source/JdbcSource.html" title="Class in gratum.source">JdbcSource</a></span> - Class in <a href="./gratum/source/package-summary.html">gratum.source</a>
-</dt><dd><div class="block"></div></dd>
+</dt><dd><div class="block">A source that uses a database query for the source of the rows it feeds through the pipeline.
+ </div></dd>
 <dt><span class="strong"><a href="gratum/source/JdbcSource.html#JdbcSource(java.lang.String, java.lang.String, java.lang.String)" title="Constructor in JdbcSource">JdbcSource(String, String, String)</a></span> - Constructor in <a href="gratum/source/JdbcSource.html">JdbcSource</a>
 </dt><dd> <div class="block"></div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#join(gratum.etl.Pipeline, def, boolean)" title="Method in Pipeline">join(Pipeline, def, boolean)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
@@ -371,7 +372,7 @@ if (location.href.indexOf('is-external=true') == -1) {
 <dt><span class="strong"><a href="gratum/etl/LoadStatistic.html#reject(gratum.etl.RejectionCategory)" title="Method in LoadStatistic">reject(RejectionCategory)</a></span> - Method in <a href="gratum/etl/LoadStatistic.html">LoadStatistic</a>
 </dt><dd> <div class="block"></div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#reject(java.lang.String, gratum.etl.RejectionCategory)" title="Method in Pipeline">reject(String, RejectionCategory)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block"></div></dd>
+</dt><dd> <div class="block">Helper method to create a <a href='../../gratum/etl/Rejection.html' title='Rejection'>Rejection</a> object.</div></dd>
 <dt><span class="strong"><a href="gratum/etl/Rejection.html" title="Class in gratum.etl">Rejection</a></span> - Class in <a href="./gratum/etl/package-summary.html">gratum.etl</a>
 </dt><dd><div class="block">Created by charliehubbard on 7/11/18.</div></dd>
 <dt><span class="strong"><a href="gratum/etl/Rejection.html#Rejection(java.lang.String, gratum.etl.RejectionCategory, java.lang.String)" title="Constructor in Rejection">Rejection(String, RejectionCategory, String)</a></span> - Constructor in <a href="gratum/etl/Rejection.html">Rejection</a>
@@ -379,7 +380,7 @@ if (location.href.indexOf('is-external=true') == -1) {
 <dt><span class="strong"><a href="gratum/etl/RejectionCategory.html" title="Enum in gratum.etl">RejectionCategory</a></span> - Enum in <a href="./gratum/etl/package-summary.html">gratum.etl</a>
 </dt><dd><div class="block">Created by charliehubbard on 7/11/18.</div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#renameFields(java.util.Map)" title="Method in Pipeline">renameFields(Map)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block">Renames a row's columns in the given map to the values of the corresponding keys.</div></dd>
+</dt><dd> <div class="block">Rename a row's columns in the given map to the value of the corresponding key.</div></dd>
 </dl>
 
     
@@ -396,7 +397,7 @@ if (location.href.indexOf('is-external=true') == -1) {
 <dt><span class="strong"><a href="gratum/etl/LoadStatistic.html#setStart(java.lang.Long)" title="Method in LoadStatistic">setStart(Long)</a></span> - Method in <a href="gratum/etl/LoadStatistic.html">LoadStatistic</a>
 </dt><dd> <div class="block"></div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#sort(java.lang.String)" title="Method in Pipeline">sort(String)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block">Returns a Pipeline where the rows are ordered by the given columns.  </div></dd>
+</dt><dd> <div class="block">Return a Pipeline where the rows are ordered by the given columns.  </div></dd>
 <dt><span class="strong"><a href="gratum/source/Source.html" title="Interface in gratum.source">Source</a></span> - Interface in <a href="./gratum/source/package-summary.html">gratum.source</a>
 </dt><dd><div class="block">Created by charliehubbard on 7/11/18.</div></dd>
 <dt><span class="strong"><a href="gratum/source/ChainedSource.html#start(groovy.lang.Closure)" title="Method in ChainedSource">start(Closure)</a></span> - Method in <a href="gratum/source/ChainedSource.html">ChainedSource</a>
@@ -410,7 +411,7 @@ if (location.href.indexOf('is-external=true') == -1) {
 <dt><span class="strong"><a href="gratum/source/JdbcSource.html#start(groovy.lang.Closure)" title="Method in JdbcSource">start(Closure)</a></span> - Method in <a href="gratum/source/JdbcSource.html">JdbcSource</a>
 </dt><dd> <div class="block"></div></dd>
 <dt><span class="strong"><a href="gratum/etl/Pipeline.html#start(groovy.lang.Closure)" title="Method in Pipeline">start(Closure)</a></span> - Method in <a href="gratum/etl/Pipeline.html">Pipeline</a>
-</dt><dd> <div class="block"></div></dd>
+</dt><dd> <div class="block">Start processing rows from the source of the pipeline, and add a closure onto after chain.</div></dd>
 <dt><span class="strong"><a href="gratum/source/Source.html#start(groovy.lang.Closure)" title="Method in Source">start(Closure)</a></span> - Method in <a href="gratum/source/Source.html">Source</a>
 </dt><dd> <div class="block"></div></dd>
 <dt><span class="strong"><a href="gratum/source/ZipSource.html#start(groovy.lang.Closure)" title="Method in ZipSource">start(Closure)</a></span> - Method in <a href="gratum/source/ZipSource.html">ZipSource</a>
