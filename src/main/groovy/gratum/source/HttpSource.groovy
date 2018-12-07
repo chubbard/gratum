@@ -5,7 +5,19 @@ import static groovyx.net.http.HttpBuilder.configure
 import gratum.etl.Pipeline
 
 /**
- * Created by charliehubbard on 7/16/18.
+ * A source that retrieves data from a URL.  For example,
+ *
+ * <pre>
+ *  http("http://api.open-notify.org/astros.json").inject { Map json ->
+ *     json.people
+ *  }
+ *  .filter([craft: "ISS"])
+ *  .printRow()
+ *  .go
+ * </pre>
+ *
+ * To configure the http connection pass a closure that will pass
+ * to {@link groovyx.net.http.HttpBuilder#configure(Closure)}.
  */
 class HttpSource implements Source {
 
