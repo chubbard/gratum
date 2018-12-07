@@ -6,6 +6,17 @@ import groovy.sql.Sql
 
 import java.sql.ResultSetMetaData
 
+/**
+ * A source that uses a database query for the source of the rows it feeds through the pipeline.
+ * This source can actually be re-used for different database queries.  For example:
+ *
+ * <pre>
+ *     database( sql )
+ *      .query("select * from People where age >= ${age}")
+ *      .into("Age")
+ *      .go()
+ * </pre>
+ */
 class JdbcSource implements Source {
 
     Sql db
