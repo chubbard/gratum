@@ -75,7 +75,7 @@ public class Pipeline implements Source {
 
     /**
      * Creates a pipeline where startClosure is the source.  The startClosure is passed another closure that it can use
-     * to pass an indiviual row to the Pipeline.
+     * to pass an individual row to the Pipeline.
      *
      * @param name name of the pipeline to create
      * @param startClosure A closure that is called with a closure.  The startClosure can call the closure argument it's 
@@ -106,7 +106,7 @@ public class Pipeline implements Source {
      * Adds a step to the pipeline.  It's passed an optional name to identify the step by, and a closure that represents
      * the individual step.  It returns the Map to be processed by the next step in the pipeline, typically it simply returns the same
      * row it was passed.  If it returns null or {@link Rejection} then it will reject this row, stop processing additional
-     * steps, and pass the current row to the rejections pipline.
+     * steps, and pass the current row to the rejections pipeline.
      *
      * @param name The step name
      * @param step The code used to process each row processed by the Pipeline.
@@ -132,7 +132,7 @@ public class Pipeline implements Source {
 
     /**
      * Takes a closure that is passed the rejection Pipeline.  The closure can register steps on the rejection
-     * pipeline.
+     * pipeline, and any rejections from the parent pipeline will be passed through the given rejection pipeline.
      *
      * @param branch Closure that's passed the rejection the pipeline
      * @return this Pipeline
@@ -150,7 +150,7 @@ public class Pipeline implements Source {
     }
 
     /**
-     * Concatentates the rows from this pipeline and the given pipeline.  The resulting Pipeline will process all
+     * Concatenates the rows from this pipeline and the given pipeline.  The resulting Pipeline will process all
      * rows from this pipeline and the src pipeline.
      *
      * @param src The pipeline
@@ -184,7 +184,7 @@ public class Pipeline implements Source {
     }
 
     /**
-     * This adds a step tot he Pipeline that passes all rows where the values of the columns on the given Map are equal
+     * This adds a step to the Pipeline that passes all rows where the values of the columns on the given Map are equal
      * to the columns in the row.  This is a boolean AND between columns.  For example:
      *
      * .filter( [ hair: 'Brown', eyeColor: 'Blue' ] )
@@ -192,7 +192,7 @@ public class Pipeline implements Source {
      * In this example all rows where hair = Brown AND eyeColor = Blue are passed through the filter.
      *
      * @param columns a Map that contains the columns, and their values that are passed through
-     * @return
+     * @return A pipeline that only includes the rows matching the given filter.
      */
     public Pipeline filter( Map columns ) {
         addStep( "filter ${ nameOf(columns) }" ) { Map row ->
@@ -218,7 +218,7 @@ public class Pipeline implements Source {
     /**
      * Returns a Pipeline where all white space is removed from all columns contained within the rows.
      *
-     * @return Pipeline where all rows has white space removed.
+     * @return Pipeline where all columns of each row has white space removed.
      */
     public Pipeline trim() {
         addStep("trim()") { Map row ->
@@ -248,6 +248,7 @@ public class Pipeline implements Source {
     /**
      * Copies all rows on this Pipeline to another Pipeline where the given condition returns is true.  The given
      * condition works the same way {@link #filter(java.util.Map)} does.  This ia combination of branch and filter.
+     * No rows on this pipeline are filtered out.  Only the rows on the branch will be filtered.
      *
      * @param condition The conditions that must be equal in order for the row to be copied to the branch.
      * @param split The closure that is passed the branch Pipeline.
@@ -346,7 +347,7 @@ public class Pipeline implements Source {
     }
 
     /**
-     * Renames a row's columns in the given map to the values of the corresponding keys.
+     * Rename a row's columns in the given map to the value of the corresponding key.
      *
      * @param fieldNames The Map of src column to renamed names.
      * @return A Pipeline where all of the columns in the keys of the Map are renamed to the Map's corresponding values.
@@ -363,7 +364,7 @@ public class Pipeline implements Source {
     }
 
     /**
-     * Returns a Pipeline where all of the rows from this Pipeline and adds a single column 
+     * Return a Pipeline where all of the rows from this Pipeline and adds a single column
      * "included" with a true/false value depending on whether the current row is occurs
      * in the given Pipeline and the values of the specified columns are equal in both 
      * Pipelines.
@@ -420,7 +421,7 @@ public class Pipeline implements Source {
     }
 
     /**
-     * Returns a Pipeline where the row is grouped by the given columns.  The resulting Pipeline will only
+     * Return a Pipeline where the row is grouped by the given columns.  The resulting Pipeline will only
      * return a single row where the keys of that row will be the first column passed to the groupBy() method.
      * All other columns given will occur under the respective keys.  This yields a tree like structure where
      * the height of the tree is equal to the columns.length.  In the leaves of the tree are the rows that
@@ -464,7 +465,7 @@ public class Pipeline implements Source {
     }
 
     /**
-     * Returns a Pipeline where the rows are ordered by the given columns.  The value of 
+     * Return a Pipeline where the rows are ordered by the given columns.  The value of
      * each column is compared using the <=> operator.
      * @param columns to sort by
      * @return a Pipeline that where it's rows are ordered according to the given columns.
@@ -505,7 +506,7 @@ public class Pipeline implements Source {
     }
 
     /**
-     * Returns a Pipeline where the given column is coverted from a string to a java.lang.Double.
+     * Return a Pipeline where the given column is converted from a string to a java.lang.Double.
      * @param column The name of the column to convert into a Double
      * @return A Pipeline where all rows contains a java.lang.Double at the given column
      */
@@ -522,7 +523,7 @@ public class Pipeline implements Source {
     }
 
     /**
-     * Parses the string value at given fieldname into a java.lang.Integer value.
+     * Parses the string value at given column into a java.lang.Integer value.
      * @param column containing a string to be turned into a java.lang.Integer
      * @return A Pipeline where all rows contain a java.lang.Integer at given column
      */
@@ -539,7 +540,7 @@ public class Pipeline implements Source {
     }
 
     /**
-     * Parses the string value at given fieldname into a java.lang.Boolean value.  It understands values like: Y/N, YES/NO, TRUE/FALSE, 1/0, T/F.
+     * Parses the string value at given column into a java.lang.Boolean value.  It understands values like: Y/N, YES/NO, TRUE/FALSE, 1/0, T/F.
      * @param column containing a string to be turned into a java.lang.Boolean
      * @return A Pipeline where all rows contain a java.lang.Boolean at given column
      */
@@ -582,8 +583,8 @@ public class Pipeline implements Source {
     }
 
     /**
-     * Parses the string at the given column name into a Date object using the given format.  Any value not
-     * parseable by the format is rejected.
+     * Parses the string at the given column name into a Date object using the given format.  Any value that
+     * cannot be parsed by the format is rejected.  Null values or empty strings are not rejected.
      * @param column The field to use to find the string value to parse
      * @param format The format of the string to use to parse into a java.util.Date
      * @return A Pipeline where all rows contain a java.util.Date at given field name
@@ -701,9 +702,9 @@ public class Pipeline implements Source {
     }
 
     /**
-     * This takes a closure that takes Map and returns a Collection&lt;Map&gt;.  Each member of the returned collection will
-     * be fed into downstream steps.  The reset flag specifies whether the statistics should be reset (true) or the
-     * existing statistics will be carried (false).
+     * Injects the Collection&lt;Map&gt; returned from the given closure into the downstream steps as individual rows.
+     * The given closure is called for every row passed through the preceding step.  Each member of the returned
+     * collection will be fed into downstream steps as separate rows.
      * @param name The name of the step
      * @param closure Takes a Map and returns a Collection&lt;Map&gt; that will be fed into the downstream steps
      * @return The Pipeline that will received all members of the Collection returned from the closure.
@@ -727,6 +728,11 @@ public class Pipeline implements Source {
         return next
     }
 
+    /*
+     * Registers an after closure onto this Pipeline to copy the start time and rejections from the src pipeline to this
+     * pipeline's statistics.  The start time is overwritten, but the rejections are added together.  This results in a
+     * consistent statistics over the whole chain of pipelines.  The rows loaded by this pipeline are not modified.
+     */
     void copyStatistics(Pipeline src) {
         after {
             this.statistic.start = src.statistic.start
@@ -738,7 +744,8 @@ public class Pipeline implements Source {
             }
         }
     }
-/**
+
+    /**
      * This takes a closure that returns a Pipeline which is used to feed the returned Pipeline.  The closure will be called
      * for each row emitted from this Pipeline so the closure could create multiple Pipelines, and all data from every Pipeline
      * will be fed into the returned Pipeline.
@@ -763,12 +770,18 @@ public class Pipeline implements Source {
     }
 
     /**
-     * @param closure A closure that 
+     * Delegates to {@link #inject(java.lang.String, groovy.lang.Closure)} with a default name.
+     * @param closure Takes a Map and returns a Collection&lt;Map&gt; that will be fed into the downstream steps
+     * @return The Pipeline that will received all members of the Collection returned from the closure.
      */
     public Pipeline inject( Closure closure) {
         this.inject("inject()", closure )
     }
 
+    /**
+     * Start processing rows from the source of the pipeline, and add a closure onto after chain.
+     * @param closure closure to add to the after chain.
+     */
     public void start(Closure closure = null) {
         if( closure ) addStep("tail", closure)
 
@@ -843,6 +856,12 @@ public class Pipeline implements Source {
         return columns.collect { key -> row[key] }.join(":")
     }
 
+    /**
+     * Helper method to create a {@link Rejection} object.
+     * @param reason A text explanation for what caused the rejection
+     * @param category The rejection category to group this specific rejection
+     * @return
+     */
     public static Rejection reject( String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
         return new Rejection( reason, category )
     }
