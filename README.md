@@ -1,4 +1,7 @@
 # Gratum ETL
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 A simplified standalone ETL engine for groovy.  Gratum is groovy + datum.
 And gratum just happens to mean thank you or pleasant in Latin.  We built 
 gratum with a couple of beliefs about data transformations.
