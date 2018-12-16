@@ -420,4 +420,25 @@ class PipelineTest {
         assertEquals( people.size(), stats.loaded + stats.rejections )
     }
 
+    @Test
+    public void testHeaderless() {
+        LoadStatistic stats = csv("src/test/resources/headerless.csv", "|", ["Date", "status", "client", "server", "url", "length", "thread", "userAgent", "referer"])
+            .addStep("Assert Columns Exist") { Map row->
+                assertNotNull( row.status )
+                assertNotNull( row.Date )
+                assertNotNull( row.client )
+                assertNotNull( row.server )
+                assertFalse( row.Date.isEmpty() )
+                assertFalse( row.client.isEmpty() )
+                assertFalse( row.server.isEmpty() )
+                assertEquals(9, row.size())
+                return row
+            }
+            .trim()
+            .go()
+
+        assertEquals(18, stats.loaded)
+        assertEquals( 0, stats.rejections )
+    }
+
 }

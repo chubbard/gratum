@@ -1,0 +1,18 @@
+[15/Dec/2018:01:26:59 +0000] | 302 | 198.167.223.52 | 34.195.61.110 | "GET /acadmin.php HTTP/1.1" | - | [http-bio-8080-exec-6] | Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36 | -
+[15/Dec/2018:01:32:32 +0000] | 302 | 42.191.227.77 | localhost | "GET / HTTP/1.0" | - | [http-bio-8080-exec-7] | - | -
+[15/Dec/2018:02:24:59 +0000] | 302 | 178.217.58.237 | 34.195.61.110 | "GET / HTTP/1.1" | - | [http-bio-8080-exec-5] | Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36 | -
+[15/Dec/2018:02:45:58 +0000] | 302 | 171.232.153.153 | localhost | "GET / HTTP/1.0" | - | [http-bio-8080-exec-1] | - | -
+[15/Dec/2018:03:09:14 +0000] | 302 | 49.213.197.181 | localhost | "GET / HTTP/1.0" | - | [http-bio-8080-exec-4] | - | -
+[15/Dec/2018:03:24:46 +0000] | 302 | 5.30.34.83 | localhost | "GET / HTTP/1.0" | - | [http-bio-8080-exec-8] | - | -
+[15/Dec/2018:03:28:12 +0000] | 302 | 122.116.232.209 | localhost | "GET / HTTP/1.0" | - | [http-bio-8080-exec-2] | - | -
+[15/Dec/2018:03:36:20 +0000] | 302 | 138.118.101.144 | 34.195.61.110 | "GET / HTTP/1.1" | - | [http-bio-8080-exec-10] | Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/601.7.7 (KHTML, like Gecko) Version/9.1.2 Safari/601.7.7 | -
+[15/Dec/2018:04:09:45 +0000] | 302 | 116.103.103.226 | localhost | "GET / HTTP/1.0" | - | [http-bio-8080-exec-6] | - | -
+[15/Dec/2018:04:42:01 +0000] | 302 | 200.207.232.30 | 34.195.61.110 | "GET / HTTP/1.1" | - | [http-bio-8080-exec-7] | Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/601.7.7 (KHTML, like Gecko) Version/9.1.2 Safari/601.7.7 | -
+[15/Dec/2018:04:58:30 +0000] | 302 | 114.35.73.69 | localhost | "GET / HTTP/1.0" | - | [http-bio-8080-exec-5] | - | -
+[15/Dec/2018:05:44:23 +0000] | 302 | 80.13.115.136 | localhost | "GET / HTTP/1.0" | - | [http-bio-8080-exec-1] | - | -
+[15/Dec/2018:06:45:07 +0000] | 302 | 111.251.66.129 | localhost | "GET / HTTP/1.0" | - | [http-bio-8080-exec-4] | - | -
+[15/Dec/2018:07:04:50 +0000] | 200 | 185.234.219.228 | 34.195.61.110 | "GET / HTTP/1.1" | 176 | [http-bio-8443-exec-5] | Mozilla/5.0 zgrab/0.x | -
+[15/Dec/2018:07:38:37 +0000] | 302 | 82.209.201.182 | 34.195.61.110 | "GET /manager/html HTTP/1.1" | - | [http-bio-8080-exec-8] | Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0) | -
+[15/Dec/2018:07:58:00 +0000] | 404 | 104.248.32.25 | 34.195.61.110 | "GET /.git/config HTTP/1.1" | 1047 | [http-bio-8443-exec-13] | - | -
+[15/Dec/2018:08:08:22 +0000] | 400 | - | null | "GET / HTTP/1.1" | - | [null] | - | -
+[15/Dec/2018:08:14:59 +0000] | 302 | 83.147.221.240 | 34.195.61.110 | "GET / HTTP/1.1" | - | [http-bio-8080-exec-10] | Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/601.7.7 (KHTML, like Gecko) Version/9.1.2 Safari/601.7.7 | -

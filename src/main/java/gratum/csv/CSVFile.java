@@ -17,13 +17,12 @@ public class CSVFile {
     private File file;
     private Reader reader;
     private String separator;
-    private boolean header = true;
     private PrintWriter writer;
     private String lastLine;
     private Pattern linePattern;
 
     private int rows = 0;
-    private String[] columnHeaders;
+    private List<String> columnHeaders;
     private HashSet<String> rowHashes = new HashSet<String>();
     private boolean allowDuplicateRows=true;
 
@@ -72,11 +71,10 @@ public class CSVFile {
     protected int parse(Reader reader, CSVReader callback) throws IOException {
         LineNumberReader lineNumberReader = new LineNumberReader(reader);
         int lines = 1;
-        List<String> headers = null;
-        if( header ) {
+        if( columnHeaders == null ) {
             try {
-                headers = readNext(lineNumberReader);
-                callback.processHeaders( headers );
+                columnHeaders = readNext(lineNumberReader);
+                callback.processHeaders( columnHeaders );
                 lines++;
             } catch( Exception ex ) {
                 throw new IOException( "Could not process header " + lines + ": " + lastLine, ex );
@@ -86,7 +84,7 @@ public class CSVFile {
         try {
             List<String> row = null;
             while( (row = readNext(lineNumberReader)) != null ) {
-                boolean stop = callback.processRow( headers, row );
+                boolean stop = callback.processRow( columnHeaders, row );
                 if( stop ) {
                     return lines;
                 }
@@ -131,25 +129,27 @@ public class CSVFile {
     }
 
     public void write( Map row, String[] columnHeaders ) throws IOException {
-        this.columnHeaders = columnHeaders;
-        String[] rowArray = new String[columnHeaders.length];
+        if( this.columnHeaders == null ) {
+            this.columnHeaders = Arrays.asList( columnHeaders );
+        }
+        String[] rowArray = new String[this.columnHeaders.size()];
         int i = 0;
-        for (String columnHeader : columnHeaders) {
+        for (String columnHeader : this.columnHeaders) {
             rowArray[i++] = row.get(columnHeader) == null ? "" : row.get(columnHeader).toString();
         }
         write(rowArray);
     }
 
     public void write( LinkedHashMap row ) throws IOException {
-        if (rows == 0) {
-            columnHeaders = new String[row.keySet().size()];
+        if (columnHeaders == null) {
+            columnHeaders = new ArrayList<>( row.keySet().size() );
             int i = 0;
             for (Object headerKey : row.keySet()) {
-                columnHeaders[i++] = headerKey.toString();
+                columnHeaders.add( headerKey.toString() );
             }
-            write(columnHeaders);
         }
-        String[] rowArray = new String[columnHeaders.length];
+        if( rows == 0 ) write(columnHeaders);
+        String[] rowArray = new String[columnHeaders.size()];
         int i = 0;
         for (String columnHeader : columnHeaders) {
             if (row.get(columnHeader) == null) {
@@ -235,11 +235,11 @@ public class CSVFile {
         this.separator = separator;
     }
 
-    public boolean isHeader() {
-        return header;
+    public List<String> getColumnHeaders() {
+        return columnHeaders;
     }
 
-    public void setHeader(boolean header) {
-        this.header = header;
+    public void setColumnHeaders(List<String> columnHeaders) {
+        this.columnHeaders = columnHeaders;
     }
 }

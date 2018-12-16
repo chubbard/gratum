@@ -614,12 +614,9 @@ public class Pipeline implements Source {
      */
     public Pipeline save( String filename, String separator = ",", List<String> columns = null ) {
         CSVFile out = new CSVFile( filename, separator )
+        if( columns ) out.setColumnHeaders( columns )
         addStep("Save to ${out.file.name}") { Map row ->
-            if( columns ) {
-                out.write( row, columns?.toArray(new String[columns.size()]) )
-            } else {
-                out.write( row )
-            }
+            out.write( row )
             return row
         }
 

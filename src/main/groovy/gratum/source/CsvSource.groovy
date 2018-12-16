@@ -11,23 +11,25 @@ import gratum.etl.Pipeline
 public class CsvSource implements Source {
     CSVFile csvFile
 
-    CsvSource(File file, String separator = ",") {
+    CsvSource(File file, String separator = ",", List<String> headers = null) {
         csvFile = new CSVFile( file, separator );
+        if( headers ) csvFile.setColumnHeaders( headers )
     }
 
-    CsvSource( Reader reader, String separator = ",") {
+    CsvSource( Reader reader, String separator = ",", List<String> headers = null) {
         csvFile = new CSVFile( reader, separator )
+        if( headers ) csvFile.setColumnHeaders( headers )
     }
 
-    public static Pipeline csv( String filename, String separator = "," ) {
+    public static Pipeline csv( String filename, String separator = ",", List<String> headers = null ) {
         Pipeline pipeline = new Pipeline( filename )
-        pipeline.src = new CsvSource( new File(filename), separator )
+        pipeline.src = new CsvSource( new File(filename), separator, headers )
         return pipeline
     }
 
-    public static Pipeline csv(String name, InputStream stream, String separator = ",") {
+    public static Pipeline csv(String name, InputStream stream, String separator = ",", List<String> headers = null) {
         Pipeline pipeline = new Pipeline(name)
-        pipeline.src = new CsvSource( new InputStreamReader(stream), separator )
+        pipeline.src = new CsvSource( new InputStreamReader(stream), separator, headers )
         return pipeline
     }
 
