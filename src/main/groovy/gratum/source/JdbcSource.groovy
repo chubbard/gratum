@@ -38,7 +38,7 @@ class JdbcSource implements Source {
         return new JdbcSource(url, username, password)
     }
 
-    JdbcSource using( GString query ) {
+    JdbcSource query( GString query ) {
         this.query = query
         return this
     }
