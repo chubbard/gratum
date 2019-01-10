@@ -441,4 +441,17 @@ class PipelineTest {
         assertEquals( 0, stats.rejections )
     }
 
+    @Test
+    public void testClip() {
+        LoadStatistic stat = from(people).clip("name", "gender").addStep("Test resulting rows") { Map row ->
+            assertEquals( 2, row.size() )
+            assertTrue( row.containsKey("name") )
+            assertTrue( row.containsKey("gender") )
+            return row
+        }.go()
+
+        assertEquals( 5, stat.loaded )
+        assertEquals( 0, stat.rejections )
+    }
+
 }

@@ -6,7 +6,34 @@ import gratum.etl.Pipeline
 
 
 /**
- * Created by charliehubbard on 7/11/18.
+ * Reads a delimited separated text file into a series of rows.  It's most common format is the comma separated values (csv),
+ * but this supports any value separated format (i.e. tab, colon, comma, pipe, etc).  Here is a simple example:
+ *
+ * <pre>
+ *     csv( "/resources/titanic.csv" ).filter([ Embarked: "Q"]).go()
+ * </pre>
+ *
+ * Example changing the delimiter:
+ *
+ * <pre>
+ *     csv("/resources/pipe_separated_example.csv", "|")
+ *          .filter([ someProperty: "someValue" ])
+ *          .go()
+ * </pre>
+ *
+ * Example header-less file:
+ *
+ * <pre>
+ *     csv("/resources/headerless.csv", "|" ["date", "status", "client-ip", "server-name", "url", "length", "thread", "user-agent", "referer"])
+ *          .filter { Map row -> row["server-name}.contains("myhostname") }
+ *          .go()
+ * </pre>
+ *
+ * From external InputStream
+ *
+ * <pre>
+ *     csv( "External InputStream", stream, "|" ).filter( [ someColumn: "someValue" ] ).go()
+ * </pre>
  */
 public class CsvSource implements Source {
     CSVFile csvFile

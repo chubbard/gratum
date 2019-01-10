@@ -1,4 +1,7 @@
 # Gratum ETL
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 A simplified standalone ETL engine for groovy.  Gratum is groovy + datum.
 And gratum just happens to mean thank you or pleasant in Latin.  We built 
 gratum with a couple of beliefs about data transformations.
@@ -11,14 +14,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '0.5'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '0.7.0'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>0.3</version>
+        <version>0.7.0</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -285,32 +288,96 @@ all rejections by their common categories and list the counts there.  The next s
 that loaded, the total rejections, and the total time it took to process the source.  Above those stats is the 
 name of the pipeline.
 
-### Operations
+## Operations
 
 It's much easier to use the existing operation methods that are included in the Pipeline.  For example,
 we used an `addStep` to add a step that filtered out rows.  This is so common there is already an operation
 that does this for you called `filter`.  There are plenty of existing methods to perform common operations.
 
+### Basics
+
+[addStep](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#addStep(java.lang.String,%20Closure%3CMap%3E))
+
 #### Column Manipulation
 
-addField
+[addField](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#addField(java.lang.String,%20groovy.lang.Closure))
 
-removeField
+[renameFields](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#renameFields(java.util.Map))
 
-renameField
+[setField](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#setField(java.lang.String,%20java.lang.Object))
+
+[clip](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#clip(java.lang.String))
 
 #### Data Types
 
-asInt
+[asInt](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#asInt(java.lang.String))
 
-asDouble
+[asDouble](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#asDouble(java.lang.String))
 
-asBoolean
+[asBoolean](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#asBoolean(java.lang.String))
+
+[asDate](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#asDate(java.lang.String,%20java.lang.String))
 
 #### Filtering
 
-filter
+[filter](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#filter(java.util.Map))
+
+[filter](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#filter(groovy.lang.Closure))
+
+[groupBy](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#groupBy(java.lang.String))
+
+### Data Manipulation
+
+[sort](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#sort(java.lang.String))
+
+[trim](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#trim())
+
+[unique](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#unique(java.lang.String))
+
+### Branching
+
+[branch](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#branch(Closure%3CVoid%3E))
+
+[branch](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#branch(Map%3CString,%20Object%3E,%20Closure%3CVoid%3E))
+
+[onRejection](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#onRejection(Closure%3CVoid%3E))
+
+#### Pipeline Manipulation
+
+[concat](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#concat(gratum.etl.Pipeline))
+
+[exchange](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#exchange(Closure%3CPipeline%3E))
+
+[inject](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(groovy.lang.Closure))
+
+[inject](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(java.lang.String,%20groovy.lang.Closure))
+
+[intersect](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#intersect(gratum.etl.Pipeline,%20def))
+
+[join](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#join(gratum.etl.Pipeline,%20def,%20boolean))
+
+[fillDownBy](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#fillDownBy(Closure%3CBoolean%3E))
+
+### Output
+
+[save](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#save(java.lang.String,%20java.lang.String,%20List%3CString%3E))
+
+[printRow](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#printRow(java.lang.String))
+
+## Sources
+
+Operations are great, but you need data for those operations to work on.  Sources are how that data is 
+passed into the Pipeline.  These are the Sources you can use to provide data.
+
+[csv](https://chubbard.github.io/gratum/gratum/source/CsvSource.html)
+
+[collection](https://chubbard.github.io/gratum/gratum/source/CollectionSource.html)
+
+[zip](https://chubbard.github.io/gratum/gratum/source/ZipSource.html)
+
+[http/https](https://chubbard.github.io/gratum/gratum/source/HttpSource.html)
+
+[jdbc](https://chubbard.github.io/gratum/gratum/source/JdbcSource.html)
 
 
-#### 
     

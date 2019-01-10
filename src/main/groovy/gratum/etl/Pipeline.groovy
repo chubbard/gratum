@@ -683,6 +683,24 @@ public class Pipeline implements Source {
     }
 
     /**
+     * Remove all columns from each row so that only the fields given will be returned.
+     * @param columns THe columns names to retain from each row
+     * @return The pipeline where only the given columns are returned
+     */
+    public Pipeline clip(String... columns) {
+        addStep( "clip(${columns.join(",")}") { Map row ->
+            Map result = [:]
+            for( String key : row.keySet() ) {
+                if( columns.contains(key) ) {
+                    result[key] = row[key]
+                }
+            }
+            return result
+        }
+        return this
+    }
+
+    /**
      * Only allows rows that are unique per the given column.
      *
      * @param column The column name to use for checking uniqueness
