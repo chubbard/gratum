@@ -306,6 +306,8 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 [setField](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#setField(java.lang.String,%20java.lang.Object))
 
+[clip](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#clip(java.lang.String))
+
 #### Data Types
 
 [asInt](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#asInt(java.lang.String))
