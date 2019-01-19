@@ -24,7 +24,7 @@ import gratum.etl.Pipeline
  * Example header-less file:
  *
  * <pre>
- *     csv("/resources/headerless.csv", "|" ["date", "status", "client-ip", "server-name", "url", "length", "thread", "user-agent", "referer"])
+ *     csv("/resources/headerless.csv", "|", ["date", "status", "client-ip", "server-name", "url", "length", "thread", "user-agent", "referer"])
  *          .filter { Map row -> row["server-name}.contains("myhostname") }
  *          .go()
  * </pre>
