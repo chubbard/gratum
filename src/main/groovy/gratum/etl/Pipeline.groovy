@@ -234,14 +234,18 @@ public class Pipeline implements Source {
      * @param split The closure that is passed a new Pipeline where all the rows from this Pipeline are copied onto.
      * @return this Pipeline
      */
-    public Pipeline branch( Closure<Void> split) {
+    public Pipeline branch( Closure<Pipeline> split) {
         Pipeline branch = new Pipeline( name )
 
-        split( branch )
+        Pipeline tail = split( branch )
 
         addStep( "branch()" ) { Map row ->
             branch.process( row )
             return row
+        }
+
+        after {
+            tail.start()
         }
     }
 
@@ -254,15 +258,19 @@ public class Pipeline implements Source {
      * @param split The closure that is passed the branch Pipeline.
      * @return this Pipeline
      */
-    public Pipeline branch(Map<String,Object> condition, Closure<Void> split) {
+    public Pipeline branch(Map<String,Object> condition, Closure<Pipeline> split) {
         Pipeline branch = new Pipeline( name )
-        split(branch)
+        Pipeline tail = split(branch)
 
         addStep( "branch(${condition})" ) { Map row ->
             if( matches( condition, row )) {
                 branch.process( row )
             }
             return row
+        }
+
+        after {
+            tail.start()
         }
     }
 
@@ -802,7 +810,7 @@ public class Pipeline implements Source {
 
         statistic.start = System.currentTimeMillis()
         int line = 1
-        src.start { Map row ->
+        src?.start { Map row ->
             line++
             return process(row, line)
         }

@@ -200,17 +200,44 @@ class PipelineTest {
     public void testBranch() {
         csv("src/test/resources/titanic.csv")
             .branch { Pipeline pipeline ->
-                pipeline.filter([Sex: "female"])
+                return pipeline.filter([Sex: "female"])
                     .addStep("Verify sex was filtered out") { Map row ->
                         assertTrue( row.Sex == "female" )
                         return row
                     }
-                return null
             }
             .filter([Sex:"male"])
             .addStep("Verify sex was filtered to male") { Map row ->
                 assertTrue( row.Sex == "male")
                 return row
+            }
+            .go()
+    }
+
+    @Test
+    public void testBranchWithGroupBy() {
+        csv("src/test/resources/titanic.csv")
+            .branch { Pipeline p ->
+                return p.groupBy("Sex", "Pclass").addStep { Map row ->
+                    assertNotNull( row["male"] )
+                    assertNotNull( row["male"]["3"] )
+                    assertNotNull( row["male"]["2"] )
+                    assertNotNull( row["male"]["1"] )
+
+                    assertEquals( 146, row["male"]["3"].size() )
+                    assertEquals( 63, row["male"]["2"].size() )
+                    assertEquals( 57, row["male"]["1"].size() )
+
+                    assertNotNull( row["female"] )
+                    assertNotNull( row["female"]["3"] )
+                    assertNotNull( row["female"]["2"] )
+                    assertNotNull( row["female"]["1"] )
+
+                    assertEquals( 72, row["female"]["3"].size() )
+                    assertEquals( 30, row["female"]["2"].size() )
+                    assertEquals( 50, row["female"]["1"].size() )
+                    return row
+                }
             }
             .go()
     }
