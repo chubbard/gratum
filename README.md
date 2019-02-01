@@ -124,8 +124,8 @@ greater than 500.
 So how do Pipelines work?  A pipeline is a series of ordered steps.  Every
 Pipeline has a Source.  A source feeds a Pipeline.  In the example below
 the `from` method creates the source, attaches it to a Pipeline, and returns
-the Pipeline.  The `CollectionSource.from` method takes in a collection as
-the source for the row data.
+the Pipeline.  The [`CollectionSource.from`](https://chubbard.github.io/gratum/gratum/source/CollectionSource.html)
+method takes in a collection as the source for the row data.
 
     from([
             [ name: 'Chuck', gender: 'Male'],
@@ -176,8 +176,8 @@ there is a better way.
 
 What is often most important is the reason for why a rejections occurred.  In
 the examples above we rejected by returning null, but that doesn't tell us
-why something was rejected.  Using the `reject` method we can specify more
-detail about why a row was rejected.
+why something was rejected.  Using the [`reject`](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#reject(java.lang.String,%20gratum.etl.RejectionCategory))
+method we can specify more detail about why a row was rejected.
 
     from([
             [ name: 'Chuck', gender: 'Male', age: 40],
@@ -192,8 +192,9 @@ detail about why a row was rejected.
        }.
        go()
 
-This allows you to provide a rejection category and a free form description.  Using categories is a great
-way to quickly group types of rejections into more easily managed sets.
+This allows you to provide a [`RejectionCategory`](https://chubbard.github.io/gratum/gratum/etl/RejectionCategory.html) 
+and a free form description.  Using categories is a great way to quickly group types of 
+rejections into more easily managed sets.
 
 ### What's in a name?
 
