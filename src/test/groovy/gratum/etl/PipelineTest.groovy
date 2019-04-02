@@ -91,6 +91,20 @@ class PipelineTest {
     }
 
     @Test
+    public void testEmptyGroupBy() {
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+            .filter([Sex: 'K'])
+            .groupBy("Sex")
+            .addStep("Assert groupBy(Sex)") { Map row ->
+                assertTrue( row.isEmpty() )
+                return row
+            }
+            .go()
+        assertEquals( "Assert rows loaded == 1", 1, statistic.loaded )
+        assertEquals( "Assert all rows rejected", 418, statistic.rejections )
+    }
+
+    @Test
     public void testIntersect() {
 
     }

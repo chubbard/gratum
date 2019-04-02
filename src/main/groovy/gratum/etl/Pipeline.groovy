@@ -849,7 +849,7 @@ public class Pipeline implements Source {
             try {
                 boolean stop = statistic.timed(step.name) {
                     def ret = step.step(current)
-                    if (!ret || ret instanceof Rejection ) {
+                    if (ret == null || ret instanceof Rejection ) {
                         doRejections((Rejection)ret, current, step.name, lineNumber)
                         return true
                     }
