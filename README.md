@@ -14,14 +14,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '0.7.0'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '0.7.1'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>0.7.0</version>
+        <version>0.7.1</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -50,7 +50,7 @@ here you go:
   
 Here is how to get gratum started up in your shell:
 
-    groovy:000> mport groovy.grape.Grape
+    groovy:000> import groovy.grape.Grape
     groovy:000> Grape.grab(group: 'com.github.chubbard', module:'gratum')
     groovy:000> import gratum.etl.*
     groovy:000> import static gratum.source.CsvSource.*
