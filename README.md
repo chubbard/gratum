@@ -14,14 +14,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '0.7.1'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '0.7.2'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>0.7.1</version>
+        <version>0.7.2</version>
       </dependency>
       
 ## Oh Shell Yeah!
