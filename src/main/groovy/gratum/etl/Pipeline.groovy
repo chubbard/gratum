@@ -691,6 +691,26 @@ public class Pipeline implements Source {
     }
 
     /**
+     * Removes a field based on whether the given closure returns true or false.  The closure is optional
+     * which will always remove the fieldName if not provided.
+     *
+     * @param fieldName the name of the field to remove depending on what the optional closure returns
+     * @param removeLogic an optiona closure that when given can return true or false to indicate to remove
+     * the field or not.  If not provided the field is always removed.
+     * @return The pipeline where the fieldName has been removed when the removeLogic closure returns true or itself is null.
+     */
+    public Pipeline removeField(String fieldName, Closure removeLogic = null) {
+        addStep( "removeField(${fieldName})") { Map row ->
+            if( removeLogic == null || removeLogic(row) ) {
+                row.remove(fieldName)
+            }
+            return row
+        }
+
+        return this
+    }
+
+    /**
      * Remove all columns from each row so that only the fields given will be returned.
      * @param columns THe columns names to retain from each row
      * @return The pipeline where only the given columns are returned
