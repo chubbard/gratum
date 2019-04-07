@@ -107,6 +107,49 @@ public class CSVFile {
             if( lastLine == null ) return null;
         } while( lastLine.length() == 0 );
 
+        return parseColumns();
+    }
+
+    private List<String> parseColumns() {
+        List<String> line = new ArrayList<>( columnHeaders != null ? columnHeaders.size() : 10 );
+        int columnStart = 0;
+        char sep = separator.charAt(0);
+        boolean skipSeparator = false;
+        boolean stripQuotes = false;
+        for( int i = 0; i < lastLine.length(); i++ ) {
+            char currentChar = lastLine.charAt(i);
+
+            if( currentChar == '"' ) {
+                if( !isEscaped(i) ) {
+                    skipSeparator = !skipSeparator;
+                    stripQuotes = true;
+                }
+            } else if( !skipSeparator && sep == currentChar ) {
+                String content = stripQuotes ? lastLine.substring( columnStart + 1, i - 1 ) : lastLine.substring( columnStart, i );
+                line.add( unescape(content) );
+                columnStart = i + 1;
+                stripQuotes = false;
+            }
+        }
+
+        if( columnStart < lastLine.length() ) {
+            line.add( lastLine.substring(columnStart) );
+        }
+
+        return line;
+    }
+
+    private boolean isEscaped(int i) {
+        int count = 0;
+        int j = 1;
+        while( i > j && lastLine.charAt(i - j) == '\\' ) {
+            count++;
+            j++;
+        }
+        return count % 2 == 1;
+    }
+
+    private List<String> parseColumnsWithRegEx() {
         List<String> line = new ArrayList<String>();
         Matcher matcher = linePattern.matcher(lastLine);
         int current = 0;
