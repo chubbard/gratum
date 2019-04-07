@@ -56,17 +56,17 @@ class PipelineTest {
     @Test
     public void testSimpleFilterClosure() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-                .filter() { Map row ->
-                    return row.Age && (row.Age as double) < 30.0
-                }
-                .onRejection { Pipeline rej ->
-            rej.addStep("Verify sex was filtered out") { Map row ->
-                assertFalse( "Assert Age = ${row.Age} >= 30.0", row.Age && (row.Age as double) < 30.0 )
-                return row
+            .filter() { Map row ->
+                return row.Age && (row.Age as double) < 30.0
             }
-            return
-        }
-        .go()
+            .onRejection { Pipeline rej ->
+                rej.addStep("Verify sex was filtered out") { Map row ->
+                    assertFalse( "Assert Age = ${row.Age} >= 30.0", row.Age && (row.Age as double) < 30.0 )
+                    return row
+                }
+                return
+            }
+            .go()
 
         assertNotNull( statistic )
         assertEquals( "Assert that we successfully loaded ", statistic.name, "src/test/resources/titanic.csv" )
