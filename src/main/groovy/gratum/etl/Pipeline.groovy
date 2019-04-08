@@ -222,7 +222,7 @@ public class Pipeline implements Source {
      */
     public Pipeline trim() {
         addStep("trim()") { Map row ->
-            row.each { String key, Object value -> row[key] = (value as String).trim() }
+            row.each { String key, Object value -> row[key] = (value as String)?.trim() }
             return row
         }
     }
