@@ -786,9 +786,11 @@ public class Pipeline implements Source {
                 this.statistic.rejectionsByCategory[ cat ] = this.statistic.rejectionsByCategory[ cat ] + src.statistic.rejectionsByCategory[ cat ]
             }
 
-            for( String step : src.statistic.stepTimings.keySet() ) {
-                this.statistic.stepTimings[ step ] = src.statistic.stepTimings[ step ]
-            }
+            Map<String,Long> timings = [:]
+            timings.putAll( src.statistic.stepTimings )
+            timings.putAll( this.statistic.stepTimings )
+            this.statistic.stepTimings = timings
+            return
         }
     }
 

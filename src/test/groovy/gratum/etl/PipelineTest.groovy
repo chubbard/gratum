@@ -91,6 +91,39 @@ class PipelineTest {
     }
 
     @Test
+    public void testMultipleGroupBy() {
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+            .asInt("Age")
+            .filter() { Map row ->
+                row.Age ? row.Age < 20 : false
+            }
+            .groupBy("Sex", "Pclass")
+            .addStep( "Assert groupBy(Sex,Pclass") { Map row ->
+                // size reflects how many sub-values there are for each group.
+                // not total items fitting into this group, only
+                // the leaves hold that information.
+                assertEquals( 3, row.male?.size() )
+                assertEquals( 3, row.female?.size() )
+
+                assertEquals( 3, row.male['1'].size() )
+                assertEquals( 7, row.male['2'].size() )
+                assertEquals( 16, row.male['3'].size() )
+
+                assertEquals( 2, row.female['1'].size() )
+                assertEquals( 7, row.female['2'].size() )
+                assertEquals( 16, row.female['3'].size() )
+
+                return row
+            }
+            .go()
+
+        // verify that step timings for steps before the groupBy() are included in the returned statistics
+        assertTrue( "Assert that the timings inlude the asInt step", statistic.stepTimings.containsKey("asInt(Age)") )
+        assertTrue( "Assert that the timings inlude the filter step", statistic.stepTimings.containsKey("filter()") )
+        assertTrue( "Assert that the timings inlude the groupBy(Sex,Pclass) step", statistic.stepTimings.containsKey("groupBy(Sex,Pclass)") )
+    }
+
+    @Test
     public void testEmptyGroupBy() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .filter([Sex: 'K'])
@@ -102,6 +135,9 @@ class PipelineTest {
             .go()
         assertEquals( "Assert rows loaded == 1", 1, statistic.loaded )
         assertEquals( "Assert all rows rejected", 418, statistic.rejections )
+
+        assertTrue( "Assert that the timings inlude the filter(Sex->K)) step", statistic.stepTimings.containsKey("filter Sex->K") )
+        assertFalse( "Assert that timings does NOT include groupBy because all rows are filtered out.", statistic.stepTimings.containsKey("groupBy(Sex)") )
     }
 
     @Test
