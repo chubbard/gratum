@@ -26,9 +26,10 @@ class CollectionSource implements Source {
     }
 
     @Override
-    void start(Closure closure) {
-        for( Map c : source ) {
-            closure( c )
+    void start(Pipeline pipeline) {
+        int line = 1;
+        for( Map r : source ) {
+            pipeline.process( r, line++ )
         }
     }
 

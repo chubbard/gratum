@@ -2,6 +2,7 @@ package gratum.etl
 
 import gratum.csv.CSVFile
 import gratum.source.ChainedSource
+import gratum.source.ClosureSource
 import gratum.source.Source
 
 import java.text.ParseException
@@ -60,7 +61,7 @@ class Step {
  *    took 1 ms
  * </pre>
  */
-public class Pipeline implements Source {
+public class Pipeline {
 
     LoadStatistic statistic
     Source src
@@ -84,12 +85,7 @@ public class Pipeline implements Source {
      */
     public static Pipeline create( String name, Closure startClosure ) {
         Pipeline pipeline = new Pipeline(name)
-        pipeline.src = new Source() {
-            @Override
-            void start(Closure pipelineClosure) {
-                startClosure( pipelineClosure )
-            }
-        }
+        pipeline.src = new ClosureSource(startClosure)
         return pipeline
     }
 
@@ -116,6 +112,10 @@ public class Pipeline implements Source {
         step.delegate = this
         processChain << new Step( name, step )
         return this
+    }
+
+    public Pipeline addStep(GString name, Closure<Map> step) {
+        this.addStep( name.toString(), step )
     }
 
     /**
@@ -303,7 +303,7 @@ public class Pipeline implements Source {
             if( left ) {
                 if( cache.containsKey(key) ) {
                     return cache[key].collect { Map k ->
-                        Map j = k.clone()
+                        Map j = (Map)k.clone()
                         j.putAll(row)
                         return j
                     }
@@ -319,7 +319,7 @@ public class Pipeline implements Source {
                 }
             } else if( cache.containsKey(key) ) {
                 return cache[key].collect { Map k ->
-                    Map j = k.clone()
+                    Map j = (Map)k.clone()
                     j.putAll(row)
                     return j
                 }
@@ -463,9 +463,9 @@ public class Pipeline implements Source {
         Pipeline other = new Pipeline( statistic.name )
         other.src = new Source() {
             @Override
-            void start(Closure closure) {
+            void start(Pipeline pipeline) {
                 parent.start() // first start our parent pipeline
-                closure( cache )
+                pipeline.process( cache, 1 );
             }
         }
         other.copyStatistics( this )
@@ -835,11 +835,7 @@ public class Pipeline implements Source {
         if( closure ) addStep("tail", closure)
 
         statistic.start = System.currentTimeMillis()
-        int line = 1
-        src?.start { Map row ->
-            line++
-            return process(row, line)
-        }
+        src?.start(this)
         statistic.end = System.currentTimeMillis()
 
         statistic.timed("Done Callbacks") {

@@ -24,14 +24,14 @@ class ZipSource implements Source {
         return pipeline
     }
 
-
     @Override
-    void start(Closure closure) {
+    void start(Pipeline pipeline) {
+        int line = 1
         ZipFile zip = new ZipFile( file )
         zip.stream().forEach( new Consumer<ZipEntry>() {
             @Override
             void accept(ZipEntry zipEntry) {
-                closure.call( [entry: zipEntry, stream: zip.getInputStream(zipEntry)] )
+                pipeline.process( [entry: zipEntry, stream: zip.getInputStream(zipEntry)], line++ )
             }
         })
     }

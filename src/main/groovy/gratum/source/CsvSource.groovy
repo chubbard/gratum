@@ -61,7 +61,8 @@ public class CsvSource implements Source {
     }
 
     @Override
-    void start(Closure callback) {
+    void start(Pipeline pipeline) {
+        int line = 1
         CSVReader csvReader = new CSVReader() {
             @Override
             void processHeaders(List<String> header) {
@@ -74,7 +75,7 @@ public class CsvSource implements Source {
                     obj[header[i]] = row[i]
                 }
 
-                return callback( obj )
+                return pipeline.process( obj, line++ )
             }
 
             @Override

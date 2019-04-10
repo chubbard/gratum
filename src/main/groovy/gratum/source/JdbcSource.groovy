@@ -50,8 +50,9 @@ class JdbcSource implements Source {
     }
 
     @Override
-    void start(Closure closure) {
+    void start(Pipeline pipeline) {
         List<String> columns = []
+        int line = 1
         db.eachRow( query, { ResultSetMetaData md ->
             for( int i = 1; i <= md.columnCount; i++ ) {
                 columns << md.getColumnName(i)
@@ -61,7 +62,7 @@ class JdbcSource implements Source {
             columns.eachWithIndex { String col, int index ->
                 result[col] = row[index]
             }
-            closure.call( result )
+            pipeline.process( result, line )
         }
     }
 }

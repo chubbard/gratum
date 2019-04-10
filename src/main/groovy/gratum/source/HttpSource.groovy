@@ -42,7 +42,7 @@ class HttpSource implements Source {
     }
 
     @Override
-    void start(Closure closure) {
+    void start(Pipeline pipeline) {
         def response = configure {
             request.uri = url
             if( configuration ) {
@@ -51,6 +51,6 @@ class HttpSource implements Source {
             }
         }.get()
 
-        closure( response )
+        pipeline.process( (Map)response, 1 )
     }
 }
