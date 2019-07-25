@@ -3,9 +3,11 @@ package gratum.source
 import gratum.etl.Pipeline
 import groovy.sql.GroovyResultSet
 import groovy.sql.Sql
+import groovy.transform.CompileStatic
 
 import java.sql.ResultSetMetaData
 
+@CompileStatic
 class JdbcSource implements Source {
 
     Sql db

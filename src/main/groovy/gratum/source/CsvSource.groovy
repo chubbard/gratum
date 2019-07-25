@@ -3,11 +3,13 @@ package gratum.source
 import gratum.csv.CSVFile
 import gratum.csv.CSVReader
 import gratum.etl.Pipeline
+import groovy.transform.CompileStatic
 
 
 /**
  * Created by charliehubbard on 7/11/18.
  */
+@CompileStatic
 public class CsvSource implements Source {
     CSVFile csvFile
 

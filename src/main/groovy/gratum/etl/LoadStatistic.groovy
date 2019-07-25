@@ -1,11 +1,14 @@
 package gratum.etl
 
+import groovy.transform.CompileStatic
+
 /**
  * This object contains the statistics on how many items were processed by the Pipeline.  The name of the 
  * {@link gratum.etl.Pipeline} is contained in the name property.  Things included in this object are
  * number of rows loaded, number of rows rejected, categories and count of each row rejected, the total
  * time spent processing the {@link gratum.etl.Pipeline}, and the time each step took to process the rows.
  */
+@CompileStatic
 class LoadStatistic {
     String name
     Map<RejectionCategory, Integer> rejectionsByCategory = [:]

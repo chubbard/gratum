@@ -3,20 +3,10 @@ package gratum.etl
 import gratum.csv.CSVFile
 import gratum.source.ChainedSource
 import gratum.source.Source
+import groovy.transform.CompileStatic
 
 import java.text.ParseException
 import java.text.SimpleDateFormat
-
-class Step {
-    public String name
-    public Closure step
-
-    Step(String name, Closure step) {
-        this.name = name
-        this.step = step
-    }
-}
-
 
 /**
  * A Pipeline represents a series of steps that will be performed on 1 or more rows.  Rows are Map objects
@@ -116,6 +106,10 @@ public class Pipeline implements Source {
         step.delegate = this
         processChain << new Step( name, step )
         return this
+    }
+
+    public Pipeline addStep(GString name, Closure<Map> step) {
+        return this.addStep( name.toString(), step )
     }
 
     /**
@@ -221,7 +215,7 @@ public class Pipeline implements Source {
      * @return Pipeline where all rows has white space removed.
      */
     public Pipeline trim() {
-        addStep("trim()") { Map row ->
+        addStep("trim()") { Map<String,Object> row ->
             row.each { String key, Object value -> row[key] = (value as String).trim() }
             return row
         }
@@ -277,7 +271,7 @@ public class Pipeline implements Source {
      * @return A Pipeline where the rows contain all columns from the this Pipeline and right Pipeline joined on the given columns.
      */
     public Pipeline join( Pipeline other, def columns, boolean left = false ) {
-        Map<String,List<Map>> cache =[:]
+        Map<String,List<Map<String,Object>>> cache =[:]
         other.addStep("join(${other.name}, ${columns}).cache") { Map row ->
             String key = keyOf(row, rightColumn(columns) )
             if( !cache.containsKey(key) ) cache.put(key, [])
@@ -294,7 +288,7 @@ public class Pipeline implements Source {
             if( left ) {
                 if( cache.containsKey(key) ) {
                     return cache[key].collect { Map k ->
-                        Map j = k.clone()
+                        Map j = (Map)k.clone()
                         j.putAll(row)
                         return j
                     }
@@ -310,7 +304,7 @@ public class Pipeline implements Source {
                 }
             } else if( cache.containsKey(key) ) {
                 return cache[key].collect { Map k ->
-                    Map j = k.clone()
+                    Map j = (Map)k.clone()
                     j.putAll(row)
                     return j
                 }
@@ -330,16 +324,16 @@ public class Pipeline implements Source {
      */
     public Pipeline fillDownBy( Closure<Boolean> decider ) {
         Map previousRow = null
-        addStep("fillDownBy()") { Map row ->
+        addStep("fillDownBy()") { Map<String,Object> row ->
             if( previousRow && decider( row, previousRow ) ) {
                 row.each { String col, Object value ->
                     // todo refactor valid_to out for excluded
-                    if (col != "valid_To" && (value == null || value.isEmpty())) {
+                    if (col != "valid_To" && (value == null || value.toString().isEmpty())) {
                         row[col] = previousRow[col]
                     }
                 }
             }
-            previousRow = row.clone()
+            previousRow = (Map)row.clone()
             return row
         }
         return this

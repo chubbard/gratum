@@ -1,5 +1,7 @@
 package gratum.etl
 
+import groovy.transform.CompileStatic
+
 import static java.util.concurrent.TimeUnit.DAYS
 import static java.util.concurrent.TimeUnit.HOURS
 import static java.util.concurrent.TimeUnit.MILLISECONDS
@@ -9,6 +11,7 @@ import static java.util.concurrent.TimeUnit.SECONDS
 /**
  * Created by charliehubbard on 7/11/18.
  */
+@CompileStatic
 public class Duration {
     private long duration;
 

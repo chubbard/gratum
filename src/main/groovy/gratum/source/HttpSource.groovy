@@ -1,5 +1,7 @@
 package gratum.source
 
+import groovy.transform.CompileStatic
+
 import static groovyx.net.http.HttpBuilder.configure
 
 import gratum.etl.Pipeline
@@ -7,6 +9,7 @@ import gratum.etl.Pipeline
 /**
  * Created by charliehubbard on 7/16/18.
  */
+@CompileStatic
 class HttpSource implements Source {
 
     String url
