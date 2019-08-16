@@ -52,7 +52,7 @@ class LoadStatistic {
     }
 
     public Integer getRejections() {
-        return rejectionsByCategory.inject(0) { Integer sum, RejectionCategory cat, Integer count -> sum + count }
+        return (Integer)rejectionsByCategory.inject(0) { Integer sum, RejectionCategory cat, Integer count -> sum + count }
     }
 
     public void reject(RejectionCategory category) {

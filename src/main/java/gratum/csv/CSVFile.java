@@ -242,4 +242,8 @@ public class CSVFile {
     public void setHeader(boolean header) {
         this.header = header;
     }
+
+    public void setWriter( Writer writer ) {
+        this.writer = new PrintWriter( writer );
+    }
 }

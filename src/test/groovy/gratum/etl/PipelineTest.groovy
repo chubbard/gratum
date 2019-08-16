@@ -37,10 +37,10 @@ class PipelineTest {
     public void testSimpleFilter() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .filter([Sex:"male"])
-            .onRejection { Pipeline rej ->
-                rej.addStep("Verify sex was filtered out") { Map row ->
-                    assertFalse( row.Sex == "male")
-                    return row
+            .onRejection { Pipeline pipeline ->
+                pipeline.addStep("Verify sex was filtered out") { Rejection<Map<String,Object>> rej ->
+                    assertFalse( rej.source.Sex == "male")
+                    return rej
                 }
                 return
             }
@@ -56,17 +56,17 @@ class PipelineTest {
     @Test
     public void testSimpleFilterClosure() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-                .filter() { Map row ->
-                    return row.Age && (row.Age as double) < 30.0
-                }
-                .onRejection { Pipeline rej ->
-            rej.addStep("Verify sex was filtered out") { Map row ->
-                assertFalse( "Assert Age = ${row.Age} >= 30.0", row.Age && (row.Age as double) < 30.0 )
-                return row
+            .filter() { Map row ->
+                return row.Age && (row.Age as double) < 30.0
             }
-            return
-        }
-        .go()
+            .onRejection { Pipeline<Rejection> pipeline ->
+                pipeline.addStep("Verify sex was filtered out") { Rejection<Map<String,Object>> rej ->
+                    assertFalse( "Assert Age = ${rej.source.Age} >= 30.0", rej.source.Age && (rej.source.Age as double) < 30.0 )
+                    return rej
+                }
+                return
+            }
+            .go()
 
         assertNotNull( statistic )
         assertEquals( "Assert that we successfully loaded ", statistic.name, "src/test/resources/titanic.csv" )
@@ -224,9 +224,9 @@ class PipelineTest {
                 return row
             }
             .onRejection { Pipeline pipeline ->
-                pipeline.addStep("Verify rejection") { Map row ->
+                pipeline.addStep("Verify rejection") { Rejection<Map<String,Object>> rejection ->
                     rejections++
-                    return row
+                    return rejection
                 }
                 return
             }
@@ -278,12 +278,12 @@ class PipelineTest {
 
     @Test
     public void testRejections() {
-        List<Map> rejections = []
+        List<Rejection> rejections = []
 
         LoadStatistic stats = from(hobbies)
                 .addStep("Rejection") { Map row -> row.id > 1 ? row : reject("${row.id} is too small", RejectionCategory.REJECTION) }
                 .onRejection { Pipeline pipeline ->
-                    pipeline.addStep("Save rejections") { Map row ->
+                    pipeline.addStep("Save rejections") { Rejection<Map<String,Object>> row ->
                         rejections << row
                         return row
                     }
