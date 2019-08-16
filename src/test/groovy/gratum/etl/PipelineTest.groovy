@@ -35,7 +35,7 @@ class PipelineTest {
 
 
     @Test
-    public void testSimpleFilter() {
+    void testSimpleFilter() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .filter([Sex:"male"])
             .onRejection { Pipeline pipeline ->
@@ -55,7 +55,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testSimpleFilterClosure() {
+    void testSimpleFilterClosure() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .filter() { Map row ->
                 return row.Age && (row.Age as double) < 30.0
@@ -77,7 +77,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testSimpleGroupBy() {
+    void testSimpleGroupBy() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .groupBy("Sex")
             .addStep("Assert groupBy(Sex)") { Map row ->
@@ -92,12 +92,12 @@ class PipelineTest {
     }
 
     @Test
-    public void testIntersect() {
+    void testIntersect() {
 
     }
 
     @Test
-    public void testConcat() {
+    void testConcat() {
         LoadStatistic stats = from([
                 [name: 'Chuck', atBats: '200', hits: '100', battingAverage: '0.5'],
                 [name: 'Sam', atBats: '300', hits: '125', battingAverage: '0.4166']
@@ -111,7 +111,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testTrim() {
+    void testTrim() {
         LoadStatistic stats = from([
                 [firstName: 'Roger   ', lastName: '  Smith'],
                 [firstName: '    Jill', lastName: 'Belcher'],
@@ -126,10 +126,13 @@ class PipelineTest {
             return row
         }
         .go()
+
+        assertEquals( 3, stats.loaded )
+        assertEquals( 0, stats.rejections )
     }
 
     @Test
-    public void testSetField() {
+    void testSetField() {
         LoadStatistic stats = from( people )
                 .setField("completed", true)
                 .addStep("Assert completed is defined") { Map row ->
@@ -137,10 +140,12 @@ class PipelineTest {
                     return row
                 }
                 .go()
+
+        assertEquals( people.size(), stats.loaded )
     }
 
     @Test
-    public void renameFields() {
+    void renameFields() {
         csv("src/test/resources/titanic.csv")
             .addStep("Test Sex Exists") { Map row ->
                 assertTrue("Assert row.Sex exists", row.containsKey("Sex"))
@@ -157,7 +162,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testAddField() {
+    void testAddField() {
         csv("src/test/resources/titanic.csv")
             .addField("survived") { Map row ->
                 return true
@@ -170,7 +175,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testFillDownBy() {
+    void testFillDownBy() {
         int count = 0
         csv("src/test/resources/fill_down.csv")
             .addStep("Assert fields are missing data.") { Map row ->
@@ -185,7 +190,7 @@ class PipelineTest {
             .fillDownBy { Map row, Map previousRow ->
                 return row.id == previousRow.id
             }
-            .addStep("Assert values were filled down") { Map row ->
+            .addStep("Assert values were filled down") { Map<String,Object> row ->
                 row.each { String key, Object value ->
                     assertNotNull( "Assert ${key} is filled in with a value", value )
                     assertTrue("Assert that ${key} is non-empty", !(value as String).isEmpty() )
@@ -198,7 +203,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testBranch() {
+    void testBranch() {
         csv("src/test/resources/titanic.csv")
             .branch { Pipeline pipeline ->
                 pipeline.filter([Sex: "female"])
@@ -217,7 +222,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testInnerJoin() {
+    void testInnerJoin() {
         int rejections = 0
         LoadStatistic stats = from(people).join( from(hobbies), ['id'] )
             .addStep("Assert hobbies") { Map row ->
@@ -239,7 +244,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testLeftJoin() {
+    void testLeftJoin() {
         LoadStatistic stats = from(people).join( from(hobbies), ['id'], true )
             .addStep("Assert optional hobbies") { Map row ->
                 if( row.id < 5 ) {
@@ -256,11 +261,11 @@ class PipelineTest {
     }
 
     @Test
-    public void testSort() {
-        String lastHobby;
+    void testSort() {
+        String lastHobby
         from(hobbies).sort("hobby").addStep("Assert order is increasing") { Map row ->
             if( lastHobby ) assertTrue( "Assert ${lastHobby} < ${row.hobby}", lastHobby.compareTo( row.hobby ) <= 0 )
-            lastHobby = row.hobby;
+            lastHobby = row.hobby
             return row
         }.go()
 
@@ -268,7 +273,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testUnique() {
+    void testUnique() {
         LoadStatistic stats = from(hobbies).unique("id")
         .go()
 
@@ -278,7 +283,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testRejections() {
+    void testRejections() {
         List<Rejection> rejections = []
 
         LoadStatistic stats = from(hobbies)
@@ -299,10 +304,10 @@ class PipelineTest {
     }
 
     @Test
-    public void testHttp() {
-        String message = null;
-        int actualCount = 0;
-        int expectedCount = 0;
+    void testHttp() {
+        String message = null
+        int actualCount = 0
+        int expectedCount = 0
         LoadStatistic stats = http("http://api.open-notify.org/astros.json").inject { Map json ->
             expectedCount = json.number
             message = json.message
@@ -325,7 +330,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testAsDate() {
+    void testAsDate() {
         LoadStatistic stats = from([
                 [name: 'Chuck', dateOfBirth: '1992-08-11'],
                 [name: 'Sam', dateOfBirth: '1980-04-12'],
@@ -340,7 +345,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testAsInt() {
+    void testAsInt() {
         LoadStatistic stats = from([
                 [name: 'Chuck', atBats: '200', hits: '100'],
                 [name: 'Sam', atBats: '300', hits: '125'],
@@ -355,7 +360,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testAsDouble() {
+    void testAsDouble() {
         LoadStatistic stats = from([
                 [name: 'Chuck', atBats: '200', hits: '100', battingAverage: '0.5'],
                 [name: 'Sam', atBats: '300', hits: '125', battingAverage: '0.4166'],
@@ -370,7 +375,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testAsBoolean() {
+    void testAsBoolean() {
         from([
                 [name: 'Chuck', member: 'Y'],
                 [name: 'Sue', member: 'y'],
@@ -410,7 +415,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testSort2() {
+    void testSort2() {
         Pipeline<Map<String,Object>> p = from( people ) >> filterFields([gender: 'male']) >> sort('age')
         LoadStatistic stats = p.go()
 
@@ -420,7 +425,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testNewStyle() {
+    void testNewStyle() {
         Pipeline p = from( people ) >> filterFields( [gender: 'female'] ) >> { Map row ->
             assertTrue( row.gender == "female" )
             return row

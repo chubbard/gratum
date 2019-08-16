@@ -23,7 +23,7 @@ class Operators {
         return new AddFieldOperator( fieldName, fieldValue )
     }
 
-    public static Operator<Map,Map> rename( Map<String,String> fieldNames ) {
+    public static Operator<Map<String,Object>,Map<String,Object>> rename( Map<String,String> fieldNames ) {
         return new RenameOperator( fieldNames );
     }
 
@@ -31,7 +31,7 @@ class Operators {
         return new BranchOperator<T>(name, null, split)
     }
 
-    public static Operator<Map,Map> branch( String name, Map<String,Object> condition, Closure<Void> split) {
+    public static Operator<Map<String,Object>,Map<String,Object>> branch( String name, Map<String,Object> condition, Closure<Void> split) {
         return new BranchOperator<Map>( null, condition, split )
     }
 
@@ -41,7 +41,7 @@ class Operators {
                 .add( new CsvLoadOperator(separator) )
     }
 
-    static Operator<Map, PipelineOutput<Map>> saveAsCsv(String filename, String separator ) {
+    static Operator<Map<String,Object>, PipelineOutput<Map>> saveAsCsv(String filename, String separator ) {
         CSVFile out = new CSVFile( filename, separator )
         return new CsvSaveOperator( out )
     }
@@ -56,7 +56,7 @@ class Operators {
      * @param column The name of the column to convert into a Double
      * @return An Operator where all rows contains a java.lang.Double at the given column
      */
-    public static Operator<Map,Map> asDouble(String fieldName) {
+    public static Operator<Map<String,Object>,Map<String,Object>> asDouble(String fieldName) {
         return convert( "Double", fieldName ) { String value ->
             Double.parseDouble(value)
         }
@@ -67,7 +67,7 @@ class Operators {
      * @param column containing a string to be turned into a java.lang.Integer
      * @return An Operator where all rows contain a java.lang.Integer at given column
      */
-    public static Operator<Map,Map> asInt(String fieldName) {
+    public static Operator<Map<String,Object>,Map<String,Object>> asInt(String fieldName) {
         return convert( "Integer", fieldName ) { String value ->
             Integer.parseInt(value)
         }
@@ -78,7 +78,7 @@ class Operators {
      * @param column containing a string to be turned into a java.lang.Boolean
      * @return An Operator where all rows contain a java.lang.Boolean at given column
      */
-    public static Operator<Map,Map> asBoolean(String fieldName) {
+    public static Operator<Map<String,Object>,Map<String,Object>> asBoolean(String fieldName) {
         return convert( "Boolean", fieldName ) { String value ->
             if( value ) {
                 switch( value ) {
@@ -119,7 +119,7 @@ class Operators {
      * @param format The format of the string to use to parse into a java.util.Date
      * @return An Operator where all rows contain a java.util.Date at given field name
      */
-    public static Operator<Map,Map> asDate(String column, String format = "yyyy-MM-dd") {
+    public static Operator<Map<String,Object>,Map<String,Object>> asDate(String column, String format = "yyyy-MM-dd") {
         return new DateOperator( column, format )
     }
 
@@ -127,7 +127,7 @@ class Operators {
         return new ExchangeOperator<Src,Dest>( name, closure )
     }
 
-    public static Operator<Map,Map> fillDownBy( Closure<Boolean> decider ) {
+    public static Operator<Map<String,Object>,Map<String,Object>> fillDownBy( Closure<Boolean> decider ) {
         return new FillDownOperator( decider )
     }
 
@@ -142,7 +142,7 @@ class Operators {
      * @param columns a Map that contains the columns, and their values that are passed through
      * @return
      */
-    public static Operator<Map,Map> filterFields(Map<String,Object> fields ) {
+    public static Operator<Map<String,Object>,Map<String,Object>> filterFields(Map<String,Object> fields ) {
         return new FilterFieldsOperator( fields )
     }
 
@@ -168,11 +168,11 @@ class Operators {
         return new InjectOperator( name, inject )
     }
 
-    public static Operator<Map,Map> intersect( Pipeline<Map> pipeline, def columns ) {
+    public static Operator<Map<String,Object>,Map<String,Object>> intersect( Pipeline<Map<String,Object>> pipeline, def columns ) {
         return new IntersectOperator( pipeline, columns )
     }
 
-    public static join(Pipeline<Map> other, def columns, boolean left = false ) {
+    public static Operator<Map<String,Object>, Map<String,Object>> join(Pipeline<Map<String,Object>> other, def columns, boolean left = false ) {
         return new JoinOperator(other, columns,left)
     }
 
@@ -187,11 +187,11 @@ class Operators {
         return new ConcatOperator(source)
     }
 
-    public static Operator<Map,Map> printRow(String... columns) {
+    public static Operator<Map<String,Object>,Map<String,Object>> printRow(String... columns) {
         return new PrintRowOperator(columns)
     }
 
-    public static Operator<Map,Map> sort( String... columns ) {
+    public static Operator<Map<String,Object>,Map<String,Object>> sort( String... columns ) {
         return new SortOperator( columns )
     }
 
@@ -200,7 +200,7 @@ class Operators {
      *
      * @return Operator where all rows has white space removed.
      */
-    public static Operator<Map,Map> trim() {
+    public static Operator<Map<String,Object>,Map<String,Object>> trim() {
         return new TrimOperator()
     }
 
@@ -210,7 +210,7 @@ class Operators {
      * @param column The column name to use for checking uniqueness
      * @return A Pipeline that only contains the unique rows for the given column
      */
-    public static Operator unique(String column) {
+    public static Operator<Map<String,Object>,Map<String,Object>> unique(String column) {
         return new UniqueOperator( column )
     }
 }

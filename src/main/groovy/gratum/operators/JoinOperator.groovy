@@ -5,7 +5,7 @@ import gratum.etl.RejectionCategory
 
 import static gratum.etl.Utils.*
 
-class JoinOperator implements Operator<Map,Map> {
+class JoinOperator implements Operator<Map<String,Object>,Map<String,Object>> {
 
     private Pipeline<Map> other
     private def columns
@@ -18,7 +18,7 @@ class JoinOperator implements Operator<Map,Map> {
     }
 
     @Override
-    public Pipeline<Map> attach(Pipeline<Map> source) {
+    public Pipeline<Map<String,Object>> attach(Pipeline<Map<String,Object>> source) {
         Map<String,List<Map<String,Object>>> cache =[:]
 
         other.addStep("join(${other.name}, ${columns}).cache") { Map row ->

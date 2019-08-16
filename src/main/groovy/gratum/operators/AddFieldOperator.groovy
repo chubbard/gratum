@@ -3,7 +3,7 @@ package gratum.operators
 import gratum.etl.Pipeline
 import gratum.etl.Rejection
 
-class AddFieldOperator implements Operator {
+class AddFieldOperator implements Operator<Map<String,Object>,Map<String,Object>> {
 
     String fieldName
     Closure<Map<String,Object>> fieldValue
@@ -14,7 +14,7 @@ class AddFieldOperator implements Operator {
     }
 
     @Override
-    Pipeline attach(Pipeline source) {
+    Pipeline<Map<String,Object>> attach(Pipeline<Map<String,Object>> source) {
         source.addStep("addField(${fieldName})") { Map row ->
             Object value = fieldValue(row)
             if( value instanceof Rejection ) return value

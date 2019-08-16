@@ -3,7 +3,7 @@ package gratum.operators
 import gratum.etl.Pipeline
 import gratum.etl.RejectionCategory
 
-class DataTypesOperator<T> implements Operator<Map,Map> {
+class DataTypesOperator<T> implements Operator<Map<String,Object>,Map<String,Object>> {
 
     private String name
     private String column
@@ -20,7 +20,7 @@ class DataTypesOperator<T> implements Operator<Map,Map> {
     }
 
     @Override
-    Pipeline<Map> attach(Pipeline<Map> source) {
+    Pipeline<Map<String,Object>> attach(Pipeline<Map<String,Object>> source) {
         source.addStep("${name}(${column})") { Map row ->
             String value = row[column] as String
             try {

@@ -6,7 +6,7 @@ import gratum.etl.RejectionCategory
 import java.text.ParseException
 import java.text.SimpleDateFormat
 
-class DateOperator implements Operator<Map,Map> {
+class DateOperator implements Operator<Map<String,Object>,Map<String,Object>> {
 
     String column
     String formatSpec
@@ -19,7 +19,7 @@ class DateOperator implements Operator<Map,Map> {
     }
 
     @Override
-    Pipeline<Map> attach(Pipeline<Map> source) {
+    Pipeline<Map<String,Object>> attach(Pipeline<Map<String,Object>> source) {
         source.addStep("asDate(${column}, ${formatSpec})") { Map row ->
             String val = row[column] as String
             try {

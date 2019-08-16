@@ -2,7 +2,7 @@ package gratum.operators
 
 import gratum.etl.Pipeline
 
-class SetFieldOperator implements Operator<Map,Map> {
+class SetFieldOperator implements Operator<Map<String,Object>,Map<String,Object>> {
 
     String fieldName
     Object value
@@ -13,7 +13,7 @@ class SetFieldOperator implements Operator<Map,Map> {
     }
 
     @Override
-    Pipeline<Map> attach(Pipeline<Map> source) {
+    Pipeline<Map<String,Object>> attach(Pipeline<Map<String,Object>> source) {
 
         source.addStep("setField(${fieldName})") { Map row ->
             row[fieldName] = value
