@@ -1,6 +1,6 @@
 package gratum.etl
 
-import gratum.csv.CSVFile
+
 import gratum.operators.AddFieldOperator
 import gratum.operators.BranchOperator
 import gratum.operators.ConcatOperator
@@ -400,8 +400,22 @@ public class Pipeline<T> implements Source {
      *
      * @return A Pipeilne whose reocrds consist of the records from all Pipelines returned from the closure
      */
-    public Pipeline exchange(Closure<Pipeline> closure) {
-        return this >> ExchangeOperator.exchange("exchange", closure)
+    public <Dest> Pipeline<Dest> exchange(Closure<Pipeline<Dest>> closure) {
+        return exchange("exchange()", closure )
+    }
+
+    /**
+     * This takes a closure that returns a Pipeline which is used to feed the returned Pipeline.  The closure will be called
+     * for each row emitted from this Pipeline so the closure could create multiple Pipelines, and all data from every Pipeline
+     * will be fed into the returned Pipeline.
+     *
+     * @param Name of the step for the exchange step.
+     * @param closure A closure that takes a Map and returns a pipeline that it's data will be fed on to the returned pipeline.
+     *
+     * @return A Pipeilne whose reocrds consist of the records from all Pipelines returned from the closure
+     */
+    public <Dest> Pipeline<Dest> exchange(String name, Closure<Pipeline<Dest>> closure) {
+        return this >> ExchangeOperator.exchange(name, closure)
     }
 
     /**
@@ -433,7 +447,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline
      */
     public Pipeline save( String filename, String separator = ",", List<String> columns = null ) {
-        return this << CsvSaveOperator.save( filename, separator, columns.toArray( new String[ columns.size() ] ) )
+        return this << CsvSaveOperator.saveAsCsv( filename, separator, columns.toArray( new String[ columns.size() ] ) )
     }
 
     /**

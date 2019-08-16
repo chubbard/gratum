@@ -3,9 +3,10 @@ package gratum.etl
 import org.junit.Test
 
 import static junit.framework.TestCase.*
-import static gratum.source.CsvSource.*
 import static gratum.source.HttpSource.*
 import static gratum.source.CollectionSource.*
+
+import static gratum.operators.CsvLoadOperator.*
 
 /**
  * Created by charliehubbard on 7/13/18.

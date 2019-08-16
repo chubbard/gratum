@@ -10,12 +10,12 @@ class CsvSaveOperator implements Operator<Map,PipelineOutput<Map>> {
     private String[] columns
     private CSVFile out
 
-    static Operator<Map,PipelineOutput<Map>> save( String filename, String separator ) {
+    static Operator<Map,PipelineOutput<Map>> saveAsCsv(String filename, String separator ) {
         CSVFile out = new CSVFile( filename, separator )
         return new CsvSaveOperator( out )
     }
 
-    static Operator<Map,PipelineOutput<Map>> save( String filename, String separator, String... columns) {
+    static Operator<Map,PipelineOutput<Map>> saveAsCsv(String filename, String separator, String... columns) {
         CSVFile out = new CSVFile( filename, separator )
         return new CsvSaveOperator( out, columns )
     }
