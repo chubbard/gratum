@@ -8,14 +8,6 @@ class BranchOperator<T> implements Operator<T,T> {
     Map<String,Object> condition
     Closure<Void> split
 
-    public static <T> Operator<T,T> branch( String name, Closure<Void> split ) {
-        return new BranchOperator<T>(name, null, split)
-    }
-
-    public static Operator<Map,Map> branch( String name, Map<String,Object> condition, Closure<Void> split) {
-        return new BranchOperator<Map>( null, condition, split )
-    }
-
     BranchOperator(String name, Map<String,Object> condition, Closure<Void> split) {
         this.name = name
         this.condition = condition
@@ -28,7 +20,7 @@ class BranchOperator<T> implements Operator<T,T> {
 
         split( branch )
 
-        if( condition ) source >> FilterFieldsOperator.filerFields( condition )
+        if( condition ) source >> Operators.filterFields( condition )
 
         source.addStep( "branch()" ) { T row ->
             branch.process( row )

@@ -14,17 +14,6 @@ class ConcatOperator<T> implements Operator<T,T> {
         this.source = source
     }
 
-    /**
-     * Concatentates the rows from this pipeline and the given pipeline.  The resulting Pipeline will process all
-     * rows from this pipeline and the src pipeline.
-     *
-     * @param source The pipeline
-     * @return Returns a new pipeline that combines all of the rows from this pipeline and the src pipeline.
-     */
-    public static Operator<T,T> concat(Pipeline<T> source ) {
-        return new ConcatOperator(source)
-    }
-
     @Override
     Pipeline<T> attach(Pipeline<T> next) {
         next.after {

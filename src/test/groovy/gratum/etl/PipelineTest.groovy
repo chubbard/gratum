@@ -6,7 +6,7 @@ import static junit.framework.TestCase.*
 import static gratum.source.HttpSource.*
 import static gratum.source.CollectionSource.*
 
-import static gratum.operators.CsvLoadOperator.*
+import static gratum.operators.Operators.*
 
 /**
  * Created by charliehubbard on 7/13/18.
@@ -411,13 +411,24 @@ class PipelineTest {
 
     @Test
     public void testSort2() {
-        LoadStatistic stats = from( people )
-                .filter([gender: 'male'])
-                .sort('age')
-                .go()
+        Pipeline<Map<String,Object>> p = from( people ) >> filterFields([gender: 'male']) >> sort('age')
+        LoadStatistic stats = p.go()
 
         assertEquals( 2, stats.loaded )
         assertEquals( 3, stats.rejections )
+        assertEquals( people.size(), stats.loaded + stats.rejections )
+    }
+
+    @Test
+    public void testNewStyle() {
+        Pipeline p = from( people ) >> filterFields( [gender: 'female'] ) >> { Map row ->
+            assertTrue( row.gender == "female" )
+            return row
+        }
+        LoadStatistic stats = p.go()
+
+        assertEquals( 3, stats.loaded )
+        assertEquals( 2, stats.rejections )
         assertEquals( people.size(), stats.loaded + stats.rejections )
     }
 

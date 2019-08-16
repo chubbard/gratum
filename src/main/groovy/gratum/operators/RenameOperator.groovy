@@ -6,10 +6,6 @@ class RenameOperator implements Operator<Map,Map> {
 
     Map<String,String> fieldNames
 
-    public static Operator<Map,Map> rename( Map<String,String> fieldNames ) {
-        return new RenameOperator( fieldNames );
-    }
-
     RenameOperator(Map<String, String> fieldNames) {
         this.fieldNames = fieldNames
     }

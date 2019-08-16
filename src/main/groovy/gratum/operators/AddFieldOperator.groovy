@@ -8,10 +8,6 @@ class AddFieldOperator implements Operator {
     String fieldName
     Closure<Map<String,Object>> fieldValue
 
-    public static addField( String fieldName, Closure<Map<String,Object>> fieldValue ) {
-        return new AddFieldOperator( fieldName, fieldValue )
-    }
-
     AddFieldOperator(String fieldName, Closure fieldValue) {
         this.fieldName = fieldName
         this.fieldValue = fieldValue

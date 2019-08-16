@@ -6,10 +6,6 @@ class PrintRowOperator implements Operator<Map,Map> {
 
     private String[] columns
 
-    public static Operator<Map,Map> printRow(String... columns) {
-        return new PrintRowOperator(columns)
-    }
-
     PrintRowOperator(String... columns) {
         this.columns = columns
     }

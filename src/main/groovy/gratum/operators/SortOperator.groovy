@@ -7,10 +7,6 @@ class SortOperator implements Operator<Map,Map> {
 
     String[] columns
 
-    public static Operator<Map,Map> sort( String... columns ) {
-        return new SortOperator( columns )
-    }
-
     public SortOperator(String[] columns) {
         this.columns = columns
     }

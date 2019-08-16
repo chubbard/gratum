@@ -7,10 +7,6 @@ class FilterOperator<T> implements Operator<T,T> {
 
     Closure<Boolean> callback
 
-    public static <T> Operator<T,T> filter( Closure<Boolean> callback ) {
-        return new FilterOperator<T>( callback )
-    }
-
     FilterOperator(Closure<Boolean> callback) {
         this.callback = callback
     }

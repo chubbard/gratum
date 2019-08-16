@@ -11,16 +11,6 @@ class UniqueOperator implements Operator<Map,Map> {
         this.column = column
     }
 
-    /**
-     * Only allows rows that are unique per the given column.
-     *
-     * @param column The column name to use for checking uniqueness
-     * @return A Pipeline that only contains the unique rows for the given column
-     */
-    public static Operator unique(String column) {
-        return new UniqueOperator( column )
-    }
-
     @Override
     Pipeline<Map> attach(Pipeline<Map> source) {
         Set<Object> unique = [:] as HashSet

@@ -8,12 +8,6 @@ class CsvLoadOperator implements Operator<Reader,Map<String,Object>> {
 
     private String separator
 
-    public static Pipeline<Map<String,Object>> csv( String filename, String separator = ",") {
-        File file = new File( filename )
-        return SingleSource.of( (Reader)file.newReader(), filename )
-                .add( new CsvLoadOperator(separator) )
-    }
-
     CsvLoadOperator(String separator) {
         this.separator = separator
     }

@@ -7,21 +7,6 @@ class FilterFieldsOperator implements Operator<Map,Map> {
 
     private Map<String,Object> fields
 
-    /**
-     * This adds a step tot he Pipeline that passes all rows where the values of the columns on the given Map are equal
-     * to the columns in the row.  This is a boolean AND between columns.  For example:
-     *
-     * .filter( [ hair: 'Brown', eyeColor: 'Blue' ] )
-     *
-     * In this example all rows where hair = Brown AND eyeColor = Blue are passed through the filter.
-     *
-     * @param columns a Map that contains the columns, and their values that are passed through
-     * @return
-     */
-    public static Operator<Map,Map> filerFields( Map<String,Object> fields ) {
-        return new FilterFieldsOperator( fields )
-    }
-
     public FilterFieldsOperator(Map<String, Object> fields) {
         this.fields = fields
     }

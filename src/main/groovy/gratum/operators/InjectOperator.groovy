@@ -8,10 +8,6 @@ class InjectOperator<T> implements Operator<T,T> {
     private String name
     private Closure<Collection<T>> inject
 
-    public static Operator<T,T> inject( String name, Closure<Collection<T>> inject ) {
-        return new InjectOperator( name, inject )
-    }
-
     InjectOperator(String name, Closure<Collection<T>> inject) {
         this.name = name
         this.inject = inject

@@ -1,27 +1,8 @@
 package gratum.etl
 
-
-import gratum.operators.AddFieldOperator
-import gratum.operators.BranchOperator
-import gratum.operators.ConcatOperator
-import gratum.operators.CsvSaveOperator
-import gratum.operators.DataTypesOperator
-import gratum.operators.DateOperator
-import gratum.operators.ExchangeOperator
-import gratum.operators.FillDownOperator
-import gratum.operators.FilterFieldsOperator
-import gratum.operators.FilterOperator
-import gratum.operators.GroupByOperator
-import gratum.operators.InjectOperator
-import gratum.operators.IntersectOperator
-import gratum.operators.JoinOperator
 import gratum.operators.Operator
-import gratum.operators.PrintRowOperator
-import gratum.operators.RenameOperator
-import gratum.operators.SetFieldOperator
-import gratum.operators.SortOperator
-import gratum.operators.TrimOperator
-import gratum.operators.UniqueOperator
+import gratum.operators.Operators
+
 import gratum.source.Source
 
 /**
@@ -138,6 +119,10 @@ public class Pipeline<T> implements Source {
         return add( operator )
     }
 
+    public Pipeline<T> rightShift( Closure<T> closure ) {
+        return addStep( "addStep()", closure )
+    }
+
     /**
      * Adds a closure to the end of the Pipeline.  This is called after all rows are processed.  This closure is
      * invoked without any arguments.
@@ -183,7 +168,7 @@ public class Pipeline<T> implements Source {
      * @return Returns a new pipeline that combines all of the rows from this pipeline and the src pipeline.
      */
     public Pipeline<T> concat( Pipeline<T> src ) {
-        return this >> ConcatOperator.concat( src )
+        return this >> Operators.concat( src )
     }
 
     /**
@@ -192,7 +177,7 @@ public class Pipeline<T> implements Source {
      * @return Pipeline where all rows has white space removed.
      */
     public Pipeline<Map> trim() {
-        return this >> TrimOperator.trim()
+        return this >> Operators.trim()
     }
 
     /**
@@ -202,7 +187,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline where all of the columns in the keys of the Map are renamed to the Map's corresponding values.
      */
     public Pipeline<Map> renameFields( Map fieldNames ) {
-        return this >> RenameOperator.rename( fieldNames )
+        return this >> Operators.rename( fieldNames )
     }
 
     /**
@@ -212,7 +197,7 @@ public class Pipeline<T> implements Source {
      * @return The Pipeline where each row has a fieldname set to the given value
      */
     public Pipeline<Map> setField(String fieldName, Object value ) {
-        return this >> SetFieldOperator.set( fieldName, value )
+        return this >> Operators.set( fieldName, value )
     }
 
     /**
@@ -222,7 +207,7 @@ public class Pipeline<T> implements Source {
      * @return The Pipeline where the fieldname exists in every row
      */
     public Pipeline<Map> addField(String fieldName, Closure fieldValue) {
-        return this >> new AddFieldOperator( fieldName, fieldValue )
+        return this >> Operators.addField( fieldName, fieldValue )
     }
 
     /**
@@ -232,7 +217,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline that only contains the unique rows for the given column
      */
     Pipeline<T> unique(String column) {
-        return this >> UniqueOperator.unique( column )
+        return this >> Operators.unique( column )
     }
 
     /**
@@ -241,7 +226,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline where all rows contains a java.lang.Double at the given column
      */
     Pipeline<Map> asDouble(String column) {
-        return this >> DataTypesOperator.asDouble( column )
+        return this >> Operators.asDouble( column )
     }
 
     /**
@@ -250,7 +235,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline where all rows contain a java.lang.Integer at given column
      */
     Pipeline<Map> asInt(String column) {
-        return this >> DataTypesOperator.asInt( column )
+        return this >> Operators.asInt( column )
     }
 
     /**
@@ -259,7 +244,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline where all rows contain a java.lang.Boolean at given column
      */
     Pipeline<Map> asBoolean(String column) {
-        return this >> DataTypesOperator.asBoolean( column )
+        return this >> Operators.asBoolean( column )
     }
 
     /**
@@ -273,7 +258,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline that yields a single row that represents the tree grouped by the given columns.
      */
     public Pipeline<Map> groupBy( String... columns ) {
-        return this >> new GroupByOperator(columns)
+        return this >> Operators.groupBy(columns)
     }
 
     /**
@@ -284,7 +269,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline that contains only the rows that matched the filter.
      */
     public Pipeline<T> filter(Closure<Boolean> callback) {
-        return this >> FilterOperator.filter( callback )
+        return this >> Operators.filter( callback )
     }
 
     /**
@@ -299,7 +284,7 @@ public class Pipeline<T> implements Source {
      * @return
      */
     public Pipeline<Map> filter( Map<String,Object> columns ) {
-        return this >> FilterFieldsOperator.filerFields( columns )
+        return this >> Operators.filterFields( columns )
     }
 
     /**
@@ -310,7 +295,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline where all rows contain a java.util.Date at given field name
      */
     Pipeline<Map> asDate(String column, String format = "yyyy-MM-dd") {
-        return this >> new DateOperator( column, format )
+        return this >> Operators.asDate( column, format )
     }
 
     /**
@@ -321,7 +306,7 @@ public class Pipeline<T> implements Source {
      * @return this Pipeline
      */
     public Pipeline<T> branch( Closure<Void> split) {
-        Operator<T,T> op = BranchOperator.branch( "branch", split )
+        Operator<T,T> op = Operators.branch( "branch", split )
         return this >> op
     }
 
@@ -334,7 +319,7 @@ public class Pipeline<T> implements Source {
      * @return this Pipeline
      */
     public Pipeline<Map> branch(Map<String,Object> condition, Closure<Void> split) {
-        return this >> BranchOperator.branch("branch", condition, split )
+        return this >> Operators.branch("branch", condition, split )
     }
 
     /**
@@ -349,7 +334,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline where the rows contain all columns from the this Pipeline and right Pipeline joined on the given columns.
      */
     public Pipeline<Map> join( Pipeline other, def columns, boolean left = false ) {
-        return this >> JoinOperator.join( other, columns, left )
+        return this >> Operators.join( other, columns, left )
     }
 
     /**
@@ -361,7 +346,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline where the row's empty column values are filled in by the previous row.
      */
     public Pipeline<Map> fillDownBy( Closure<Boolean> decider ) {
-        return this >> new FillDownOperator( decider )
+        return this >> Operators.fillDownBy( decider )
     }
 
     /**
@@ -378,7 +363,7 @@ public class Pipeline<T> implements Source {
      * the other Pipeline
      */
     public Pipeline<Map> intersect( Pipeline<Map> other, def columns ) {
-        return this >> IntersectOperator.intersect( other, columns )
+        return this >> Operators.intersect( other, columns )
     }
 
     /**
@@ -388,7 +373,7 @@ public class Pipeline<T> implements Source {
      * @return a Pipeline that where it's rows are ordered according to the given columns.
      */
     public Pipeline<Map> sort(String... columns) {
-        return this >> SortOperator.sort( columns )
+        return this >> Operators.sort( columns )
     }
 
     /**
@@ -415,7 +400,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeilne whose reocrds consist of the records from all Pipelines returned from the closure
      */
     public <Dest> Pipeline<Dest> exchange(String name, Closure<Pipeline<Dest>> closure) {
-        return this >> ExchangeOperator.exchange(name, closure)
+        return this >> Operators.exchange(name, closure)
     }
 
     /**
@@ -427,7 +412,7 @@ public class Pipeline<T> implements Source {
      * @return The Pipeline that will received all members of the Collection returned from the closure.
      */
     public Pipeline inject(String name, Closure closure) {
-        return this >> InjectOperator.inject( name, closure )
+        return this >> Operators.inject( name, closure )
     }
 
     /**
@@ -447,7 +432,7 @@ public class Pipeline<T> implements Source {
      * @return A Pipeline
      */
     public Pipeline save( String filename, String separator = ",", List<String> columns = null ) {
-        return this << CsvSaveOperator.saveAsCsv( filename, separator, columns.toArray( new String[ columns.size() ] ) )
+        return this << Operators.saveAsCsv( filename, separator, columns.toArray( new String[ columns.size() ] ) )
     }
 
     /**
@@ -456,7 +441,7 @@ public class Pipeline<T> implements Source {
      * @return this Pipeline
      */
     public Pipeline printRow(String... columns) {
-        return this >> PrintRowOperator.printRow( columns )
+        return this >> Operators.printRow( columns )
     }
 
     public Pipeline progress( int col = 50 ) {

@@ -6,10 +6,6 @@ class FillDownOperator implements Operator<Map,Map> {
 
     private Closure<Boolean> decider
 
-    public static Operator<Map,Map> fillDownBy( Closure<Boolean> decider ) {
-        return new FillDownOperator( decider )
-    }
-
     public FillDownOperator(Closure<Boolean> decider) {
         this.decider = decider
     }

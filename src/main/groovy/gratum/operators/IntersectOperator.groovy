@@ -7,10 +7,6 @@ class IntersectOperator implements Operator<Map,Map> {
     def columns
     Pipeline<Map> other
 
-    public static Operator<Map,Map> intersect( Pipeline<Map> pipeline, def columns ) {
-        return new IntersectOperator( pipeline, columns )
-    }
-
     public IntersectOperator(Pipeline<Map> other, def columns) {
         this.columns = columns
         this.other = other

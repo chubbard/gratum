@@ -8,10 +8,6 @@ class ExchangeOperator<Src,Dest> implements Operator<Src,Dest> {
     String name
     Closure<Pipeline<Dest>> closure
 
-    public static <Src,Dest> Operator<Src,Dest> exchange( String name, Closure<Pipeline<Dest>> closure  ) {
-        return new ExchangeOperator<Src,Dest>( name, closure )
-    }
-
     public ExchangeOperator(String name, Closure<Pipeline<Dest>> closure) {
         this.name = name
         this.closure = closure

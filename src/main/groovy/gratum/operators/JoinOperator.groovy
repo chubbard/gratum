@@ -11,10 +11,6 @@ class JoinOperator implements Operator<Map,Map> {
     private def columns
     private boolean left
 
-    public static join( Pipeline<Map> other, def columns, boolean left = false ) {
-        return new JoinOperator(other, columns,left)
-    }
-
     public JoinOperator(Pipeline<Map> other, def columns, boolean left) {
         this.other = other
         this.columns = columns
@@ -32,7 +28,7 @@ class JoinOperator implements Operator<Map,Map> {
             return row
         }
 
-        return source >> InjectOperator.inject("join(${source.name}, ${columns})") { Map row ->
+        return source >> Operators.inject("join(${source.name}, ${columns})") { Map row ->
             if( !other.complete ) {
                 other.go()
             }
