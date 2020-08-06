@@ -14,7 +14,7 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '0.7.2'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '0.8.0'
 
 For Maven:
 
