@@ -21,7 +21,7 @@ For Maven:
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>0.7.2</version>
+        <version>0.8.0</version>
       </dependency>
       
 ## Oh Shell Yeah!
