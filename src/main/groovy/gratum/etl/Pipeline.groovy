@@ -828,6 +828,36 @@ public class Pipeline {
     }
 
     /**
+     * Sets the destination column to the value within the given Map when the destination column is empty/null.
+     * @param defaults A Map of destination column to value where destination column is key and the values are the default
+     * values used when the destination column is empty/null.
+     * @return A Pipeline where the destination columns are initialized to the values in the Map when the destination
+     * column is empty.
+     */
+    public Pipeline defaultValues( Map<String,Object> defaults ) {
+        this.addStep("defaultValues for ${defaults.keySet()}") { Map row ->
+            defaults.each { String column, Object value ->
+                if( !row[column] ) row[column] = value
+            }
+            return row
+        }
+    }
+
+    /**
+     * Sets the destination column to the value of the source column if it is empty or null.
+     * @param defaults A Map containing the destination column as the key and source column as the value.
+     * @return A pipeline where the rows will have the destination columns set to the source column if empty/null.
+     */
+    public Pipeline defaultsBy( Map<String,String> defaults ) {
+        this.addStep("defaultsBy for ${defaults.keySet()}") { Map row ->
+            defaults.each { String destColumn, String srcColumn ->
+                if( !row[destColumn] ) row[destColumn] = row[srcColumn]
+            }
+            return row
+        }
+    }
+
+    /**
      * Start processing rows from the source of the pipeline, and add a closure onto after chain.
      * @param closure closure to add to the after chain.
      */

@@ -598,5 +598,62 @@ class PipelineTest {
             }.go()
     }
 
+    @Test
+    public void testDefaultValues() {
+        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
+            .addStep("Assert null exists") { Map row ->
+                if( ['Captain', 'Private First Class'].contains( row.rank ) ) {
+                    assert row.assignment == null
+                }
+                return row
+            }
+            .defaultValues([
+                    assignment: 'None'
+            ])
+            .addStep("Assert defaults") { Map row ->
+                assert row.assignment != null
+                switch( row.rank ) {
+                    case 'Captain':
+                        assert row.assignment == "None"
+                        break
+                    case 'Private First Class':
+                        assert row.assignment == "None"
+                        break
+                    default:
+                        assert row.assignment != "None"
+                        break
+                }
+                return  row
+            }
+            .go()
+    }
 
+    @Test
+    public void testDefaultsBy() {
+        from([
+                [name: 'State 1', tax: null, defaultTax: 4.5],
+                [name: 'State 2', tax: 5.5, defaultTax: 4.5],
+                [name: 'State 3', tax: null, defaultTax: 3.0 ]
+        ])
+        .addStep("Assert null exists") { Map row ->
+            if( row.name != 'State 2' ) {
+                assert row.tax == null
+            }
+            return row
+        }
+        .defaultsBy([tax: 'defaultTax'])
+        .addStep("Assert non null tax") { Map row ->
+            assert row.tax != null
+            assert row.tax instanceof Number
+            switch( row.name ) {
+                case 'State 2':
+                    assert row.tax > 5.0
+                    break
+                default:
+                    assert row.tax >= 3.0 && row.tax < 5.0
+            }
+            return row
+        }
+        .go()
+    }
 }
