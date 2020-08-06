@@ -71,8 +71,8 @@ public class CsvSource implements Source {
             @Override
             boolean processRow(List<String> header, List<String> row) {
                 Map obj = [:]
-                for( int i = 0; i < row.size(); i++ ) {
-                    obj[header[i]] = row[i]
+                for( int i = 0; i < header.size(); i++ ) {
+                    obj[header[i]] = i < row.size() ? row[i] : null
                 }
 
                 return pipeline.process( obj, line++ )

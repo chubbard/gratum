@@ -531,4 +531,16 @@ class PipelineTest {
         assertEquals( 0, stat.rejections )
     }
 
+    @Test
+    public void testRagged() {
+        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
+            .addStep("Assert Row") { Map row ->
+                assert row.containsKey("assignment")
+                return row
+            }.go()
+
+        assertEquals( 3, stats.loaded )
+        assertEquals( 0, stats.rejections )
+    }
+
 }
