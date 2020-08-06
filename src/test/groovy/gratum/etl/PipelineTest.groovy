@@ -543,4 +543,20 @@ class PipelineTest {
         assertEquals( 0, stats.rejections )
     }
 
+    @Test
+    public void testSave() {
+        File tmp = File.createTempFile("people", ".csv")
+        try {
+            from(people).save(tmp.absolutePath, "|").go()
+
+            csv(tmp.absolutePath, "|")
+                .addStep("assert 4 columns") { Map row ->
+                    assert row.size() == 4
+                }.go()
+        } finally {
+            tmp.delete()
+        }
+    }
+
+
 }

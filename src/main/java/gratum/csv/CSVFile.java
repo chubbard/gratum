@@ -183,7 +183,7 @@ public class CSVFile {
         write(rowArray);
     }
 
-    public void write( LinkedHashMap row ) throws IOException {
+    public void write( Map row ) throws IOException {
         if (columnHeaders == null) {
             columnHeaders = new ArrayList<>( row.keySet().size() );
             int i = 0;
@@ -191,7 +191,7 @@ public class CSVFile {
                 columnHeaders.add( headerKey.toString() );
             }
         }
-        if( rows == 0 ) write(columnHeaders);
+        if( rows == 0 ) write(columnHeaders.toArray());
         String[] rowArray = new String[columnHeaders.size()];
         int i = 0;
         for (String columnHeader : columnHeaders) {
