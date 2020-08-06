@@ -536,10 +536,24 @@ class PipelineTest {
         LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
             .addStep("Assert Row") { Map row ->
                 assert row.containsKey("assignment")
+                switch(row.rank) {
+                    case "Captain":
+                        assert row.assignment == null
+                        break
+                    case "Private":
+                        assert row.assignment == "Old River"
+                        break
+                    case "Sergeant":
+                        assert row.assignment == "Lombok"
+                        break
+                    case "Private First Class":
+                        assert row.assignment == null
+                        break
+                }
                 return row
             }.go()
 
-        assertEquals( 3, stats.loaded )
+        assertEquals( 4, stats.loaded )
         assertEquals( 0, stats.rejections )
     }
 
@@ -556,6 +570,32 @@ class PipelineTest {
         } finally {
             tmp.delete()
         }
+    }
+
+    @Test
+    public void testEscaping() {
+        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
+            .addStep("Test Escaping") { Map row ->
+                switch(row.rank) {
+                    case "Captain":
+                        assert row.comment.contains("\n")
+                        assert row.comment == "This is a comment\nwith new lines"
+                        break
+                    case "Private":
+                        assert row.comment.contains("\n")
+                        assert row.comment == "This is another comment\nwith new lines"
+                        break
+                    case "Sergeant":
+                        assert row.comment.startsWith('"')
+                        assert row.comment.endsWith('"')
+                        assert row.comment == '"This one has quotes"'
+                        break
+                    case "Private First Class":
+                        assert row.comment == "More comments\nwith newlines\nin them"
+                        break
+                }
+                return row
+            }.go()
     }
 
 
