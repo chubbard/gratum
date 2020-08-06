@@ -309,6 +309,10 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 [clip](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#clip(java.lang.String))
 
+[defaultValues](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#defaultValues(java.util.Map))
+
+[defaultsBy](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#defaultsBy(java.util.Map))
+
 #### Data Types
 
 [asInt](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#asInt(java.lang.String))
