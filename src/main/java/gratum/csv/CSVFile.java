@@ -133,7 +133,7 @@ public class CSVFile {
         }
 
         if( columnStart < lastLine.length() ) {
-            line.add( lastLine.substring(columnStart) );
+            line.add( unescape(lastLine.substring(columnStart)) );
         }
 
         return line;
