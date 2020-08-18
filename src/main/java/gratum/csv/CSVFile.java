@@ -133,7 +133,8 @@ public class CSVFile {
         }
 
         if( columnStart < lastLine.length() ) {
-            line.add( unescape(lastLine.substring(columnStart)) );
+            String content = stripQuotes ? lastLine.substring( columnStart + 1, lastLine.length() - 1 ) : lastLine.substring( columnStart );
+            line.add( unescape(content) );
         }
 
         return line;
