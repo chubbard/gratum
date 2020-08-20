@@ -38,11 +38,10 @@ class XlsxSource implements Source {
         return new XlsxSource( file, sheet )
     }
 
-    public LoadStatistic attach( Closure<Pipeline> setup ) {
+    public Pipeline into() {
         Pipeline pipeline = new Pipeline( name )
         pipeline.src = this
-        Pipeline r = setup( pipeline )
-        r.go()
+        return pipeline
     }
 
     @Override
