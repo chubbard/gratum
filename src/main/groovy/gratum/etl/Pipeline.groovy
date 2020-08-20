@@ -1,6 +1,7 @@
 package gratum.etl
 
 import gratum.csv.CSVFile
+import gratum.source.AbstractSource
 import gratum.source.ChainedSource
 import gratum.source.ClosureSource
 import gratum.source.Source
@@ -461,7 +462,7 @@ public class Pipeline {
 
         Pipeline parent = this
         Pipeline other = new Pipeline( statistic.name )
-        other.src = new Source() {
+        other.src = new AbstractSource() {
             @Override
             void start(Pipeline pipeline) {
                 parent.start() // first start our parent pipeline

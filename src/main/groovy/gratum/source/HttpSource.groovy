@@ -19,26 +19,23 @@ import gratum.etl.Pipeline
  * To configure the http connection pass a closure that will pass
  * to {@link groovyx.net.http.HttpBuilder#configure(Closure)}.
  */
-class HttpSource implements Source {
+class HttpSource extends AbstractSource {
 
     String url
     Closure configuration
 
     public HttpSource(String url, Closure configuration) {
+        this.name = url
         this.url = url
         this.configuration = configuration
     }
 
-    public static Pipeline http(String url, Closure configuration = null) {
-        Pipeline pipeline = new Pipeline( url )
-        pipeline.src = new HttpSource(url, configuration)
-        return pipeline
+    public static HttpSource http(String url, Closure configuration = null) {
+        return new HttpSource(url, configuration)
     }
 
-    public static Pipeline https(String url, Closure configuration = null) {
-        Pipeline pipeline = new Pipeline(url)
-        pipeline.src = new HttpSource(url, configuration)
-        return pipeline
+    public static HttpSource https(String url, Closure configuration = null) {
+        return new HttpSource(url, configuration)
     }
 
     @Override

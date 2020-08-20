@@ -17,16 +17,18 @@ import java.sql.ResultSetMetaData
  *      .go()
  * </pre>
  */
-class JdbcSource implements Source {
+class JdbcSource extends AbstractSource {
 
     Sql db
     GString query
 
     JdbcSource(Sql db) {
+        this.name = "jdbc"
         this.db = db
     }
 
     JdbcSource(String url, String username, String password) {
+        this.name = url
         db = Sql.newInstance(url, username, password)
     }
 
@@ -41,12 +43,6 @@ class JdbcSource implements Source {
     JdbcSource query( GString query ) {
         this.query = query
         return this
-    }
-
-    Pipeline into(String name = "query") {
-        Pipeline pipeline = new Pipeline(name)
-        pipeline.src = this
-        return pipeline
     }
 
     @Override

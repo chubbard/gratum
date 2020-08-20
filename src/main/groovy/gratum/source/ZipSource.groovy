@@ -6,22 +6,21 @@ import java.util.function.Consumer
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
-class ZipSource implements Source {
+class ZipSource extends AbstractSource {
 
     File file
 
     ZipSource(String path) {
-        this.file = new File( path )
+        this( new File( path ) )
     }
 
     ZipSource(File zip) {
+        this.name = zip.name
         this.file = zip
     }
 
-    public static Pipeline unzip(File zip ) {
-        Pipeline pipeline = new Pipeline( zip.name )
-        pipeline.src = new ZipSource( zip )
-        return pipeline
+    public static ZipSource unzip(File zip ) {
+        return new ZipSource( zip )
     }
 
     @Override

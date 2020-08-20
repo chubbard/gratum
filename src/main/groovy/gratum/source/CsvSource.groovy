@@ -35,29 +35,27 @@ import gratum.etl.Pipeline
  *     csv( "External InputStream", stream, "|" ).filter( [ someColumn: "someValue" ] ).go()
  * </pre>
  */
-public class CsvSource implements Source {
+public class CsvSource extends AbstractSource {
     CSVFile csvFile
 
     CsvSource(File file, String separator = ",", List<String> headers = null) {
+        this.name = file.name
         csvFile = new CSVFile( file, separator );
         if( headers ) csvFile.setColumnHeaders( headers )
     }
 
     CsvSource( Reader reader, String separator = ",", List<String> headers = null) {
+        this.name = "Reader"
         csvFile = new CSVFile( reader, separator )
         if( headers ) csvFile.setColumnHeaders( headers )
     }
 
-    public static Pipeline csv( String filename, String separator = ",", List<String> headers = null ) {
-        Pipeline pipeline = new Pipeline( filename )
-        pipeline.src = new CsvSource( new File(filename), separator, headers )
-        return pipeline
+    public static CsvSource csv( String filename, String separator = ",", List<String> headers = null ) {
+        return new CsvSource( new File(filename), separator, headers )
     }
 
-    public static Pipeline csv(String name, InputStream stream, String separator = ",", List<String> headers = null) {
-        Pipeline pipeline = new Pipeline(name)
-        pipeline.src = new CsvSource( new InputStreamReader(stream), separator, headers )
-        return pipeline
+    public static CsvSource csv(String name, InputStream stream, String separator = ",", List<String> headers = null) {
+        return new CsvSource( new InputStreamReader(stream), separator, headers )
     }
 
     @Override

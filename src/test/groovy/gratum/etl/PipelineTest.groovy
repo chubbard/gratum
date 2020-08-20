@@ -35,7 +35,7 @@ class PipelineTest {
 
     @Test
     public void testSimpleFilter() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv").into()
             .filter([Sex:"male"])
             .onRejection { Pipeline rej ->
                 rej.addStep("Verify sex was filtered out") { Map row ->
@@ -47,7 +47,7 @@ class PipelineTest {
             .go()
 
         assertNotNull( statistic )
-        assertEquals( "Assert that we successfully loaded ", statistic.name, "src/test/resources/titanic.csv" )
+        assertEquals( "Assert that we successfully loaded ", statistic.name, "titanic.csv" )
         assertEquals( "Assert that we successfully loaded all male passengers", 266, statistic.loaded )
         assertEquals( "Assert that we rejected non-male passengers", 152, statistic.rejections )
         assertEquals( "Assert the rejection category", 152, statistic.getRejections(RejectionCategory.IGNORE_ROW) )
@@ -55,7 +55,7 @@ class PipelineTest {
 
     @Test
     public void testSimpleFilterClosure() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv").into()
             .filter() { Map row ->
                 return row.Age && (row.Age as double) < 30.0
             }
@@ -69,7 +69,7 @@ class PipelineTest {
             .go()
 
         assertNotNull( statistic )
-        assertEquals( "Assert that we successfully loaded ", statistic.name, "src/test/resources/titanic.csv" )
+        assertEquals( "Assert that we successfully loaded ", statistic.name, "titanic.csv" )
         assertEquals( "Assert that we successfully loaded all male passengers", 185, statistic.loaded )
         assertEquals( "Assert that we rejected non-male passengers", 233, statistic.rejections )
         assertEquals( "Assert the rejection category", 233, statistic.getRejections(RejectionCategory.IGNORE_ROW) )
@@ -77,7 +77,7 @@ class PipelineTest {
 
     @Test
     public void testSimpleGroupBy() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv").into()
             .groupBy("Sex")
             .addStep("Assert groupBy(Sex)") { Map row ->
                 assertEquals(266, row.male?.size())
@@ -92,7 +92,7 @@ class PipelineTest {
 
     @Test
     public void testMultipleGroupBy() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv").into()
             .asInt("Age")
             .filter() { Map row ->
                 row.Age ? row.Age < 20 : false
@@ -125,7 +125,7 @@ class PipelineTest {
 
     @Test
     public void testEmptyGroupBy() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv").into()
             .filter([Sex: 'K'])
             .groupBy("Sex")
             .addStep("Assert groupBy(Sex)") { Map row ->
@@ -190,7 +190,7 @@ class PipelineTest {
 
     @Test
     public void renameFields() {
-        csv("src/test/resources/titanic.csv")
+        csv("src/test/resources/titanic.csv").into()
             .addStep("Test Sex Exists") { Map row ->
                 assertTrue("Assert row.Sex exists", row.containsKey("Sex"))
                 assertTrue("Assert row.Age exists", row.containsKey("Age"))
@@ -207,7 +207,7 @@ class PipelineTest {
 
     @Test
     public void testAddField() {
-        csv("src/test/resources/titanic.csv")
+        csv("src/test/resources/titanic.csv").into()
             .addField("survived") { Map row ->
                 return true
             }
@@ -221,7 +221,7 @@ class PipelineTest {
     @Test
     public void testFillDownBy() {
         int count = 0
-        csv("src/test/resources/fill_down.csv")
+        csv("src/test/resources/fill_down.csv").into()
             .addStep("Assert fields are missing data.") { Map row ->
                 if( !row.first_name ) {
                     count++
@@ -248,7 +248,7 @@ class PipelineTest {
 
     @Test
     public void testBranch() {
-        csv("src/test/resources/titanic.csv")
+        csv("src/test/resources/titanic.csv").into()
             .branch { Pipeline pipeline ->
                 return pipeline.filter([Sex: "female"])
                     .addStep("Verify sex was filtered out") { Map row ->
@@ -266,7 +266,7 @@ class PipelineTest {
 
     @Test
     public void testBranchWithGroupBy() {
-        csv("src/test/resources/titanic.csv")
+        csv("src/test/resources/titanic.csv").into()
             .branch { Pipeline p ->
                 return p.groupBy("Sex", "Pclass").addStep { Map row ->
                     assertNotNull( row["male"] )
@@ -379,17 +379,18 @@ class PipelineTest {
         String message = null;
         int actualCount = 0;
         int expectedCount = 0;
-        LoadStatistic stats = http("http://api.open-notify.org/astros.json").inject { Map json ->
-            expectedCount = json.number
-            message = json.message
-            json.people
-        }.addStep("assert astros in space") { Map row ->
-            actualCount++
-            // assert that we received the data we expected, but we can't really test anything because this will change over time
-            assertNotNull( row.name )
-            assertNotNull( row.craft )
-            return row
-        }.go()
+        LoadStatistic stats = http("http://api.open-notify.org/astros.json").into()
+            .inject { Map json ->
+                expectedCount = json.number
+                message = json.message
+                json.people
+            }.addStep("assert astros in space") { Map row ->
+                actualCount++
+                // assert that we received the data we expected, but we can't really test anything because this will change over time
+                assertNotNull( row.name )
+                assertNotNull( row.craft )
+                return row
+            }.go()
 
         assertNotNull( "Message should be non-null if we called the service", message )
         assertEquals( "success", message )
@@ -499,7 +500,7 @@ class PipelineTest {
 
     @Test
     public void testHeaderless() {
-        LoadStatistic stats = csv("src/test/resources/headerless.csv", "|", ["Date", "status", "client", "server", "url", "length", "thread", "userAgent", "referer"])
+        LoadStatistic stats = csv("src/test/resources/headerless.csv", "|", ["Date", "status", "client", "server", "url", "length", "thread", "userAgent", "referer"]).into()
             .addStep("Assert Columns Exist") { Map row->
                 assertNotNull( row.status )
                 assertNotNull( row.Date )
@@ -533,7 +534,7 @@ class PipelineTest {
 
     @Test
     public void testRagged() {
-        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
+        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",").into()
             .addStep("Assert Row") { Map row ->
                 assert row.containsKey("assignment")
                 switch(row.rank) {
@@ -563,7 +564,7 @@ class PipelineTest {
         try {
             from(people).save(tmp.absolutePath, "|").go()
 
-            csv(tmp.absolutePath, "|")
+            csv(tmp.absolutePath, "|").into()
                 .addStep("assert 4 columns") { Map row ->
                     assert row.size() == 4
                 }.go()
@@ -574,7 +575,7 @@ class PipelineTest {
 
     @Test
     public void testEscaping() {
-        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
+        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",").into()
             .addStep("Test Escaping") { Map row ->
                 switch(row.rank) {
                     case "Captain":
@@ -600,7 +601,7 @@ class PipelineTest {
 
     @Test
     public void testDefaultValues() {
-        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
+        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",").into()
             .addStep("Assert null exists") { Map row ->
                 if( ['Captain', 'Private First Class'].contains( row.rank ) ) {
                     assert row.assignment == null

@@ -54,7 +54,7 @@ Here is how to get gratum started up in your shell:
     groovy:000> Grape.grab(group: 'com.github.chubbard', module:'gratum')
     groovy:000> import gratum.etl.*
     groovy:000> import static gratum.source.CsvSource.*
-    groovy:000> csv('sample.csv').go
+    groovy:000> csv('sample.csv').into().go
 
 But, to make it easier to get started you'll want to add the following to your 
 `$HOME/.groovy/groovysh.rc` file:
@@ -79,6 +79,7 @@ But, to make it easier to get started you'll want to add the following to your
             [ name: 'Sue', gender: 'Male'],
             [ name: 'Jenny', gender: 'Female']
         ]).
+        into().
         filter([gender: 'Female']).
         go()
 
@@ -96,7 +97,7 @@ That should produce the following:
     
 #### Filter using a closure
 
-    csv('bank_balance.csv').asDouble('amount').filter { Map row -> row.amount > 500 }.go
+    csv('bank_balance.csv').into().asDouble('amount').filter { Map row -> row.amount > 500 }.go
     
 In the above we load a file named bank_balance.csv then we convert the column `amount` 
 to a double value.  Then we filter on `amount` for all rows containing an `amount` 
@@ -112,6 +113,7 @@ greater than 500.
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
+       into().
        filter { Map row -> row.age > 50 }.
        sort('age').
        printRow().
@@ -135,6 +137,7 @@ method takes in a collection as the source for the row data.
             [ name: 'Sue', gender: 'Male'],
             [ name: 'Jenny', gender: 'Female']
         ]).
+       into().
        addStep { Map row ->
            println( row )
            return row
@@ -166,6 +169,7 @@ is the example for how to reject a row:
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
+       into().
        addStep { Map row ->
           return row.gender == 'Female' ? row : null 
        }.
@@ -187,6 +191,7 @@ method we can specify more detail about why a row was rejected.
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
+       into().
        addStep { Map row ->
           return row.gender == 'Female' ? row : reject("Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
        }.
@@ -210,6 +215,7 @@ identify where in the pipeline a rejection occurs.
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
+       into().
        addStep('Filter by Gender = Female') { Map row ->
           return row.gender == 'Female' ? row : reject("Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
        }.
@@ -232,6 +238,7 @@ with the `onRejection` method.  Here is an example:
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
+        into().
         filter( gender: 'Male' ).
         onRejection { Pipeline rejections ->
             rejections.save( 'rejections.csv', '|')
@@ -268,6 +275,7 @@ amount of time used while processing the `Source`, step timings, or rejections b
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
+        into().
         filter( gender: 'Male' ).
         go()
     println( stats ) 
@@ -376,6 +384,8 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 
 [csv](https://chubbard.github.io/gratum/gratum/source/CsvSource.html)
 
+[xlsx](https://chubbard.github.io/gratum/gratum/source/XlsxSource.html)
+
 [collection](https://chubbard.github.io/gratum/gratum/source/CollectionSource.html)
 
 [zip](https://chubbard.github.io/gratum/gratum/source/ZipSource.html)
@@ -384,5 +394,6 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 
 [jdbc](https://chubbard.github.io/gratum/gratum/source/JdbcSource.html)
 
+[]()
 
     

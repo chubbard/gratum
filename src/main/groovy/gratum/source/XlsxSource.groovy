@@ -1,6 +1,5 @@
 package gratum.source
 
-import gratum.etl.LoadStatistic
 import gratum.etl.Pipeline
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.CellType
@@ -10,9 +9,8 @@ import org.apache.poi.ss.usermodel.Sheet
 import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.ss.usermodel.WorkbookFactory
 
-class XlsxSource implements Source {
+class XlsxSource extends AbstractSource {
 
-    String name
     File excelFile
     InputStream stream
     String sheet
@@ -25,8 +23,8 @@ class XlsxSource implements Source {
 
 
     XlsxSource(File excelFile, String sheet = null) {
-        this.excelFile = excelFile
         this.name = excelFile.name
+        this.excelFile = excelFile
         this.sheet = sheet
     }
 
@@ -36,13 +34,6 @@ class XlsxSource implements Source {
 
     public static XlsxSource xlsx( File file, String sheet = null ) {
         return new XlsxSource( file, sheet )
-    }
-
-    public LoadStatistic attach( Closure<Pipeline> setup ) {
-        Pipeline pipeline = new Pipeline( name )
-        pipeline.src = this
-        Pipeline r = setup( pipeline )
-        r.go()
     }
 
     @Override
