@@ -34,6 +34,14 @@ class CollectionSource extends AbstractSource {
         }
     }
 
+    public static CollectionSource of( Map... src ) {
+        return new CollectionSource( src.toList() )
+    }
+
+    public static CollectionSource of( Collection<Map> src ) {
+        return new CollectionSource( src )
+    }
+
     public static Pipeline from( Map... src) {
         Pipeline pipeline = new Pipeline("Array(${src.size()})")
         pipeline.src = new CollectionSource( src.toList() )
