@@ -1,6 +1,7 @@
 package gratum.etl
 
 import gratum.csv.CSVFile
+import gratum.csv.HaltPipelineException
 import gratum.source.ChainedSource
 import gratum.source.ClosureSource
 import gratum.source.Source

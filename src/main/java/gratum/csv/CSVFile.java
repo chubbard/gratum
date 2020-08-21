@@ -1,6 +1,6 @@
 package gratum.csv;
 
-import gratum.etl.HaltPipelineException;
+import gratum.csv.HaltPipelineException;
 import gratum.util.Utilities;
 import org.apache.commons.io.input.BOMInputStream;
 
