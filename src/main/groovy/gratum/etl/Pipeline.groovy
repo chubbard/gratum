@@ -868,10 +868,10 @@ public class Pipeline {
     public Pipeline limit(long limit) {
         int current = 0
         this.addStep("Limit(${limit})") { Map row ->
+            current++
             if( current > limit ) {
                 return reject("Over the maximum limit of ${limit}", RejectionCategory.IGNORE_ROW)
             }
-            current++
             return row
         }
     }

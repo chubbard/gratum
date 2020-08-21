@@ -656,4 +656,13 @@ class PipelineTest {
         }
         .go()
     }
+
+    @Test
+    public void testLimit() {
+        LoadStatistic stat = from( people ).limit(3).go()
+
+        assert stat.loaded == 3
+        assert stat.rejections == 2
+        assert stat.rejectionsByCategory[RejectionCategory.IGNORE_ROW] == 2
+    }
 }
