@@ -662,6 +662,15 @@ class PipelineTest {
         LoadStatistic stat = from( people ).limit(3).go()
 
         assert stat.loaded == 3
+        assert stat.rejections == 0
+//        assert stat.rejectionsByCategory[RejectionCategory.IGNORE_ROW] == 2
+    }
+
+    @Test
+    public void testLimitWithoutHalt() {
+        LoadStatistic stat = from(people).limit(3, false).go()
+
+        assert stat.loaded == 3
         assert stat.rejections == 2
         assert stat.rejectionsByCategory[RejectionCategory.IGNORE_ROW] == 2
     }
