@@ -858,6 +858,25 @@ public class Pipeline {
     }
 
     /**
+     * Limit the number of rows you take from a source to an upper bound.  After the upper bound is hit it rejects
+     * everything else.  All steps above the limit will be executed for all rows.  All steps preceeding the limit
+     * will only process limit number of rows.
+     *
+     * @param limit An upper limit on the number of rows this pipeline will process.
+     * @return A pipeline where only limit number of rows will be sent to down stream steps.
+     */
+    public Pipeline limit(long limit) {
+        int current = 0
+        this.addStep("Limit(${limit})") { Map row ->
+            if( current > limit ) {
+                return reject("Over the maximum limit of ${limit}", RejectionCategory.IGNORE_ROW)
+            }
+            current++
+            return row
+        }
+    }
+
+    /**
      * Start processing rows from the source of the pipeline, and add a closure onto after chain.
      * @param closure closure to add to the after chain.
      */
