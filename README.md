@@ -14,14 +14,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '0.8.0'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '0.8.1'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>0.8.0</version>
+        <version>0.8.1</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -339,6 +339,8 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 [unique](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#unique(java.lang.String))
 
+[limit](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#limit(long,boolean))
+
 ### Branching
 
 [branch](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#branch(Closure%3CVoid%3E))
@@ -384,5 +386,5 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 
 [jdbc](https://chubbard.github.io/gratum/gratum/source/JdbcSource.html)
 
-
+[xlsx](https://chubbard.github.io/gratum/gratum/source/XlsxSource.html)
     
