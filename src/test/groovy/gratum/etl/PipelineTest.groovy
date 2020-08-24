@@ -34,7 +34,7 @@ class PipelineTest {
 
 
     @Test
-    public void testSimpleFilter() {
+    void testSimpleFilter() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .filter([Sex:"male"])
             .onRejection { Pipeline rej ->
@@ -54,7 +54,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testSimpleFilterClosure() {
+    void testSimpleFilterClosure() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .filter() { Map row ->
                 return row.Age && (row.Age as double) < 30.0
@@ -76,7 +76,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testSimpleGroupBy() {
+    void testSimpleGroupBy() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .groupBy("Sex")
             .addStep("Assert groupBy(Sex)") { Map row ->
@@ -91,7 +91,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testMultipleGroupBy() {
+    void testMultipleGroupBy() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .asInt("Age")
             .filter() { Map row ->
@@ -124,7 +124,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testEmptyGroupBy() {
+    void testEmptyGroupBy() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .filter([Sex: 'K'])
             .groupBy("Sex")
@@ -141,12 +141,12 @@ class PipelineTest {
     }
 
     @Test
-    public void testIntersect() {
+    void testIntersect() {
 
     }
 
     @Test
-    public void testConcat() {
+    void testConcat() {
         LoadStatistic stats = from([
                 [name: 'Chuck', atBats: '200', hits: '100', battingAverage: '0.5'],
                 [name: 'Sam', atBats: '300', hits: '125', battingAverage: '0.4166']
@@ -160,7 +160,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testTrim() {
+    void testTrim() {
         LoadStatistic stats = from([
                 [firstName: 'Roger   ', lastName: '  Smith'],
                 [firstName: '    Jill', lastName: 'Belcher'],
@@ -168,28 +168,32 @@ class PipelineTest {
         ])
         .trim()
         .addStep("Assert all values were trimmed") { Map row ->
-            assertFalse( row.firstName.contains(' '))
-            assertFalse( row.firstName.contains('\t'))
-            assertFalse( row.lastName.contains(' '))
-            assertFalse( row.lastName.contains('\t'))
+            assert !row.firstName.contains(' ')
+            assert !row.firstName.contains('\t')
+            assert !row.lastName.contains(' ')
+            assert !row.lastName.contains('\t')
             return row
         }
         .go()
+
+        assert stats.loaded == 3
     }
 
     @Test
-    public void testSetField() {
+    void testSetField() {
         LoadStatistic stats = from( people )
                 .setField("completed", true)
                 .addStep("Assert completed is defined") { Map row ->
-                    assertTrue( row.completed )
+                    assert row.completed
                     return row
                 }
                 .go()
+
+        assert stats.loaded == 5
     }
 
     @Test
-    public void renameFields() {
+    void renameFields() {
         csv("src/test/resources/titanic.csv")
             .addStep("Test Sex Exists") { Map row ->
                 assertTrue("Assert row.Sex exists", row.containsKey("Sex"))
@@ -206,7 +210,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testAddField() {
+    void testAddField() {
         csv("src/test/resources/titanic.csv")
             .addField("survived") { Map row ->
                 return true
@@ -219,22 +223,22 @@ class PipelineTest {
     }
 
     @Test
-    public void testFillDownBy() {
+    void testFillDownBy() {
         int count = 0
         csv("src/test/resources/fill_down.csv")
             .addStep("Assert fields are missing data.") { Map row ->
                 if( !row.first_name ) {
                     count++
-                    assertTrue("Assert first_name is empty or null", !row.first_anem)
-                    assertTrue("Assert last_name is empty or null", !row.last_name)
-                    assertTrue("Assert date_of_birth is empty or null", !row.date_of_birth)
+                    assert !row.first_anem
+                    assert !row.last_name
+                    assert !row.date_of_birth
                 }
                 return row
             }
             .fillDownBy { Map row, Map previousRow ->
                 return row.id == previousRow.id
             }
-            .addStep("Assert values were filled down") { Map row ->
+            .addStep("Assert values were filled down") { Map<String,Object> row ->
                 row.each { String key, Object value ->
                     assertNotNull( "Assert ${key} is filled in with a value", value )
                     assertTrue("Assert that ${key} is non-empty", !(value as String).isEmpty() )
@@ -247,7 +251,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testBranch() {
+    void testBranch() {
         csv("src/test/resources/titanic.csv")
             .branch { Pipeline pipeline ->
                 return pipeline.filter([Sex: "female"])
@@ -265,7 +269,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testBranchWithGroupBy() {
+    void testBranchWithGroupBy() {
         csv("src/test/resources/titanic.csv")
             .branch { Pipeline p ->
                 return p.groupBy("Sex", "Pclass").addStep { Map row ->
@@ -293,7 +297,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testInnerJoin() {
+    void testInnerJoin() {
         int rejections = 0
         LoadStatistic stats = from(people).join( from(hobbies), ['id'] )
             .addStep("Assert hobbies") { Map row ->
@@ -315,7 +319,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testLeftJoin() {
+    void testLeftJoin() {
         LoadStatistic stats = from(people).join( from(hobbies), ['id'], true )
             .addStep("Assert optional hobbies") { Map row ->
                 if( row.id < 5 ) {
@@ -332,11 +336,11 @@ class PipelineTest {
     }
 
     @Test
-    public void testSort() {
-        String lastHobby;
+    void testSort() {
+        String lastHobby
         from(hobbies).sort("hobby").addStep("Assert order is increasing") { Map row ->
             if( lastHobby ) assertTrue( "Assert ${lastHobby} < ${row.hobby}", lastHobby.compareTo( row.hobby ) <= 0 )
-            lastHobby = row.hobby;
+            lastHobby = row.hobby
             return row
         }.go()
 
@@ -344,7 +348,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testUnique() {
+    void testUnique() {
         LoadStatistic stats = from(hobbies).unique("id")
         .go()
 
@@ -354,7 +358,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testRejections() {
+    void testRejections() {
         List<Map> rejections = []
 
         LoadStatistic stats = from(hobbies)
@@ -375,10 +379,10 @@ class PipelineTest {
     }
 
     @Test(timeout = 5000L)
-    public void testHttp() {
-        String message = null;
-        int actualCount = 0;
-        int expectedCount = 0;
+    void testHttp() {
+        String message = null
+        int actualCount = 0
+        int expectedCount = 0
         LoadStatistic stats = http("http://api.open-notify.org/astros.json").inject { Map json ->
             expectedCount = json.number
             message = json.message
@@ -401,7 +405,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testAsDate() {
+    void testAsDate() {
         LoadStatistic stats = from([
                 [name: 'Chuck', dateOfBirth: '1992-08-11'],
                 [name: 'Sam', dateOfBirth: '1980-04-12'],
@@ -416,7 +420,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testAsInt() {
+    void testAsInt() {
         LoadStatistic stats = from([
                 [name: 'Chuck', atBats: '200', hits: '100'],
                 [name: 'Sam', atBats: '300', hits: '125'],
@@ -431,7 +435,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testAsDouble() {
+    void testAsDouble() {
         LoadStatistic stats = from([
                 [name: 'Chuck', atBats: '200', hits: '100', battingAverage: '0.5'],
                 [name: 'Sam', atBats: '300', hits: '125', battingAverage: '0.4166'],
@@ -446,7 +450,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testAsBoolean() {
+    void testAsBoolean() {
         from([
                 [name: 'Chuck', member: 'Y'],
                 [name: 'Sue', member: 'y'],
@@ -460,8 +464,8 @@ class PipelineTest {
         ])
         .asBoolean('member')
         .addStep("Assert all are boolean true") { Map row ->
-            assertTrue( row.member instanceof Boolean )
-            assertTrue( row.member )
+            assert row.member instanceof Boolean
+            assert row.member
             return row
         }.go()
 
@@ -479,14 +483,14 @@ class PipelineTest {
         .asBoolean('member')
         .addStep("Assert all are boolean true") { Map row ->
             assertTrue( row.member instanceof Boolean )
-            assertFalse( row.member )
+            assert row.member != true
             return row
         }.go()
 
     }
 
     @Test
-    public void testSort2() {
+    void testSort2() {
         LoadStatistic stats = from( people )
                 .filter([gender: 'male'])
                 .sort('age')
@@ -498,16 +502,16 @@ class PipelineTest {
     }
 
     @Test
-    public void testHeaderless() {
+    void testHeaderless() {
         LoadStatistic stats = csv("src/test/resources/headerless.csv", "|", ["Date", "status", "client", "server", "url", "length", "thread", "userAgent", "referer"])
             .addStep("Assert Columns Exist") { Map row->
                 assertNotNull( row.status )
                 assertNotNull( row.Date )
                 assertNotNull( row.client )
                 assertNotNull( row.server )
-                assertFalse( row.Date.isEmpty() )
-                assertFalse( row.client.isEmpty() )
-                assertFalse( row.server.isEmpty() )
+                assert !row.Date.isEmpty()
+                assert !row.client.isEmpty()
+                assert !row.server.isEmpty()
                 assertEquals(9, row.size())
                 return row
             }
@@ -519,7 +523,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testClip() {
+    void testClip() {
         LoadStatistic stat = from(people).clip("name", "gender").addStep("Test resulting rows") { Map row ->
             assertEquals( 2, row.size() )
             assertTrue( row.containsKey("name") )
@@ -532,7 +536,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testRagged() {
+    void testRagged() {
         LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
             .addStep("Assert Row") { Map row ->
                 assert row.containsKey("assignment")
@@ -558,7 +562,7 @@ class PipelineTest {
     }
 
     @Test
-    public void testSave() {
+    void testSave() {
         File tmp = File.createTempFile("people", ".csv")
         try {
             from(people).save(tmp.absolutePath, "|").go()
@@ -566,6 +570,7 @@ class PipelineTest {
             csv(tmp.absolutePath, "|")
                 .addStep("assert 4 columns") { Map row ->
                     assert row.size() == 4
+                    return row
                 }.go()
         } finally {
             tmp.delete()
