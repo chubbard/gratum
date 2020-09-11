@@ -5,6 +5,7 @@ import gratum.csv.HaltPipelineException
 import gratum.source.ChainedSource
 import gratum.source.ClosureSource
 import gratum.source.Source
+import groovy.json.JsonOutput
 
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -631,6 +632,41 @@ public class Pipeline {
 
         after {
             out.close()
+        }
+        return this
+    }
+
+    /**
+     * Write out the rows produced to JSON file.
+     * @param filename the filename to save the JSON into.
+     * @param columns Optional list of columns to use clip out certain columns you want to include in the output.  If left
+     * off all columns are included.
+     * @return A Pipeline unmodified.
+     */
+    public Pipeline json(String filename, List<String> columns = null) {
+        File file = new File( filename )
+        Writer writer = file.newWriter("UTF-8")
+        writer.writeLine("[")
+        if( columns ) {
+            addStep("Json to ${file.name}") { Map row ->
+                String json = JsonOutput.toJson( row.subMap( columns ) )
+                writer.write( json )
+                writer.write(",\n")
+                return row
+            }
+        } else {
+            addStep("Json to ${file.name}") { Map row ->
+                String json = JsonOutput.toJson( row )
+                writer.write( json )
+                writer.write(",\n")
+                return row
+            }
+        }
+
+        after {
+            writer.write("\n]")
+            writer.flush()
+            writer.close()
         }
         return this
     }
