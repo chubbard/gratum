@@ -14,14 +14,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '0.8.0'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '0.8.1'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>0.8.0</version>
+        <version>0.8.1</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -79,7 +79,6 @@ But, to make it easier to get started you'll want to add the following to your
             [ name: 'Sue', gender: 'Male'],
             [ name: 'Jenny', gender: 'Female']
         ]).
-        into().
         filter([gender: 'Female']).
         go()
 
@@ -113,7 +112,6 @@ greater than 500.
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
-       into().
        filter { Map row -> row.age > 50 }.
        sort('age').
        printRow().
@@ -137,7 +135,6 @@ method takes in a collection as the source for the row data.
             [ name: 'Sue', gender: 'Male'],
             [ name: 'Jenny', gender: 'Female']
         ]).
-       into().
        addStep { Map row ->
            println( row )
            return row
@@ -169,7 +166,6 @@ is the example for how to reject a row:
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
-       into().
        addStep { Map row ->
           return row.gender == 'Female' ? row : null 
        }.
@@ -191,7 +187,6 @@ method we can specify more detail about why a row was rejected.
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
-       into().
        addStep { Map row ->
           return row.gender == 'Female' ? row : reject("Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
        }.
@@ -215,7 +210,6 @@ identify where in the pipeline a rejection occurs.
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
-       into().
        addStep('Filter by Gender = Female') { Map row ->
           return row.gender == 'Female' ? row : reject("Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
        }.
@@ -238,7 +232,6 @@ with the `onRejection` method.  Here is an example:
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
-        into().
         filter( gender: 'Male' ).
         onRejection { Pipeline rejections ->
             rejections.save( 'rejections.csv', '|')
@@ -275,7 +268,6 @@ amount of time used while processing the `Source`, step timings, or rejections b
             [ name: 'Sue', gender: 'Male', age: 65],
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
-        into().
         filter( gender: 'Male' ).
         go()
     println( stats ) 
@@ -347,6 +339,8 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 [unique](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#unique(java.lang.String))
 
+[limit](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#limit(long,boolean))
+
 ### Branching
 
 [branch](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#branch(Closure%3CVoid%3E))
@@ -393,7 +387,4 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 [http/https](https://chubbard.github.io/gratum/gratum/source/HttpSource.html)
 
 [jdbc](https://chubbard.github.io/gratum/gratum/source/JdbcSource.html)
-
-[]()
-
     

@@ -1,13 +1,27 @@
 package gratum.source
 
 import gratum.etl.Pipeline
+import org.apache.poi.openxml4j.opc.OPCPackage
+import org.apache.poi.openxml4j.opc.PackageAccess
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.CellType
+import org.apache.poi.ss.usermodel.DataFormatter
 import org.apache.poi.ss.usermodel.DateUtil
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.ss.usermodel.Sheet
 import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.ss.usermodel.WorkbookFactory
+import org.apache.poi.util.XMLHelper
+import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable
+import org.apache.poi.xssf.eventusermodel.XSSFReader
+import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler
+import org.apache.poi.xssf.model.StylesTable
+import org.apache.poi.xssf.usermodel.XSSFComment
+import org.xml.sax.InputSource
+import org.xml.sax.XMLReader
+import org.xml.sax.ContentHandler
+
+import javax.xml.parsers.ParserConfigurationException
 
 class XlsxSource extends AbstractSource {
 
@@ -36,8 +50,45 @@ class XlsxSource extends AbstractSource {
         return new XlsxSource( file, sheet )
     }
 
+    public LoadStatistic attach( Closure<Pipeline> setup ) {
+        Pipeline pipeline = new Pipeline( name )
+        pipeline.src = this
+        Pipeline r = setup( pipeline )
+        r.go()
+    }
+
     @Override
     void start(Pipeline pipeline) {
+        OPCPackage ocp = null
+        try {
+            ocp = OPCPackage.open( stream ?: excelFile.newInputStream() )
+
+            ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(ocp)
+            XSSFReader xssfReader = new XSSFReader(ocp)
+            StylesTable styles = xssfReader.getStylesTable()
+            XSSFReader.SheetIterator iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData()
+            while( iter.hasNext() ) {
+                InputStream is = iter.next()
+                String name = iter.getSheetName()
+                if( name == this.sheet || this.sheet == null) {
+                    DataFormatter formatter = new DataFormatter();
+                    InputSource sheetSource = new InputSource(is);
+                    try {
+                        XMLReader sheetParser = XMLHelper.newXMLReader();
+                        XslxSheetHandler sheetHandler = new XslxSheetHandler( pipeline )
+                        ContentHandler handler = new XSSFSheetXMLHandler(styles, null, strings, sheetHandler, formatter, false)
+                        sheetParser.setContentHandler(handler)
+                        sheetParser.parse(sheetSource);
+                    } catch(ParserConfigurationException e) {
+                        throw new RuntimeException("SAX parser configuration error: ${e.getMessage()}", e)
+                    }
+                    if( sheet == null ) sheet = name // prevent anymore sheets
+                }
+            }
+        } finally {
+            ocp?.close()
+        }
+/*
         Workbook wb = null
         if( excelFile ) wb = WorkbookFactory.create( excelFile )
         if( stream ) wb = WorkbookFactory.create( stream )
@@ -90,5 +141,50 @@ class XlsxSource extends AbstractSource {
         } finally {
             wb.close()
         }
+*/
     }
+
+    class XslxSheetHandler implements XSSFSheetXMLHandler.SheetContentsHandler {
+
+        int headerRow = -1;
+        List<String> headers
+        Pipeline pipeline
+        Map current
+        int col = 0
+        int currentRow = 0
+
+        XslxSheetHandler(Pipeline pipeline) {
+            this.pipeline = pipeline
+        }
+
+        @Override
+        void startRow(int rowNum) {
+            if( headers == null ) {
+                headers = []
+                headerRow = rowNum
+            } else {
+                current = [:]
+            }
+            currentRow = rowNum
+            col = 0
+        }
+
+        @Override
+        void endRow(int rowNum) {
+            if( rowNum != headerRow ) {
+                pipeline.process( current, rowNum)
+            }
+        }
+
+        @Override
+        void cell(String cellReference, String formattedValue, XSSFComment comment) {
+            if( currentRow != headerRow ) {
+                current[ headers[col] ] = formattedValue
+            } else {
+                headers.add( formattedValue )
+            }
+            col++
+        }
+    }
+
 }

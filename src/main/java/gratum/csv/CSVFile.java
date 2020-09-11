@@ -1,5 +1,6 @@
 package gratum.csv;
 
+import gratum.csv.HaltPipelineException;
 import gratum.util.Utilities;
 import org.apache.commons.io.input.BOMInputStream;
 
@@ -83,14 +84,16 @@ public class CSVFile {
 
         try {
             List<String> row = null;
-            while( (row = readNext(lineNumberReader)) != null ) {
-                boolean stop = callback.processRow( columnHeaders, row );
-                if( stop ) {
+            while ((row = readNext(lineNumberReader)) != null) {
+                boolean stop = callback.processRow(columnHeaders, row);
+                if (stop) {
                     return lines;
                 }
                 lines++;
             }
             return lines;
+        } catch( HaltPipelineException ex ) {
+            throw ex;
         } catch( RuntimeException ex ) {
             throw new RuntimeException( "Could not parse line " + lines + ": " +  lastLine, ex );
         } catch( Exception ex ) {

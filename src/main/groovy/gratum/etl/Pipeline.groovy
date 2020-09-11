@@ -2,9 +2,11 @@ package gratum.etl
 
 import gratum.csv.CSVFile
 import gratum.source.AbstractSource
+import gratum.csv.HaltPipelineException
 import gratum.source.ChainedSource
 import gratum.source.ClosureSource
 import gratum.source.Source
+import groovy.json.JsonOutput
 
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -636,6 +638,41 @@ public class Pipeline {
     }
 
     /**
+     * Write out the rows produced to JSON file.
+     * @param filename the filename to save the JSON into.
+     * @param columns Optional list of columns to use clip out certain columns you want to include in the output.  If left
+     * off all columns are included.
+     * @return A Pipeline unmodified.
+     */
+    public Pipeline json(String filename, List<String> columns = null) {
+        File file = new File( filename )
+        Writer writer = file.newWriter("UTF-8")
+        writer.writeLine("[")
+        if( columns ) {
+            addStep("Json to ${file.name}") { Map row ->
+                String json = JsonOutput.toJson( row.subMap( columns ) )
+                writer.write( json )
+                writer.write(",\n")
+                return row
+            }
+        } else {
+            addStep("Json to ${file.name}") { Map row ->
+                String json = JsonOutput.toJson( row )
+                writer.write( json )
+                writer.write(",\n")
+                return row
+            }
+        }
+
+        after {
+            writer.write("\n]")
+            writer.flush()
+            writer.close()
+        }
+        return this
+    }
+
+    /**
      * Prints the values of the given columns for each row to the console, or all columns if no columns are given.
      * @param columns The names of the columns to print to the console
      * @return this Pipeline
@@ -859,20 +896,50 @@ public class Pipeline {
     }
 
     /**
+     * Limit the number of rows you take from a source to an upper bound.  After the upper bound is hit it will either
+     * stop processing rows immediately or continue processing rows but simply reject the remaining based on if halt
+     * is true or false, respectively.  If it's rejected rows then all steps above the limit will be executed for
+     * all rows.  All steps after the limit operation will only process limit number of rows.
+     *
+     * @param limit An upper limit on the number of rows this pipeline will process.
+     * @param halt after limit has been exceeded stop processing any additional rows (halt = true),
+     *              or continue to process rows but simply reject all rows (halt = false).
+     * @return A pipeline where only limit number of rows will be sent to down stream steps.
+     */
+    public Pipeline limit(long limit, boolean halt = true) {
+        int current = 0
+        this.addStep("Limit(${limit})") { Map row ->
+            current++
+            if( current > limit ) {
+                if( halt ) {
+                    throw new HaltPipelineException("Over the maximum limit of ${limit}")
+                } else {
+                    return reject("Over the maximum limit of ${limit}", RejectionCategory.IGNORE_ROW)
+                }
+            }
+            return row
+        }
+    }
+
+    /**
      * Start processing rows from the source of the pipeline, and add a closure onto after chain.
      * @param closure closure to add to the after chain.
      */
     public void start(Closure closure = null) {
-        if( closure ) addStep("tail", closure)
+        try {
+            if (closure) addStep("tail", closure)
 
-        statistic.start = System.currentTimeMillis()
-        src?.start(this)
-        statistic.end = System.currentTimeMillis()
+            statistic.start = System.currentTimeMillis()
+            src?.start(this)
+            statistic.end = System.currentTimeMillis()
 
-        statistic.timed("Done Callbacks") {
-            doneChain.each { Closure current ->
-                current()
+            statistic.timed("Done Callbacks") {
+                doneChain.each { Closure current ->
+                    current()
+                }
             }
+        } catch( HaltPipelineException ex ) {
+            // ignore as we were asked to halt.
         }
         complete = true
     }
@@ -902,14 +969,16 @@ public class Pipeline {
             try {
                 boolean stop = statistic.timed(step.name) {
                     def ret = step.step(current)
-                    if (ret == null || ret instanceof Rejection ) {
-                        doRejections((Rejection)ret, current, step.name, lineNumber)
+                    if (ret == null || ret instanceof Rejection) {
+                        doRejections((Rejection) ret, current, step.name, lineNumber)
                         return true
                     }
                     current = ret
                     return false
                 }
                 if (stop) return false
+            } catch( HaltPipelineException ex ) {
+                throw ex
             } catch (Exception ex) {
                 throw new RuntimeException("Line ${lineNumber > 0 ? lineNumber : row}: Error encountered in step ${statistic.name}.${step.name}", ex)
             }
