@@ -247,7 +247,30 @@ public class CSVFile {
     }
 
     private CharSequence escape(String source) {
-        return "\"" + source.replace("\"", "\\\"") + "\"";
+        StringBuilder builder = new StringBuilder( source.length() + 2 );
+        builder.append('"');
+        int lastIndex = 0;
+        for( int i = 0; i < source.length(); i++ ) {
+            char c = source.charAt(i);
+            switch( c ) {
+                case '"':
+                    builder.append( source, lastIndex, i );
+                    builder.append("\\\"");
+                    lastIndex = i + 1;
+                    break;
+                case '\n':
+                    builder.append( source, lastIndex, i );
+                    builder.append("\\n");
+                    lastIndex = i + 1;
+                    break;
+            }
+        }
+        if( lastIndex < source.length() ) {
+            builder.append( source.subSequence(lastIndex, source.length() ) );
+        }
+        builder.append('"');
+        return builder.toString();
+        //return "\"" + source.replace("\n", "\\n").replace("\"", "\\\"") + "\"";
     }
 
     public void flush() {
