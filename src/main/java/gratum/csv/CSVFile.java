@@ -5,22 +5,15 @@ import gratum.util.Utilities;
 import org.apache.commons.io.input.BOMInputStream;
 
 import java.io.*;
-import java.text.MessageFormat;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class CSVFile {
-
-    //    private static final String CSV_PATTERN = "(\"([^\"]*)\"|[^{0}]*){0}?";
-    private static final String CSV_PATTERN = "(\"(([^\\\"]??(\\\\\\\")?)*)\"|[^{0}]*){0}?";
 
     private File file;
     private Reader reader;
     private String separator;
     private PrintWriter writer;
     private String lastLine;
-    private Pattern linePattern;
 
     private int rows = 0;
     private List<String> columnHeaders;
@@ -34,21 +27,16 @@ public class CSVFile {
     public CSVFile(File file, String separator) {
         this.file = file;
         this.separator = separator;
-
-        linePattern = Pattern.compile(MessageFormat.format(CSV_PATTERN, Pattern.quote(separator)));
     }
 
     public CSVFile(Reader reader, String separator) {
         this.reader = reader;
         this.separator = separator;
-        linePattern = Pattern.compile(MessageFormat.format(CSV_PATTERN, Pattern.quote(separator)));
     }
 
     public CSVFile(PrintWriter out, String separator) {
         this.writer = out;
         this.separator = separator;
-
-        linePattern = Pattern.compile(MessageFormat.format(CSV_PATTERN, Pattern.quote(separator)));
     }
 
     public void setAllowDuplicateRows(boolean allowDuplicateRows) {
@@ -121,11 +109,12 @@ public class CSVFile {
         boolean stripQuotes = false;
         for( int i = 0; i < lastLine.length(); i++ ) {
             char currentChar = lastLine.charAt(i);
-
             if( currentChar == '"' ) {
-                if( !isEscaped(i) ) {
+                if( skipSeparator && isEscaped(i) ) {
+                    i++;
+                } else {
                     skipSeparator = !skipSeparator;
-                    stripQuotes = true;
+                    stripQuotes = stripQuotes || i == columnStart;
                 }
             } else if( !skipSeparator && sep == currentChar ) {
                 String content = stripQuotes ? lastLine.substring( columnStart + 1, i - 1 ) : lastLine.substring( columnStart, i );
@@ -144,35 +133,11 @@ public class CSVFile {
     }
 
     private boolean isEscaped(int i) {
-        int count = 0;
-        int j = 1;
-        while( i > j && lastLine.charAt(i - j) == '\\' ) {
-            count++;
-            j++;
-        }
-        return count % 2 == 1;
-    }
-
-    private List<String> parseColumnsWithRegEx() {
-        List<String> line = new ArrayList<String>();
-        Matcher matcher = linePattern.matcher(lastLine);
-        int current = 0;
-        while( current < lastLine.length() && matcher.find(current) ) {
-            if( matcher.group(2) !=null ) {
-                line.add( unescape(matcher.group(2)) );
-            } else if( matcher.group(1) != null ) {
-                line.add( unescape(matcher.group(1)) );
-            } else {
-                line.add( unescape(matcher.group(0)) );
-            }
-            current = matcher.end();
-        }
-
-        return line;
+        return i + 1 < lastLine.length() && lastLine.charAt(i+1) == '"';
     }
 
     private String unescape( String input ) {
-        return input.replace("\\n", "\n").replace("\\\"", "\"");
+        return input.replace("\\n", "\n").replace("\"\"", "\"");
     }
 
     public void write( Map row, String[] columnHeaders ) throws IOException {
@@ -233,8 +198,6 @@ public class CSVFile {
                 }
                 if( row[i] != null ) {
                     buffer.append( escape( format( row[i] ) ) );
-                }else {
-                    buffer.append( "\"\"" );
                 }
             }
             writer.println( buffer.toString() );
@@ -255,7 +218,7 @@ public class CSVFile {
             switch( c ) {
                 case '"':
                     builder.append( source, lastIndex, i );
-                    builder.append("\\\"");
+                    builder.append("\"\"");
                     lastIndex = i + 1;
                     break;
                 case '\n':
