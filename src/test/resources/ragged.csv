@@ -1,5 +1,5 @@
 name,rank,gender,comment,assignment
 Hank Gaston,Captain,Male,"This is a comment\nwith new lines",
 Charles Gambrell,Private,Male,"This is another comment\nwith new lines",Old River
-Linda Jules,Sergeant,Female,"\"This one has quotes\"",Lombok
+Linda Jules,Sergeant,Female,"""This one has quotes""",Lombok
 Ronald James,Private First Class,Male,"More comments\nwith newlines\nin them",
