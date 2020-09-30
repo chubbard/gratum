@@ -210,6 +210,7 @@ public class CSVFile {
     }
 
     private CharSequence escape(String source) {
+        if( source.isEmpty() ) return source;
         StringBuilder builder = new StringBuilder( source.length() + 2 );
         builder.append('"');
         int lastIndex = 0;
@@ -233,7 +234,6 @@ public class CSVFile {
         }
         builder.append('"');
         return builder.toString();
-        //return "\"" + source.replace("\n", "\\n").replace("\"", "\\\"") + "\"";
     }
 
     public void flush() {

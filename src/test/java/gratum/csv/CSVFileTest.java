@@ -165,21 +165,40 @@ public class CSVFileTest extends TestCase {
                 "comment"
         );
 
-        Object[] row = new Object[] {
+        List<Object[]> rows = new ArrayList<>();
+        rows.add(new Object[] {
                 "Charles \"Pinky\" Williams",
                 new Date(),
                 "I want to voice my opinion about the following things:\n1. Blah blah blah\n2.Blah Blah Blek\n3.Blah Blah Ahhhhhh Rah\nThank you!"
-        };
+        });
+        rows.add(new Object[] {
+                "Jill \"The Thrill\" Ryan",
+                "",
+                "I wish there were more family options"
+        });
+        rows.add( new Object[] {
+                "William \"Bill\" Taylor",
+                null,
+                "I would like more salad options."
+        });
 
         csv.setColumnHeaders(header);
         csv.write( header.toArray() );
-        csv.write( row );
+        rows.forEach( (s) -> {
+            try {
+                csv.write(s);
+            } catch (IOException e) {
+                throw new RuntimeException( e );
+            }
+        } );
         csv.flush();
         csv.close();
 
         String output = writer.toString();
         assertTrue( output.contains("\"name\"|\"date\"|\"comment\"") );
         assertTrue( output.contains("Charles \"\"Pinky\"\" Williams") );
+        assertTrue( output.contains("Ryan\"||")); // verify that it wrote out nothing for a blank string
+        assertTrue( output.contains("Taylor\"||")); // verify that it wrote out nothing for a null
         assertTrue( output.contains("\\n") );
     }
 }
