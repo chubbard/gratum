@@ -14,11 +14,24 @@ import static gratum.source.CollectionSource.*
 class PipelineTest {
 
     List<Map> people = [
-            [id: 1, name: 'Bill Rhodes', age: 53, gender: 'male'],
-            [id: 2, name: 'Cheryl Lipscome', age: 43, gender: 'female'],
-            [id: 3, name: 'Diana Rogers', age: 34, gender: 'female'],
-            [id: 4, name: 'Jack Lowland', age: 25, gender: 'male'],
-            [id: 5, name: 'Ginger Rogers', age: 83, gender: 'female']
+            [id: 1, name: 'Bill Rhodes', age: 53, gender: 'male', comment: """
+I had the single cheese burger.  It was juicy and well seasoned.  The fries 
+were on the soggy side and I had to wait for a while to get my milkshake.
+"""],
+            [id: 2, name: 'Cheryl Lipscome', age: 43, gender: 'female', comment: """
+I had the chicken salad.  It was delicious.  I would like more raisins next time.
+"""],
+            [id: 3, name: 'Diana Rogers', age: 34, gender: 'female', comment: """
+I had to wait a very long time for my cheeseburger, and when it came it didn't have
+cheese.  I had to send it back, but they got it right the second time.  The burger
+was good, and the fries were crispy and warm.
+"""],
+            [id: 4, name: 'Jack Lowland', age: 25, gender: 'male', comment: """
+I loved my burger and milkshake.
+"""],
+            [id: 5, name: 'Ginger Rogers', age: 83, gender: 'female', comment: """
+I had the chili dog and the onion rings, but I wish you had tater tots.
+"""]
     ]
 
     Collection<Map> hobbies = [
@@ -569,8 +582,9 @@ class PipelineTest {
             from(people).save(tmp.absolutePath, "|").go()
 
             csv(tmp.absolutePath, "|").into()
-                .addStep("assert 4 columns") { Map row ->
-                    assert row.size() == 4
+                .addStep("assert 5 columns") { Map row ->
+                    assert row.size() == 5
+                    assert row["comment"].contains("\n")
                     return row
                 }.go()
         } finally {
