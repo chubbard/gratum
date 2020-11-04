@@ -50,12 +50,20 @@ public class CsvSource extends AbstractSource {
         if( headers ) csvFile.setColumnHeaders( headers )
     }
 
-    public static CsvSource csv( String filename, String separator = ",", List<String> headers = null ) {
-        return new CsvSource( new File(filename), separator, headers )
+    public static CsvSource of(File file, String separator = ",") {
+        return new CsvSource( file, separator )
     }
 
-    public static CsvSource csv(String name, InputStream stream, String separator = ",", List<String> headers = null) {
-        return new CsvSource( new InputStreamReader(stream), separator, headers )
+    public static CsvSource of(String filename, String separator = ",") {
+        return of( new File( filename ), separator )
+    }
+
+    public static Pipeline csv( String filename, String separator = ",", List<String> headers = null ) {
+        return new CsvSource( new File(filename), separator, headers ).into()
+    }
+
+    public static Pipeline csv(String name, InputStream stream, String separator = ",", List<String> headers = null) {
+        return new CsvSource( new InputStreamReader(stream), separator, headers ).into()
     }
 
     @Override

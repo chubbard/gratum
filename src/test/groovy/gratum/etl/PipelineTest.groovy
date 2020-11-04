@@ -90,7 +90,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testSimpleGroupBy() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv").into()
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .groupBy("Sex")
             .addStep("Assert groupBy(Sex)") { Map row ->
                 assertEquals(266, row.male?.size())
@@ -105,7 +105,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testMultipleGroupBy() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv").into()
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .asInt("Age")
             .filter() { Map row ->
                 row.Age ? row.Age < 20 : false
@@ -138,7 +138,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testEmptyGroupBy() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv").into()
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .filter([Sex: 'K'])
             .groupBy("Sex")
             .addStep("Assert groupBy(Sex)") { Map row ->
@@ -207,7 +207,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void renameFields() {
-        csv("src/test/resources/titanic.csv").into()
+        csv("src/test/resources/titanic.csv")
             .addStep("Test Sex Exists") { Map row ->
                 assertTrue("Assert row.Sex exists", row.containsKey("Sex"))
                 assertTrue("Assert row.Age exists", row.containsKey("Age"))
@@ -224,7 +224,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testAddField() {
-        csv("src/test/resources/titanic.csv").into()
+        csv("src/test/resources/titanic.csv")
             .addField("survived") { Map row ->
                 return true
             }
@@ -238,7 +238,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
     @Test
     void testFillDownBy() {
         int count = 0
-        csv("src/test/resources/fill_down.csv").into()
+        csv("src/test/resources/fill_down.csv")
             .addStep("Assert fields are missing data.") { Map row ->
                 if( !row.first_name ) {
                     count++
@@ -265,7 +265,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testBranch() {
-        csv("src/test/resources/titanic.csv").into()
+        csv("src/test/resources/titanic.csv")
             .branch { Pipeline pipeline ->
                 return pipeline.filter([Sex: "female"])
                     .addStep("Verify sex was filtered out") { Map row ->
@@ -283,7 +283,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testBranchWithGroupBy() {
-        csv("src/test/resources/titanic.csv").into()
+        csv("src/test/resources/titanic.csv")
             .branch { Pipeline p ->
                 return p.groupBy("Sex", "Pclass").addStep { Map row ->
                     assertNotNull( row["male"] )
@@ -517,7 +517,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testHeaderless() {
-        LoadStatistic stats = csv("src/test/resources/headerless.csv", "|", ["Date", "status", "client", "server", "url", "length", "thread", "userAgent", "referer"]).into()
+        LoadStatistic stats = csv("src/test/resources/headerless.csv", "|", ["Date", "status", "client", "server", "url", "length", "thread", "userAgent", "referer"])
             .addStep("Assert Columns Exist") { Map row->
                 assertNotNull( row.status )
                 assertNotNull( row.Date )
@@ -551,7 +551,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testRagged() {
-        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",").into()
+        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
             .addStep("Assert Row") { Map row ->
                 assert row.containsKey("assignment")
                 switch(row.rank) {
@@ -581,7 +581,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
         try {
             from(people).save(tmp.absolutePath, "|").go()
 
-            csv(tmp.absolutePath, "|").into()
+            csv(tmp.absolutePath, "|")
                 .addStep("assert 5 columns") { Map row ->
                     assert row.size() == 5
                     assert row["comment"].contains("\n")
@@ -594,7 +594,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     public void testEscaping() {
-        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",").into()
+        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
             .addStep("Test Escaping") { Map row ->
                 switch(row.rank) {
                     case "Captain":
@@ -620,7 +620,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     public void testDefaultValues() {
-        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",").into()
+        LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
             .addStep("Assert null exists") { Map row ->
                 if( ['Captain', 'Private First Class'].contains( row.rank ) ) {
                     assert row.assignment == null
