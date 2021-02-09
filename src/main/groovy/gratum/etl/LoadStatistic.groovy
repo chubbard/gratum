@@ -73,6 +73,14 @@ class LoadStatistic {
         return (Integer)rejectionsByCategory.get(category).values().sum(0)
     }
 
+    public Integer getRejections(RejectionCategory cat, String step) {
+        return rejectionsByCategory?.get(cat)?.get(step)
+    }
+
+    public Map<String,Integer> getRejectionsFor( RejectionCategory category ) {
+        return rejectionsByCategory[category];
+    }
+
     public Object timed( String stepName, Closure c ) {
         if( !stepTimings.containsKey(stepName) ) stepTimings.put( stepName, 0L )
         long start = System.currentTimeMillis()

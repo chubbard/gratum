@@ -86,9 +86,46 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
         assertEquals( "Assert that we successfully loaded all male passengers", 185, statistic.loaded )
         assertEquals( "Assert that we rejected non-male passengers", 233, statistic.rejections )
         assertEquals( "Assert the rejection category", 233, statistic.getRejections(RejectionCategory.IGNORE_ROW) )
-        assertEquals("Assert rejection step is 1", 1, statistic.getRejectionsByCategory()[RejectionCategory.IGNORE_ROW].size() )
-        assertEquals("Assert rejection step is filter()", "filter()", statistic.getRejectionsByCategory()[RejectionCategory.IGNORE_ROW].keySet().first())
-        assertEquals("Assert rejection step filter() == 233", 233, statistic.getRejectionsByCategory()[RejectionCategory.IGNORE_ROW]["filter()"])
+        assertEquals("Assert rejection step is 1", 1, statistic.getRejectionsFor(RejectionCategory.IGNORE_ROW).size() )
+        assertEquals("Assert rejection step is filter()", "filter()", statistic.getRejectionsFor(RejectionCategory.IGNORE_ROW).keySet().first())
+        assertEquals("Assert rejection step filter() == 233", 233, statistic.getRejections(RejectionCategory.IGNORE_ROW,"filter()"))
+    }
+
+    @Test
+    void testFilterWithCollection() {
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+            .filter([Pclass: "3", Sex: "male"])
+            .onRejection { Pipeline rej ->
+                rej.addStep("verify not sex != male && pClass != 3") { Map row ->
+                    assert row.Pclass != "3" || row.Sex != "male"
+                    return row
+                }
+                return
+            }
+            .go()
+
+        assert statistic.loaded == 146
+        assert statistic.rejections == 272
+        assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 272
+        assert statistic.getRejections( RejectionCategory.IGNORE_ROW, "filter Pclass->3,Sex->male" ) == 272
+    }
+
+    @Test
+    void testFilterMapWithClosure() {
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+            .filter([Pclass: { value -> (value as Integer) < 3 } ])
+            .onRejection { Pipeline rej ->
+                rej.addStep("Verify all rejections are == 3") { Map row ->
+                    assert row.Pclass == "3"
+                    return row
+                }
+                return
+            }
+            .go()
+
+        assert statistic.loaded == 200
+        assert statistic.rejections == 218
+        assert statistic.getRejections( RejectionCategory.IGNORE_ROW ) == 218
     }
 
     @Test
