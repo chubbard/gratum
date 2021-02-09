@@ -818,9 +818,14 @@ public class Pipeline {
             this.statistic.start = src.statistic.start
             for( RejectionCategory cat : src.statistic.rejectionsByCategory.keySet() ) {
                 if( !this.statistic.rejectionsByCategory.containsKey(cat) ) {
-                    this.statistic.rejectionsByCategory[ cat ] = 0
+                    this.statistic.rejectionsByCategory[ cat ] = [:]
                 }
-                this.statistic.rejectionsByCategory[ cat ] = this.statistic.rejectionsByCategory[ cat ] + src.statistic.rejectionsByCategory[ cat ]
+                for( String step : src.statistic.rejectionsByCategory[cat].keySet() ) {
+                    if( !this.statistic.rejectionsByCategory[cat].containsKey(step) ) {
+                        this.statistic.rejectionsByCategory[cat][step] = 0
+                    }
+                    this.statistic.rejectionsByCategory[cat][ step ] = this.statistic.rejectionsByCategory[ cat ][step] + src.statistic.rejectionsByCategory[ cat ][step]
+                }
             }
 
             Map<String,Long> timings = [:]
@@ -992,7 +997,7 @@ public class Pipeline {
         current.rejectionCategory = rejection.category
         current.rejectionReason = rejection.reason
         current.rejectionStep = rejection.step
-        statistic.reject(rejection?.category ?: RejectionCategory.REJECTION)
+        statistic.reject( rejection )
         rejections?.process(current, lineNumber)
     }
 
