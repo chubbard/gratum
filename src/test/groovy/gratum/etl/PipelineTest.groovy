@@ -86,6 +86,9 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
         assertEquals( "Assert that we successfully loaded all male passengers", 185, statistic.loaded )
         assertEquals( "Assert that we rejected non-male passengers", 233, statistic.rejections )
         assertEquals( "Assert the rejection category", 233, statistic.getRejections(RejectionCategory.IGNORE_ROW) )
+        assertEquals("Assert rejection step is 1", 1, statistic.getRejectionsByCategory()[RejectionCategory.IGNORE_ROW].size() )
+        assertEquals("Assert rejection step is filter()", "filter()", statistic.getRejectionsByCategory()[RejectionCategory.IGNORE_ROW].keySet().first())
+        assertEquals("Assert rejection step filter() == 233", 233, statistic.getRejectionsByCategory()[RejectionCategory.IGNORE_ROW]["filter()"])
     }
 
     @Test
@@ -683,7 +686,6 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
         assert stat.loaded == 3
         assert stat.rejections == 0
-//        assert stat.rejectionsByCategory[RejectionCategory.IGNORE_ROW] == 2
     }
 
     @Test
@@ -692,6 +694,6 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
         assert stat.loaded == 3
         assert stat.rejections == 2
-        assert stat.rejectionsByCategory[RejectionCategory.IGNORE_ROW] == 2
+        assert stat.getRejections(RejectionCategory.IGNORE_ROW) == 2
     }
 }
