@@ -10,6 +10,7 @@ import groovy.json.JsonOutput
 
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.util.regex.Pattern
 
 class Step {
     public String name
@@ -212,8 +213,9 @@ public class Pipeline {
      * @return A pipeline that only includes the rows matching the given filter.
      */
     public Pipeline filter( Map columns ) {
+        Condition condition = new Condition( columns )
         addStep( "filter ${ nameOf(columns) }" ) { Map row ->
-            if(matches(columns, row)) {
+            if( condition.matches(row) ) {
                 return row
             } else {
                 return reject("Row did not match the filter ${columns}", RejectionCategory.IGNORE_ROW )
@@ -228,7 +230,9 @@ public class Pipeline {
             if( comparator instanceof Collection ) {
                 return match && ((Collection)comparator).contains( row[key] )
             } else if(comparator instanceof Closure ) {
-                return match && comparator( row[key] )
+                return match && comparator(row[key])
+            } else if( comparator instanceof Pattern ) {
+                return match && row[key] =~ comparator
             } else {
                 return match && row[key] == comparator
             }
@@ -282,8 +286,9 @@ public class Pipeline {
         Pipeline branch = new Pipeline( name )
         Pipeline tail = split(branch)
 
+        Condition selection = new Condition( condition )
         addStep( "branch(${condition})" ) { Map row ->
-            if( matches( condition, row )) {
+            if( selection.matches( row )) {
                 branch.process( row )
             }
             return row

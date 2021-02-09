@@ -92,7 +92,28 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
     }
 
     @Test
-    void testFilterWithCollection() {
+    void testFilterMapWithCollection() {
+        List<String> filter = ["3", "2"]
+
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+                .filter([Pclass: filter, Sex: "male"])
+                .onRejection { Pipeline rej ->
+                    rej.addStep("verify not sex != male && pClass != 3") { Map row ->
+                        assert !filter.contains(row.Pclass) || row.Sex != "male"
+                        return row
+                    }
+                    return
+                }
+                .go()
+
+        assert statistic.loaded == 209
+        assert statistic.rejections == 209
+        assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 209
+        assert statistic.getRejections( RejectionCategory.IGNORE_ROW, "filter Pclass->[3, 2],Sex->male" ) == 209
+    }
+
+    @Test
+    void testFilterMap() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .filter([Pclass: "3", Sex: "male"])
             .onRejection { Pipeline rej ->
