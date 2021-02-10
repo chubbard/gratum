@@ -17,11 +17,12 @@ import gratum.etl.Pipeline
  * .go
  * </pre>
  */
-class CollectionSource implements Source {
+class CollectionSource extends AbstractSource {
 
     Collection<Map> source
 
     CollectionSource(Collection<Map> source) {
+        this.name = "Collection"
         this.source = source
     }
 
@@ -31,6 +32,14 @@ class CollectionSource implements Source {
         for( Map r : source ) {
             pipeline.process( r, line++ )
         }
+    }
+
+    public static CollectionSource of( Map... src ) {
+        return new CollectionSource( src.toList() )
+    }
+
+    public static CollectionSource of( Collection<Map> src ) {
+        return new CollectionSource( src )
     }
 
     public static Pipeline from( Map... src) {

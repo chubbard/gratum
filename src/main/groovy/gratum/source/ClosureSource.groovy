@@ -2,7 +2,7 @@ package gratum.source
 
 import gratum.etl.Pipeline
 
-class ClosureSource implements Source {
+class ClosureSource extends AbstractSource {
 
     Closure closure
 

@@ -8,4 +8,6 @@ import gratum.etl.Pipeline
 interface Source {
 
     void start(Pipeline pipeline );
+
+    Pipeline into()
 }

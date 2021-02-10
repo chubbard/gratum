@@ -14,14 +14,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '0.8.1'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '1.0.0'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>0.8.1</version>
+        <version>1.0.0</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -54,7 +54,7 @@ Here is how to get gratum started up in your shell:
     groovy:000> Grape.grab(group: 'com.github.chubbard', module:'gratum')
     groovy:000> import gratum.etl.*
     groovy:000> import static gratum.source.CsvSource.*
-    groovy:000> csv('sample.csv').go
+    groovy:000> csv('sample.csv').into().go
 
 But, to make it easier to get started you'll want to add the following to your 
 `$HOME/.groovy/groovysh.rc` file:
@@ -93,14 +93,117 @@ That should produce the following:
     loaded 3
     rejected 3
     took 3 ms
+
+#### Filtering by multiple columns
+
+    from([
+            [ name: 'Chuck', gender: 'Male', city: 'London'],
+            [ name: 'Jane', gender: 'Female', city: 'London'],
+            [ name: 'Rob', gender: 'Male', city: 'Manchester'],
+            [ name: 'Charlie', gender: 'Female', city: 'Liverpool'],
+            [ name: 'Sue', gender: 'Male', city: 'Oxford'],
+            [ name: 'Jenny', gender: 'Female', city: 'Oxford']
+        ]).
+        filter([gender: 'Female', city: 'Oxford']).
+        go()
+
+That should produce the following:
+
+    ----
+    Rejections by category
+    IGNORE_ROW: 5
+    
+    ----
+    ==> Collection(6)
+    loaded 1
+    rejected 5
+    took 3 ms
+
+#### Filtering using a Collection
+
+    from([
+            [ name: 'Chuck', gender: 'Male'],
+            [ name: 'Jane', gender: 'Female'],
+            [ name: 'Rob', gender: 'Male'],
+            [ name: 'Charlie', gender: 'Female'],
+            [ name: 'Sue', gender: 'Male'],
+            [ name: 'Jenny', gender: 'Female']
+        ]).
+        filter([name: ['Chuck', 'Jane', 'Rob']]).
+        go()
+
+That should produce the following:
+
+    ----
+    Rejections by category
+    IGNORE_ROW: 3
+    
+    ----
+    ==> Collection(6)
+    loaded 3
+    rejected 3
+    took 3 ms
+
+#### Filter using a Regular Expression
+
+    from([
+            [ name: 'Chuck', gender: 'Male'],
+            [ name: 'Jane', gender: 'Female'],
+            [ name: 'Rob', gender: 'Male'],
+            [ name: 'Charlie', gender: 'Female'],
+            [ name: 'Sue', gender: 'Male'],
+            [ name: 'Jenny', gender: 'Female']
+        ]).
+        filter([name: ~/Ch.*/]).
+        go()
+
+That should produce the following:
+
+    ----
+    Rejections by category
+    IGNORE_ROW: 4
+    
+    ----
+    ==> Collection(6)
+    loaded 2
+    rejected 4
+    took 3 ms
     
 #### Filter using a closure
 
-    csv('bank_balance.csv').asDouble('amount').filter { Map row -> row.amount > 500 }.go
-    
-In the above we load a file named bank_balance.csv then we convert the column `amount` 
-to a double value.  Then we filter on `amount` for all rows containing an `amount` 
+    csv('bank_balance.csv').into().asDouble('amount').filter { Map row -> row.amount > 500 }.go
+
+In the above we load a file named bank_balance.csv then we convert the column `amount`
+to a double value.  Then we filter on `amount` for all rows containing an `amount`
 greater than 500.
+
+#### Filter using closures and maps
+
+You can mix closures with the map version of the `filter` method.  Here is an example:
+
+    from([
+            [ name: 'Chuck', gender: 'Male', age: 33],
+            [ name: 'Jane', gender: 'Female', age: 24],
+            [ name: 'Rob', gender: 'Male', age: 28],
+            [ name: 'Charlie', gender: 'Female', age: 35],
+            [ name: 'Sue', gender: 'Male', age: 50],
+            [ name: 'Jenny', gender: 'Female', age: 42]
+        ]).
+        filter([gender: 'Male', age: { v -> v > 30 }]).
+        go()
+
+That should produce the following:
+
+    ----
+    Rejections by category
+    IGNORE_ROW: 4
+    
+    ----
+    ==> Collection(6)
+    loaded 2
+    rejected 4
+    took 3 ms
+ 
 
 #### Sort by column
 
@@ -325,9 +428,9 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 #### Filtering
 
-[filter](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#filter(java.util.Map))
+[filter(Map)](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#filter(java.util.Map))
 
-[filter](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#filter(groovy.lang.Closure))
+[filter(Closure)](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#filter(groovy.lang.Closure))
 
 [groupBy](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#groupBy(java.lang.String))
 
@@ -355,9 +458,9 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 [exchange](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#exchange(Closure%3CPipeline%3E))
 
-[inject](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(groovy.lang.Closure))
+[inject(Closure)](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(groovy.lang.Closure))
 
-[inject](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(java.lang.String,%20groovy.lang.Closure))
+[inject(String, Closure)](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(java.lang.String,%20groovy.lang.Closure))
 
 [intersect](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#intersect(gratum.etl.Pipeline,%20def))
 
@@ -378,6 +481,8 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 
 [csv](https://chubbard.github.io/gratum/gratum/source/CsvSource.html)
 
+[xlsx](https://chubbard.github.io/gratum/gratum/source/XlsxSource.html)
+
 [collection](https://chubbard.github.io/gratum/gratum/source/CollectionSource.html)
 
 [zip](https://chubbard.github.io/gratum/gratum/source/ZipSource.html)
@@ -386,5 +491,4 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 
 [jdbc](https://chubbard.github.io/gratum/gratum/source/JdbcSource.html)
 
-[xlsx](https://chubbard.github.io/gratum/gratum/source/XlsxSource.html)
-    
+[concat](https://chubbard.github.io/gratum/gratum/source/ConcatSource.html)

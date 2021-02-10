@@ -1,6 +1,7 @@
 package gratum.etl
 
 import gratum.csv.CSVFile
+import gratum.source.AbstractSource
 import gratum.csv.HaltPipelineException
 import gratum.source.ChainedSource
 import gratum.source.ClosureSource
@@ -9,6 +10,7 @@ import groovy.json.JsonOutput
 
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.util.regex.Pattern
 
 class Step {
     public String name
@@ -193,12 +195,27 @@ public class Pipeline {
      *
      * In this example all rows where hair = Brown AND eyeColor = Blue are passed through the filter.
      *
+     * You can also pass a java.util.Collection of values to compare a column to.  For example,
+     *
+     * .filter( [hair: ['Brown','Blonde'], eyeColor: ['Blue','Green'] ] )
+     *
+     * In this example you need hair of 'Brown' or 'Blonde' and eyeColor of 'Blue' or 'Green'.
+     *
+     * You can also pass a groovy.lang.Closure as a value for a column and it will filter based
+     * on the value returned by the Closure.  For example,
+     *
+     * .filter( [hair: { String v -> v.startsWith('B') }, eyeColor: 'Brown'] )
+     *
+     * In this example it invokes the Closure with the value at row['hair'] and the Closure evaluates
+     * to a boolean to decide if a row is filtered or not.
+     *
      * @param columns a Map that contains the columns, and their values that are passed through
      * @return A pipeline that only includes the rows matching the given filter.
      */
     public Pipeline filter( Map columns ) {
+        Condition condition = new Condition( columns )
         addStep( "filter ${ nameOf(columns) }" ) { Map row ->
-            if(matches(columns, row)) {
+            if( condition.matches(row) ) {
                 return row
             } else {
                 return reject("Row did not match the filter ${columns}", RejectionCategory.IGNORE_ROW )
@@ -209,10 +226,15 @@ public class Pipeline {
 
     private boolean matches(Map columns, Map row) {
         return columns.keySet().inject(true) { match, key ->
-            if( columns[key] instanceof Collection ) {
-                match && ((Collection)columns[key]).contains( row[key] )
+            Object comparator = columns[key]
+            if( comparator instanceof Collection ) {
+                return match && ((Collection)comparator).contains( row[key] )
+            } else if(comparator instanceof Closure ) {
+                return match && comparator(row[key])
+            } else if( comparator instanceof Pattern ) {
+                return match && row[key] =~ comparator
             } else {
-                match && row[key] == columns[key]
+                return match && row[key] == comparator
             }
         }
     }
@@ -264,8 +286,9 @@ public class Pipeline {
         Pipeline branch = new Pipeline( name )
         Pipeline tail = split(branch)
 
+        Condition selection = new Condition( condition )
         addStep( "branch(${condition})" ) { Map row ->
-            if( matches( condition, row )) {
+            if( selection.matches( row )) {
                 branch.process( row )
             }
             return row
@@ -463,7 +486,7 @@ public class Pipeline {
 
         Pipeline parent = this
         Pipeline other = new Pipeline( statistic.name )
-        other.src = new Source() {
+        other.src = new AbstractSource() {
             @Override
             void start(Pipeline pipeline) {
                 parent.start() // first start our parent pipeline
@@ -818,9 +841,14 @@ public class Pipeline {
             this.statistic.start = src.statistic.start
             for( RejectionCategory cat : src.statistic.rejectionsByCategory.keySet() ) {
                 if( !this.statistic.rejectionsByCategory.containsKey(cat) ) {
-                    this.statistic.rejectionsByCategory[ cat ] = 0
+                    this.statistic.rejectionsByCategory[ cat ] = [:]
                 }
-                this.statistic.rejectionsByCategory[ cat ] = this.statistic.rejectionsByCategory[ cat ] + src.statistic.rejectionsByCategory[ cat ]
+                for( String step : src.statistic.rejectionsByCategory[cat].keySet() ) {
+                    if( !this.statistic.rejectionsByCategory[cat].containsKey(step) ) {
+                        this.statistic.rejectionsByCategory[cat][step] = 0
+                    }
+                    this.statistic.rejectionsByCategory[cat][ step ] = this.statistic.rejectionsByCategory[ cat ][step] + src.statistic.rejectionsByCategory[ cat ][step]
+                }
             }
 
             Map<String,Long> timings = [:]
@@ -992,7 +1020,7 @@ public class Pipeline {
         current.rejectionCategory = rejection.category
         current.rejectionReason = rejection.reason
         current.rejectionStep = rejection.step
-        statistic.reject(rejection?.category ?: RejectionCategory.REJECTION)
+        statistic.reject( rejection )
         rejections?.process(current, lineNumber)
     }
 

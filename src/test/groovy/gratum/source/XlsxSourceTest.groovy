@@ -1,11 +1,9 @@
 package gratum.source
 
 import gratum.etl.LoadStatistic
-import gratum.etl.Pipeline
 import org.junit.Test
 
 class XlsxSourceTest {
-
 
     @Test
     void testXlsxLoading() {

@@ -8,7 +8,7 @@ package gratum.etl
  */
 class LoadStatistic {
     String name
-    Map<RejectionCategory, Integer> rejectionsByCategory = [:]
+    Map<RejectionCategory, Map<String,Integer>> rejectionsByCategory = [:]
     Map<String,Long> stepTimings = [:]
     Integer loaded = 0
     Long start = 0
@@ -49,19 +49,36 @@ class LoadStatistic {
     }
 
     public Integer getRejections() {
-        return rejectionsByCategory.inject(0) { Integer sum, RejectionCategory cat, Integer count -> sum + count }
+        return rejectionsByCategory.inject(0) { Integer sum, RejectionCategory cat, Map<String,Integer> stepCounts ->
+            sum + (Integer)stepCounts.values().sum()
+        }
     }
 
-    public void reject(RejectionCategory category) {
-        rejectionsByCategory[category] = (rejectionsByCategory[category] ?: 0) + 1
+    public void reject(Rejection rejection) {
+        RejectionCategory category = rejection?.category ?: RejectionCategory.REJECTION
+        if( !rejectionsByCategory[category] ) {
+            rejectionsByCategory[category] = [(rejection.step): 0]
+        } else if( !rejectionsByCategory[category][rejection.step] ) {
+            rejectionsByCategory[category][rejection.step] = 0
+        }
+        Integer count = rejectionsByCategory[category][rejection.step] + 1
+        rejectionsByCategory[category][rejection.step] = count
     }
 
-    public Map<RejectionCategory, Integer> getRejectionsByCategory() {
+    public Map<RejectionCategory, Map<String,Integer>> getRejectionsByCategory() {
         return rejectionsByCategory
     }
 
     public Integer getRejections(RejectionCategory category) {
-        return rejectionsByCategory.get(category);
+        return (Integer)rejectionsByCategory.get(category).values().sum(0)
+    }
+
+    public Integer getRejections(RejectionCategory cat, String step) {
+        return rejectionsByCategory?.get(cat)?.get(step)
+    }
+
+    public Map<String,Integer> getRejectionsFor( RejectionCategory category ) {
+        return rejectionsByCategory[category];
     }
 
     public Object timed( String stepName, Closure c ) {
@@ -96,8 +113,11 @@ class LoadStatistic {
         if( this.rejections > 0 ) {
             pw.println("\n----")
             pw.println("Rejections by category")
-            this.rejectionsByCategory.each { RejectionCategory category, Integer count ->
-                pw.printf( "%s: %,d%n", category, count )
+            this.rejectionsByCategory.each { RejectionCategory category, Map<String,Integer> steps ->
+                pw.printf( "%s: %,d%n", category, steps.values().sum(0) )
+                steps.each { String step, Integer count ->
+                    pw.printf( "\t%s: %,d%n", step, count )
+                }
             }
         }
         pw.println("\n----")

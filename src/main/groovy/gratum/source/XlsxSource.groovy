@@ -2,15 +2,7 @@ package gratum.source
 
 import gratum.etl.Pipeline
 import org.apache.poi.openxml4j.opc.OPCPackage
-import org.apache.poi.openxml4j.opc.PackageAccess
-import org.apache.poi.ss.usermodel.Cell
-import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.ss.usermodel.DataFormatter
-import org.apache.poi.ss.usermodel.DateUtil
-import org.apache.poi.ss.usermodel.Row
-import org.apache.poi.ss.usermodel.Sheet
-import org.apache.poi.ss.usermodel.Workbook
-import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.util.XMLHelper
 import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable
 import org.apache.poi.xssf.eventusermodel.XSSFReader
@@ -23,9 +15,8 @@ import org.xml.sax.ContentHandler
 
 import javax.xml.parsers.ParserConfigurationException
 
-class XlsxSource implements Source {
+class XlsxSource extends AbstractSource {
 
-    String name
     File excelFile
     InputStream stream
     String sheet
@@ -38,8 +29,8 @@ class XlsxSource implements Source {
 
 
     XlsxSource(File excelFile, String sheet = null) {
-        this.excelFile = excelFile
         this.name = excelFile.name
+        this.excelFile = excelFile
         this.sheet = sheet
     }
 
@@ -49,12 +40,6 @@ class XlsxSource implements Source {
 
     public static XlsxSource xlsx( File file, String sheet = null ) {
         return new XlsxSource( file, sheet )
-    }
-
-    public Pipeline into() {
-        Pipeline pipeline = new Pipeline( name )
-        pipeline.src = this
-        return pipeline
     }
 
     @Override
@@ -71,14 +56,14 @@ class XlsxSource implements Source {
                 InputStream is = iter.next()
                 String name = iter.getSheetName()
                 if( name == this.sheet || this.sheet == null) {
-                    DataFormatter formatter = new DataFormatter();
-                    InputSource sheetSource = new InputSource(is);
+                    DataFormatter formatter = new DataFormatter()
+                    InputSource sheetSource = new InputSource(is)
                     try {
-                        XMLReader sheetParser = XMLHelper.newXMLReader();
+                        XMLReader sheetParser = XMLHelper.newXMLReader()
                         XslxSheetHandler sheetHandler = new XslxSheetHandler( pipeline )
                         ContentHandler handler = new XSSFSheetXMLHandler(styles, null, strings, sheetHandler, formatter, false)
                         sheetParser.setContentHandler(handler)
-                        sheetParser.parse(sheetSource);
+                        sheetParser.parse(sheetSource)
                     } catch(ParserConfigurationException e) {
                         throw new RuntimeException("SAX parser configuration error: ${e.getMessage()}", e)
                     }
@@ -146,7 +131,7 @@ class XlsxSource implements Source {
 
     class XslxSheetHandler implements XSSFSheetXMLHandler.SheetContentsHandler {
 
-        int headerRow = -1;
+        int headerRow = -1
         List<String> headers
         Pipeline pipeline
         Map current
