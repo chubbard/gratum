@@ -115,7 +115,7 @@ class LoadStatistic {
             pw.println("Rejections by category")
             this.rejectionsByCategory.each { RejectionCategory category, Map<String,Integer> steps ->
                 pw.printf( "%s: %,d%n", category, steps.values().sum(0) )
-                steps.each { String step, Integer, count ->
+                steps.each { String step, Integer count ->
                     pw.printf( "\t%s: %,d%n", step, count )
                 }
             }
