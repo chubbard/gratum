@@ -458,9 +458,9 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 [exchange](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#exchange(Closure%3CPipeline%3E))
 
-[inject](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(groovy.lang.Closure))
+[inject(Closure)](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(groovy.lang.Closure))
 
-[inject](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(java.lang.String,%20groovy.lang.Closure))
+[inject(String, Closure)](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(java.lang.String,%20groovy.lang.Closure))
 
 [intersect](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#intersect(gratum.etl.Pipeline,%20def))
 
@@ -490,4 +490,5 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 [http/https](https://chubbard.github.io/gratum/gratum/source/HttpSource.html)
 
 [jdbc](https://chubbard.github.io/gratum/gratum/source/JdbcSource.html)
-    
+
+[concat](https://chubbard.github.io/gratum/gratum/source/ConcatSource.html)
