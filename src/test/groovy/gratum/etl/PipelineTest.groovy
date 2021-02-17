@@ -1,5 +1,6 @@
 package gratum.etl
 
+import gratum.source.CsvSource
 import org.junit.Test
 
 import static junit.framework.TestCase.*
@@ -753,5 +754,18 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
         assert stat.loaded == 3
         assert stat.rejections == 2
         assert stat.getRejections(RejectionCategory.IGNORE_ROW) == 2
+    }
+
+    @Test
+    public void testProcessingHeader() {
+        boolean headerCallback = false
+        LoadStatistic stats = CsvSource.of("src/test/resources/titanic.csv").header { List<String> headers ->
+            headerCallback = true
+            assert headers.size() == 11
+        }.into().limit(0).go()
+
+        assert stats.loaded == 0
+        assert stats.rejections == 0
+        assert headerCallback
     }
 }

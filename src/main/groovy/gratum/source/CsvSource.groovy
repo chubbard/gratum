@@ -36,7 +36,10 @@ import gratum.etl.Pipeline
  * </pre>
  */
 public class CsvSource extends AbstractSource {
+
     CSVFile csvFile
+
+    Closure<Void> headerClosure = null
 
     CsvSource(File file, String separator = ",", List<String> headers = null) {
         this.name = file.name
@@ -50,12 +53,16 @@ public class CsvSource extends AbstractSource {
         if( headers ) csvFile.setColumnHeaders( headers )
     }
 
-    public static CsvSource of(File file, String separator = ",") {
-        return new CsvSource( file, separator )
+    public static CsvSource of(File file, String separator = ",", List<String> headers = null) {
+        return new CsvSource( file, separator, headers )
     }
 
-    public static CsvSource of(String filename, String separator = ",") {
+    public static CsvSource of(String filename, String separator = ",", List<String> headers = null) {
         return of( new File( filename ), separator )
+    }
+
+    public static Pipeline csv( File filename, String separator = ",", List<String> headers = null ) {
+        return new CsvSource( filename, separator, headers ).into()
     }
 
     public static Pipeline csv( String filename, String separator = ",", List<String> headers = null ) {
@@ -66,12 +73,20 @@ public class CsvSource extends AbstractSource {
         return new CsvSource( new InputStreamReader(stream), separator, headers ).into()
     }
 
+    public CsvSource header( Closure<Void> headerClosure ) {
+        this.headerClosure = headerClosure
+        return this
+    }
+
     @Override
     void start(Pipeline pipeline) {
         int line = 1
         CSVReader csvReader = new CSVReader() {
             @Override
             void processHeaders(List<String> header) {
+                if( headerClosure ) {
+                    headerClosure.call( header )
+                }
             }
 
             @Override
