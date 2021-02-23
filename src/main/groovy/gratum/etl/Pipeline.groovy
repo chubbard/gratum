@@ -87,7 +87,7 @@ public class Pipeline {
      * passed to send a row into the pipeline.
      * @return The pipeline attached to results of the startClosure.
      */
-    public static Pipeline create( String name, Closure startClosure ) {
+    public static Pipeline create( String name, @DelegatesTo(Pipeline) Closure startClosure ) {
         Pipeline pipeline = new Pipeline(name)
         pipeline.src = new ClosureSource(startClosure)
         return pipeline
@@ -112,13 +112,13 @@ public class Pipeline {
      * @param step The code used to process each row processed by the Pipeline.
      * @return this Pipeline.
      */
-    public Pipeline addStep( String name = null, Closure<Map> step ) {
+    public Pipeline addStep( String name = null, @DelegatesTo(Pipeline) Closure<Map> step ) {
         step.delegate = this
         processChain << new Step( name, step )
         return this
     }
 
-    public Pipeline addStep(GString name, Closure<Map> step) {
+    public Pipeline addStep(GString name, @DelegatesTo(Pipeline) Closure<Map> step) {
         this.addStep( name.toString(), step )
     }
 
@@ -129,7 +129,7 @@ public class Pipeline {
      * @param step the Closure that is invoked after all rows have been processed.
      * @return this Pipeline.
      */
-    public Pipeline after( Closure<Void> step ) {
+    public Pipeline after( @DelegatesTo(Pipeline) Closure<Void> step ) {
         doneChain << step
         return this
     }
@@ -141,8 +141,9 @@ public class Pipeline {
      * @param branch Closure that's passed the rejection the pipeline
      * @return this Pipeline
      */
-    public Pipeline onRejection( Closure<Void> branch ) {
+    public Pipeline onRejection( @DelegatesTo(Pipeline) Closure<Void> branch ) {
         if( !rejections ) rejections = new Pipeline("Rejections(${name})")
+        branch.delegate = rejections
         branch( rejections )
         after {
             rejections.doneChain.each { Closure c ->
@@ -180,7 +181,8 @@ public class Pipeline {
      * @param callback A callback that is passed a row, and returns a boolean.  All rows that return a false are rejected.
      * @return A Pipeline that contains only the rows that matched the filter.
      */
-    public Pipeline filter(Closure callback) {
+    public Pipeline filter(@DelegatesTo(Pipeline) Closure callback) {
+        callback.delegate = this
         addStep( "filter()" ) { Map row ->
             return callback(row) ? row : reject("Row did not match the filter closure.", RejectionCategory.IGNORE_ROW )
         }
@@ -230,6 +232,7 @@ public class Pipeline {
             if( comparator instanceof Collection ) {
                 return match && ((Collection)comparator).contains( row[key] )
             } else if(comparator instanceof Closure ) {
+                comparator.delegate = this
                 return match && comparator(row[key])
             } else if( comparator instanceof Pattern ) {
                 return match && row[key] =~ comparator
@@ -740,7 +743,8 @@ public class Pipeline {
      * @param fieldValue The closure that returns a value to set the given field's name to.
      * @return The Pipeline where the fieldname exists in every row
      */
-    public Pipeline addField(String fieldName, Closure fieldValue) {
+    public Pipeline addField(String fieldName, @DelegatesTo(Pipeline) Closure fieldValue) {
+        fieldValue.delegate = this
         addStep("addField(${fieldName})") { Map row ->
             Object value = fieldValue(row)
             if( value instanceof Rejection ) return value
@@ -759,7 +763,8 @@ public class Pipeline {
      * the field or not.  If not provided the field is always removed.
      * @return The pipeline where the fieldName has been removed when the removeLogic closure returns true or itself is null.
      */
-    public Pipeline removeField(String fieldName, Closure removeLogic = null) {
+    public Pipeline removeField(String fieldName, @DelegatesTo(Pipeline) Closure removeLogic = null) {
+        removeLogic.delegate = this
         addStep( "removeField(${fieldName})") { Map row ->
             if( removeLogic == null || removeLogic(row) ) {
                 row.remove(fieldName)
@@ -812,10 +817,10 @@ public class Pipeline {
      * @param closure Takes a Map and returns a Collection&lt;Map&gt; that will be fed into the downstream steps
      * @return The Pipeline that will received all members of the Collection returned from the closure.
      */
-    public Pipeline inject(String name, Closure closure) {
+    public Pipeline inject(String name, @DelegatesTo(Pipeline) Closure closure) {
         Pipeline next = new Pipeline(name)
         next.src = new ChainedSource( this )
-
+        closure.delegate = this
         addStep(name) { Map row ->
             def result = closure( row )
             if( result instanceof Rejection ) {
@@ -888,7 +893,7 @@ public class Pipeline {
      * @param closure Takes a Map and returns a Collection&lt;Map&gt; that will be fed into the downstream steps
      * @return The Pipeline that will received all members of the Collection returned from the closure.
      */
-    public Pipeline inject( Closure closure) {
+    public Pipeline inject( @DelegatesTo(Pipeline) Closure closure) {
         this.inject("inject()", closure )
     }
 
@@ -952,7 +957,7 @@ public class Pipeline {
      * Start processing rows from the source of the pipeline, and add a closure onto after chain.
      * @param closure closure to add to the after chain.
      */
-    public void start(Closure closure = null) {
+    public void start(@DelegatesTo(Pipeline) Closure closure = null) {
         try {
             if (closure) addStep("tail", closure)
 
