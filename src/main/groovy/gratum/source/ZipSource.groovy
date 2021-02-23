@@ -30,7 +30,7 @@ class ZipSource extends AbstractSource {
         zip.stream().forEach( new Consumer<ZipEntry>() {
             @Override
             void accept(ZipEntry zipEntry) {
-                pipeline.process( [entry: zipEntry, stream: zip.getInputStream(zipEntry)], line++ )
+                pipeline.process( [filename: zip.name, file: zip, entry: zipEntry, stream: zip.getInputStream(zipEntry)], line++ )
             }
         })
     }
