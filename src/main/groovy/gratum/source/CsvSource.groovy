@@ -92,8 +92,14 @@ public class CsvSource extends AbstractSource {
             @Override
             boolean processRow(List<String> header, List<String> row) {
                 Map obj = [:]
-                for( int i = 0; i < header.size(); i++ ) {
-                    obj[header[i]] = i < row.size() ? row[i] : null
+                for( int i = 0; i < row.size(); i++ ) {
+                    obj[header[i]] = row[i]
+                }
+
+                if( header.size() > row.size() ) {
+                    for( int j = row.size(); j < header.size(); j++ ) {
+                        obj[header[j]] = null
+                    }
                 }
 
                 return pipeline.process( obj, line++ )
