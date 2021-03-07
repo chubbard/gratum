@@ -11,6 +11,7 @@ class ArchivedSource extends AbstractSource {
     String format
 
     ArchivedSource(File file) {
+        this.name = file.name
         this.file = file
     }
 
@@ -32,11 +33,10 @@ class ArchivedSource extends AbstractSource {
         int line = 1
         this.file.withInputStream { InputStream stream ->
             ArchiveInputStream archive = getArchiveInputStream(stream)
-            ArchiveEntry entry = archive.getNextEntry()
-            while( entry ) {
+            ArchiveEntry entry
+            while( (entry = archive.getNextEntry()) != null ) {
                 if( !entry.isDirectory() && archive.canReadEntryData(entry) ) {
                     pipeline.process( [filename: file.name, file: file, entry: entry, stream: archive], line++ )
-                    entry = archive.getNextEntry()
                 }
             }
         }
