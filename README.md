@@ -492,3 +492,7 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 [jdbc](https://chubbard.github.io/gratum/gratum/source/JdbcSource.html)
 
 [concat](https://chubbard.github.io/gratum/gratum/source/ConcatSource.html)
+
+[ssh](https://chubbard.github.io/gratum/gratum/source/SshSource.html)
+
+[archived](https://chubbard.github.io/gratum/gratum/source/ArchivedSource.html)
