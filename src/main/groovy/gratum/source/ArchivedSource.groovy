@@ -1,6 +1,7 @@
 package gratum.source
 
 import gratum.etl.Pipeline
+import gratum.util.UncloseableInputStream
 import org.apache.commons.compress.archivers.ArchiveEntry
 import org.apache.commons.compress.archivers.ArchiveInputStream
 import org.apache.commons.compress.archivers.ArchiveStreamFactory
@@ -33,11 +34,15 @@ class ArchivedSource extends AbstractSource {
         int line = 1
         this.file.withInputStream { InputStream stream ->
             ArchiveInputStream archive = getArchiveInputStream(stream)
-            ArchiveEntry entry
-            while( (entry = archive.getNextEntry()) != null ) {
-                if( !entry.isDirectory() && archive.canReadEntryData(entry) ) {
-                    pipeline.process( [filename: file.name, file: file, entry: entry, stream: archive], line++ )
+            try {
+                ArchiveEntry entry
+                while ((entry = archive.getNextEntry()) != null) {
+                    if (!entry.isDirectory() && archive.canReadEntryData(entry)) {
+                        pipeline.process([filename: file.name, file: file, entry: entry, stream: new UncloseableInputStream(archive)], line++)
+                    }
                 }
+            } finally {
+                archive.close()
             }
         }
     }

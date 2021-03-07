@@ -876,12 +876,13 @@ public class Pipeline {
     public Pipeline exchange(Closure<Pipeline> closure) {
         Pipeline next = new Pipeline( name )
         next.src = new ChainedSource(this)
-        addStep("exchange()") { Map row ->
+        addStep("exchange(${next.name})") { Map row ->
             Pipeline pipeline = closure( row )
-            pipeline.start { Map current ->
+            pipeline.addStep("Exchange Bridge(${pipeline.name})") { Map current ->
                 next.process( current )
                 return current
             }
+            pipeline.start()
             return row
         }
         next.copyStatistics( this )
