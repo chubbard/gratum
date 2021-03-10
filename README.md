@@ -474,6 +474,10 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 [printRow](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#printRow(java.lang.String))
 
+[encryptPgp](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#encryptPgp(java.lang.String))
+
+[decryptPgp](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#decryptPgp(java.lang.String))
+
 ## Sources
 
 Operations are great, but you need data for those operations to work on.  Sources are how that data is 

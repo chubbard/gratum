@@ -42,8 +42,8 @@ class PgpTest {
         try {
             LoadStatistic stat = from(GratumFixture.people)
                     .save(tmp.getAbsolutePath())
-                    .encrypt("stream", ["Sue <sue@boy.com>"], secretKeyRingFile) { PgpContext pgp ->
-                        pgp.overwrite(true)
+                    .encryptPgp("stream") { PgpContext pgp ->
+                        pgp.addSecretKeys( secretKeyRingFile ).identities(["Sue <sue@boy.com>"]).overwrite(true)
                     }
                     .addStep("Test encrypted stream is available") { Map row ->
                         assert row.filename != null
@@ -67,10 +67,14 @@ class PgpTest {
         try {
             LoadStatistic stat = from(GratumFixture.people)
                     .save(tmp.getAbsolutePath())
-                    .encrypt("stream", ["Sue <sue@boy.com>"], secretKeyRingFile) { PgpContext pgp ->
-                        pgp.overwrite(false)
+                    .encryptPgp("stream") { PgpContext pgp ->
+                        pgp.addSecretKeys( secretKeyRingFile )
+                                .identities(["Sue <sue@boy.com>"])
+                                .overwrite(false)
                     }
-                    .decrypt("stream", "sue@boy.com", secretKeyRingFile, "SueIsStillABoy!")
+                    .decryptPgp("stream") { PgpContext pgp ->
+                        pgp.addSecretKeys(secretKeyRingFile).identity("sue@boy.com", "SueIsStillABoy!".getChars())
+                    }
                     .addStep("Assert the same") { Map row ->
                         assert tmp.length() == row.file.length()
                         row.file.delete()
@@ -87,8 +91,11 @@ class PgpTest {
     void performanceTest() {
         File perfFile = new File("${System.getProperty("user.home")}/Documents/customer/pfchangs/src/2012/PFC1000_XLodEEDed_20210207_1512.txt")
         LoadStatistic stat = from([file: perfFile, filename: perfFile.name, stream: new FileOpenable(perfFile)])
-                .encrypt("stream", ["Sue <sue@boy.com>"], secretKeyRingFile) { PgpContext context ->
-                    context.compressData(PGPCompressedData.UNCOMPRESSED).overwrite( false )
+                .encryptPgp("stream") { PgpContext context ->
+                    context.addSecretKeys( secretKeyRingFile )
+                            .identities(["Sue <sue@boy.com>"])
+                            .compressData(PGPCompressedData.UNCOMPRESSED)
+                            .overwrite(false)
                 }
                 .addStep("Test encrypted stream is available") { Map row ->
                     assert row.filename != null

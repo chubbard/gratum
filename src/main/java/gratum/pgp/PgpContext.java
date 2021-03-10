@@ -12,15 +12,14 @@ import java.io.*;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class PgpContext {
 
     private PGPSecretKeyRingCollection secretKeys;
+    private PGPPublicKeyRingCollection publicKeys;
     private Iterable<String> identities;
+    private char[] passphrase;
     private boolean asciiArmour = true;
     private boolean checkIntegrity = true;
     private int compressedDataType = PGPCompressedData.ZIP;
@@ -33,11 +32,34 @@ public class PgpContext {
         }
     }
 
-    public PgpContext addKeys( File keyRing ) throws IOException, PGPException {
-        try(InputStream stream = new ArmoredInputStream(new FileInputStream(keyRing))) {
+    public PgpContext addPublicKeys( PGPPublicKeyRingCollection keys ) {
+        this.publicKeys = keys;
+        return this;
+    }
+
+    public PgpContext addSecretKeys( PGPSecretKeyRingCollection keys ) {
+        this.secretKeys = keys;
+        return this;
+    }
+
+    public PgpContext addPublicKeys( File publicKeyRing ) throws IOException, PGPException {
+        try(InputStream stream = new ArmoredInputStream(new FileInputStream(publicKeyRing))) {
+            this.publicKeys = new PGPPublicKeyRingCollection(stream, new JcaKeyFingerprintCalculator());
+            return this;
+        }
+    }
+
+    public PgpContext addSecretKeys( File secretKeyRing ) throws IOException, PGPException {
+        try(InputStream stream = new ArmoredInputStream(new FileInputStream(secretKeyRing))) {
             this.secretKeys = new PGPSecretKeyRingCollection(stream, new JcaKeyFingerprintCalculator());
             return this;
         }
+    }
+
+    public PgpContext identity( String identity, char[] passphrase ) {
+        this.identities = Collections.singleton( identity );
+        this.passphrase = passphrase;
+        return this;
     }
 
     public PgpContext identities( Iterable<String> identities ) {
@@ -66,6 +88,9 @@ public class PgpContext {
     }
 
     public final void encrypt(String filename, Date modificationTime, InputStream stream, OutputStream out) throws IOException, PGPException {
+        assert secretKeys != null || publicKeys != null : "You must provide either a secret key ring or public key ring using addPublicKeys() or addSecretKeys()";
+        assert identities != null : "You must have at least 1 identity configured using addIdentities()";
+
         List<PGPPublicKey> keys = getPgpPublicKeys();
         try {
             if (asciiArmour) {
@@ -97,15 +122,39 @@ public class PgpContext {
     private List<PGPPublicKey> getPgpPublicKeys() throws PGPException {
         List<PGPPublicKey> keys = new ArrayList<>();
         for( String identity : identities ) {
-            Iterator<PGPSecretKeyRing> rings = secretKeys.getKeyRings(identity, true, true);
-            if( !rings.hasNext() ) throw new IllegalArgumentException("No keys for identity: " + identity );
-            PGPSecretKeyRing ring = rings.next();
-            keys.add( getEncryptionKey(ring) );
+            PGPPublicKey key;
+            if( (key = getPublicIdentity( identity ) ) != null ) {
+                keys.add(key);
+            }  else if( (key = getSecretIdentity( identity )) != null ) {
+                keys.add(key);
+            } else {
+                throw new IllegalArgumentException("No keys for identity: " + identity );
+            }
         }
         return keys;
     }
 
-    private PGPPublicKey getEncryptionKey(PGPSecretKeyRing ring) {
+    private PGPPublicKey getPublicIdentity(String identity) throws PGPException {
+        if( publicKeys == null ) return null;
+        Iterator<PGPPublicKeyRing> rings = publicKeys.getKeyRings(identity, true, true);
+        if (rings.hasNext()) {
+            PGPPublicKeyRing ring = rings.next();
+            return getEncryptionKey(ring);
+        }
+        return null;
+    }
+
+    private PGPPublicKey getSecretIdentity( String identity ) throws PGPException {
+        if( secretKeys == null ) return null;
+        Iterator<PGPSecretKeyRing> rings = secretKeys.getKeyRings(identity, true, true);
+        if (rings.hasNext()) {
+            PGPSecretKeyRing ring = rings.next();
+            return getEncryptionKey(ring);
+        }
+        return null;
+    }
+
+    private PGPPublicKey getEncryptionKey(PGPKeyRing ring) {
         Iterator<PGPPublicKey> i = ring.getPublicKeys();
         while (i.hasNext()) {
             PGPPublicKey key = i.next();
@@ -121,7 +170,9 @@ public class PgpContext {
         return overwrite;
     }
 
-    public void decrypt(InputStream inputStream, OutputStream outputStream, char[] passphrase ) throws IOException, PGPException {
+    public void decrypt(InputStream inputStream, OutputStream outputStream ) throws IOException, PGPException {
+        assert secretKeys != null : "You must provide a secret key ring using addSecretKeys()";
+        assert identities != null : "You must provide an identity to decrypt using addIdentity()";
         new PgpObjectProcessor(this, passphrase ).onData( (PGPLiteralData pgpLiteralData) -> {
             Streams.pipeAll(pgpLiteralData.getInputStream(), outputStream);
             outputStream.flush();
