@@ -1,5 +1,6 @@
 package gratum.etl
 
+import org.junit.Ignore
 import org.junit.Test
 
 import static gratum.source.CsvSource.csv
@@ -7,6 +8,7 @@ import static gratum.source.CsvSource.csv
 class PipelinePerformanceTest {
 
     @Test
+    @Ignore
     void performanceTest() {
         File tmpFilePw = File.createTempFile("pfchangs", "pw.csv")
         File tmpFileNotPw = File.createTempFile("pfchangs", "not_pw.csv")
@@ -18,8 +20,8 @@ class PipelinePerformanceTest {
                         .branch([PehEELink: { it.startsWith("PW") }]) { Pipeline p ->
                             return p.save(tmpFilePw.absolutePath, "|")
                         }.branch([PehEELink: { !it.startsWith("PW") }]) { Pipeline p ->
-                    return p.save(tmpFileNotPw.absolutePath, "|")
-                }
+                            return p.save(tmpFileNotPw.absolutePath, "|")
+                        }
                         .go()
                 println( stat )
             }

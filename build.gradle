@@ -28,6 +28,10 @@ dependencies {
     implementation 'org.apache.poi:ooxml-schemas:1.4'
     implementation group: "org.apache.commons", name:"commons-compress", version:"1.20"
     implementation group: "com.jcraft", name: "jsch", version: "0.1.55"
+    implementation "org.bouncycastle:bcprov-jdk15on:1.67",
+            "org.bouncycastle:bcprov-ext-jdk15on:1.66",
+            "org.bouncycastle:bcpg-jdk15on:1.67",
+            "org.bouncycastle:bcpkix-jdk15on:1.67"
 
 //    testCompile "mysql:mysql-connector-java:5.1.40"
     testImplementation group: 'junit', name: 'junit', version: '4.11'

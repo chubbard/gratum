@@ -1,5 +1,6 @@
 package gratum.source
 
+import gratum.etl.FileOpenable
 import gratum.etl.Pipeline
 import groovy.io.FileType
 
@@ -40,7 +41,7 @@ class FileSystemSource extends AbstractSource {
     void process(File file, Pipeline pipeline) {
         file.eachFileRecurse(FileType.FILES) { File current ->
             if( current.name =~ filter ) {
-                pipeline.process([file: current], line++)
+                pipeline.process([file: current, stream: new FileOpenable(current)], line++)
             }
         }
     }

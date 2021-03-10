@@ -1,6 +1,7 @@
 package gratum.etl
 
 import gratum.csv.CSVFile
+import gratum.pgp.PgpContext
 import gratum.source.AbstractSource
 import gratum.csv.HaltPipelineException
 import gratum.source.ChainedSource
@@ -646,7 +647,7 @@ public class Pipeline {
      * @param filename the filename to write the CSV file to
      * @param separator the field separator to use between each field value (default ",")
      * @param columns the list of fields to write from each row.  (default null)
-     * @return A Pipeline
+     * @return A Pipeline that returns a row for the csv file.
      */
     public Pipeline save( String filename, String separator = ",", List<String> columns = null ) {
         CSVFile out = new CSVFile( filename, separator )
@@ -656,10 +657,14 @@ public class Pipeline {
             return row
         }
 
+        Pipeline next = new Pipeline( filename )
+        next.src = new ChainedSource( this )
         after {
             out.close()
+            next.process([ file: out.getFile(), filename: filename, stream: new FileOpenable(out.getFile()) ])
+            return
         }
-        return this
+        return next
     }
 
     /**
@@ -955,13 +960,59 @@ public class Pipeline {
     }
 
     /**
-     * Start processing rows from the source of the pipeline, and add a closure onto after chain.
-     * @param closure closure to add to the after chain.
+     * Encrypt a stream on the pipeline and rewrite that stream back to the pipeline.
      */
-    public void start(@DelegatesTo(Pipeline) Closure closure = null) {
-        try {
-            if (closure) addStep("tail", closure)
+    public Pipeline encrypt(String streamProperty, Iterable<String> identities, File secretKeyRing, Closure configure = null ) {
+        PgpContext pgp = new PgpContext().addKeys( secretKeyRing ).identities( identities );
+        if( configure ) configure.call( pgp );
+        addStep("encrypt(${streamProperty}, ${identities})") { Map row ->
+            File encryptedTemp = File.createTempFile("pgp-encrypted-output-${streamProperty}".toString(), ".gpg")
+            InputStream stream = row[streamProperty] as InputStream
+            try {
+                encryptedTemp.withOutputStream { OutputStream out ->
+                    pgp.encrypt((String) row.filename, new Date(), stream, out)
+                }
+            } finally {
+                stream.close()
+            }
+            if( pgp.isOverwrite() ) {
+                row?.file?.delete()
+            }
+            row.file = encryptedTemp
+            row.filename = encryptedTemp.getName()
+            row[streamProperty] = new FileOpenable(encryptedTemp)
+            return row
+        }
+        return this
+    }
 
+    public Pipeline decrypt(String streamProperty, String identity, File secretKeyRing, String passphrase, Closure configure = null ) {
+        PgpContext pgp = new PgpContext().addKeys( secretKeyRing ).identities( [ identity ] )
+        if( configure ) configure.call( pgp )
+        addStep("decrypt(${streamProperty}, ${identity})") { Map row ->
+            InputStream stream = row[streamProperty] as InputStream
+            File decryptedFile = File.createTempFile("pgp-decrypted-output-${streamProperty}", "out")
+            try {
+                decryptedFile.withOutputStream { OutputStream out ->
+                    pgp.decrypt( stream, out, passphrase.getChars() )
+                }
+            } finally {
+                stream.close()
+            }
+
+            // todo should we get the original file name??!!
+            row.file = decryptedFile
+            row.filename = decryptedFile.name
+            row[streamProperty] = new FileOpenable( decryptedFile )
+            return row
+        }
+    }
+
+    /**
+     * Start processing rows from the source of the pipeline.
+     */
+    public void start() {
+        try {
             statistic.start = System.currentTimeMillis()
             src?.start(this)
             statistic.end = System.currentTimeMillis()
@@ -980,13 +1031,12 @@ public class Pipeline {
     /**
      * Starts processing the rows returned from the {@link gratum.source.Source} into the Pipeline.  When the
      * {@link gratum.source.Source} is finished this method returns the {@link gratum.etl.LoadStatistic} for
-     * this Pipeline.  The given closure is added as the final step in the Pipeline if provided.
+     * this Pipeline.
      *
-     * @param closure The final step added to the Pipeline if non-null.
      * @return The LoadStatistic instance from this Pipeline.
      */
-    public LoadStatistic go(Closure<Map> closure = null) {
-        start(closure)
+    public LoadStatistic go() {
+        start()
         return statistic
     }
 
