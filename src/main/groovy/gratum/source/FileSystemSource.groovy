@@ -1,6 +1,10 @@
 package gratum.source
 
+import gratum.etl.FileOpenable
 import gratum.etl.Pipeline
+import groovy.io.FileType
+
+import java.util.regex.Pattern
 
 /**
  * Creates a source that enumerates files within a directory and returns
@@ -12,7 +16,7 @@ import gratum.etl.Pipeline
 class FileSystemSource extends AbstractSource {
 
     File file
-    Object filter = ~/.*/
+    Pattern filter = ~/.*/
     int line = 1
 
     FileSystemSource(File file) {
@@ -29,18 +33,16 @@ class FileSystemSource extends AbstractSource {
         process( file, pipeline )
     }
 
-    FileSystemSource filter( Object filenameFilter ) {
+    FileSystemSource filter(Pattern filenameFilter ) {
         this.filter = filenameFilter
         return this
     }
 
     void process(File file, Pipeline pipeline) {
-        if( file.isDirectory() ) {
-            file.eachFileMatch( filter ) { File current ->
-                process( current, pipeline )
+        file.eachFileRecurse(FileType.FILES) { File current ->
+            if( current.name =~ filter ) {
+                pipeline.process([file: current, stream: new FileOpenable(current)], line++)
             }
-        } else {
-            pipeline.process([file: file], line++)
         }
     }
 }

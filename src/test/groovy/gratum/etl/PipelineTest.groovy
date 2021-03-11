@@ -1,5 +1,6 @@
 package gratum.etl
 
+import gratum.source.CsvSource
 import org.junit.Test
 
 import static junit.framework.TestCase.*
@@ -12,39 +13,6 @@ import static gratum.source.CollectionSource.*
  */
 
 class PipelineTest {
-
-    List<Map> people = [
-            [id: 1, name: 'Bill Rhodes', age: 53, gender: 'male', comment: """
-I had the single cheese burger.  It was juicy and well seasoned.  The fries 
-were on the soggy side and I had to wait for a while to get my milkshake.
-"""],
-            [id: 2, name: 'Cheryl Lipscome', age: 43, gender: 'female', comment: """
-I had the chicken salad.  It was delicious.  I would like more raisins next time.
-"""],
-            [id: 3, name: 'Diana Rogers', age: 34, gender: 'female', comment: """
-I had to wait a very long time for my cheeseburger, and when it came it didn't have
-cheese.  I had to send it back, but they got it right the second time.  The burger
-was good, and the fries were crispy and warm.
-"""],
-            [id: 4, name: 'Jack Lowland', age: 25, gender: 'male', comment: """
-I loved my burger and milkshake.
-"""],
-            [id: 5, name: 'Ginger Rogers', age: 83, gender: 'female', comment: """
-I had the chili dog and the onion rings, but I wish you had tater tots.
-"""]
-    ]
-
-    Collection<Map> hobbies = [
-            [id:1, hobby: 'Stamp Collecting'],
-            [id:1, hobby: 'Bird Watching'],
-            [id:2, hobby: 'Biking'],
-            [id:2, hobby: 'Tennis'],
-            [id:3, hobby: 'Archeology'],
-            [id:3, hobby: 'Treasure Hunting'],
-            [id:4, hobby: 'Crossfit'],
-            [id:4, hobby: 'Obstacle Races']
-    ]
-
 
     @Test
     void testSimpleFilter() {
@@ -255,7 +223,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testSetField() {
-        LoadStatistic stats = from( people )
+        LoadStatistic stats = from( GratumFixture.people )
                 .setField("completed", true)
                 .addStep("Assert completed is defined") { Map row ->
                     assert row.completed
@@ -373,7 +341,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
     @Test
     void testInnerJoin() {
         int rejections = 0
-        LoadStatistic stats = from(people).join( from(hobbies), ['id'] )
+        LoadStatistic stats = from(GratumFixture.people).join( from(GratumFixture.hobbies), ['id'] )
             .addStep("Assert hobbies") { Map row ->
                 assertNotNull( row.hobby )
                 return row
@@ -394,7 +362,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testLeftJoin() {
-        LoadStatistic stats = from(people).join( from(hobbies), ['id'], true )
+        LoadStatistic stats = from(GratumFixture.people).join( from(GratumFixture.hobbies), ['id'], true )
             .addStep("Assert optional hobbies") { Map row ->
                 if( row.id < 5 ) {
                     assertNotNull( row.hobby )
@@ -412,7 +380,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
     @Test
     void testSort() {
         String lastHobby
-        from(hobbies).sort("hobby").addStep("Assert order is increasing") { Map row ->
+        from(GratumFixture.hobbies).sort("hobby").addStep("Assert order is increasing") { Map row ->
             if( lastHobby ) assertTrue( "Assert ${lastHobby} < ${row.hobby}", lastHobby.compareTo( row.hobby ) <= 0 )
             lastHobby = row.hobby
             return row
@@ -423,7 +391,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testUnique() {
-        LoadStatistic stats = from(hobbies).unique("id")
+        LoadStatistic stats = from(GratumFixture.hobbies).unique("id")
         .go()
 
         assertEquals( 4, stats.loaded )
@@ -435,7 +403,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
     void testRejections() {
         List<Map> rejections = []
 
-        LoadStatistic stats = from(hobbies)
+        LoadStatistic stats = from(GratumFixture.hobbies)
                 .addStep("Rejection") { Map row -> row.id > 1 ? row : reject("${row.id} is too small", RejectionCategory.REJECTION) }
                 .onRejection { Pipeline pipeline ->
                     pipeline.addStep("Save rejections") { Map row ->
@@ -566,14 +534,14 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testSort2() {
-        LoadStatistic stats = from( people )
+        LoadStatistic stats = from( GratumFixture.people )
                 .filter([gender: 'male'])
                 .sort('age')
                 .go()
 
         assertEquals( 2, stats.loaded )
         assertEquals( 3, stats.rejections )
-        assertEquals( people.size(), stats.loaded + stats.rejections )
+        assertEquals( GratumFixture.people.size(), stats.loaded + stats.rejections )
     }
 
     @Test
@@ -599,7 +567,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     void testClip() {
-        LoadStatistic stat = from(people).clip("name", "gender").addStep("Test resulting rows") { Map row ->
+        LoadStatistic stat = from(GratumFixture.people).clip("name", "gender").addStep("Test resulting rows") { Map row ->
             assertEquals( 2, row.size() )
             assertTrue( row.containsKey("name") )
             assertTrue( row.containsKey("gender") )
@@ -640,7 +608,16 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
     void testSave() {
         File tmp = File.createTempFile("people", ".csv")
         try {
-            from(people).save(tmp.absolutePath, "|").go()
+            from(GratumFixture.people)
+                    .save(tmp.absolutePath, "|")
+                    .addStep("Verify we have a CSV file on the Pipeline") { Map row ->
+                        assert row.file != null
+                        assert row.filename == tmp.absolutePath
+                        assert row.stream != null
+                        assert row.stream instanceof Openable
+                        return row
+                    }
+                    .go()
 
             csv(tmp.absolutePath, "|")
                 .addStep("assert 5 columns") { Map row ->
@@ -740,7 +717,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     public void testLimit() {
-        LoadStatistic stat = from( people ).limit(3).go()
+        LoadStatistic stat = from( GratumFixture.people ).limit(3).go()
 
         assert stat.loaded == 3
         assert stat.rejections == 0
@@ -748,10 +725,23 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 
     @Test
     public void testLimitWithoutHalt() {
-        LoadStatistic stat = from(people).limit(3, false).go()
+        LoadStatistic stat = from(GratumFixture.people).limit(3, false).go()
 
         assert stat.loaded == 3
         assert stat.rejections == 2
         assert stat.getRejections(RejectionCategory.IGNORE_ROW) == 2
+    }
+
+    @Test
+    public void testProcessingHeader() {
+        boolean headerCallback = false
+        LoadStatistic stats = CsvSource.of("src/test/resources/titanic.csv").header { List<String> headers ->
+            headerCallback = true
+            assert headers.size() == 11
+        }.into().limit(0).go()
+
+        assert stats.loaded == 0
+        assert stats.rejections == 0
+        assert headerCallback
     }
 }

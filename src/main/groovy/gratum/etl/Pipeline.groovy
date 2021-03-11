@@ -1,6 +1,7 @@
 package gratum.etl
 
 import gratum.csv.CSVFile
+import gratum.pgp.PgpContext
 import gratum.source.AbstractSource
 import gratum.csv.HaltPipelineException
 import gratum.source.ChainedSource
@@ -87,7 +88,7 @@ public class Pipeline {
      * passed to send a row into the pipeline.
      * @return The pipeline attached to results of the startClosure.
      */
-    public static Pipeline create( String name, Closure startClosure ) {
+    public static Pipeline create( String name, @DelegatesTo(Pipeline) Closure startClosure ) {
         Pipeline pipeline = new Pipeline(name)
         pipeline.src = new ClosureSource(startClosure)
         return pipeline
@@ -112,13 +113,13 @@ public class Pipeline {
      * @param step The code used to process each row processed by the Pipeline.
      * @return this Pipeline.
      */
-    public Pipeline addStep( String name = null, Closure<Map> step ) {
+    public Pipeline addStep( String name = null, @DelegatesTo(Pipeline) Closure<Map> step ) {
         step.delegate = this
         processChain << new Step( name, step )
         return this
     }
 
-    public Pipeline addStep(GString name, Closure<Map> step) {
+    public Pipeline addStep(GString name, @DelegatesTo(Pipeline) Closure<Map> step) {
         this.addStep( name.toString(), step )
     }
 
@@ -129,7 +130,7 @@ public class Pipeline {
      * @param step the Closure that is invoked after all rows have been processed.
      * @return this Pipeline.
      */
-    public Pipeline after( Closure<Void> step ) {
+    public Pipeline after( @DelegatesTo(Pipeline) Closure<Void> step ) {
         doneChain << step
         return this
     }
@@ -141,8 +142,9 @@ public class Pipeline {
      * @param branch Closure that's passed the rejection the pipeline
      * @return this Pipeline
      */
-    public Pipeline onRejection( Closure<Void> branch ) {
+    public Pipeline onRejection( @DelegatesTo(Pipeline) Closure<Void> branch ) {
         if( !rejections ) rejections = new Pipeline("Rejections(${name})")
+        branch.delegate = rejections
         branch( rejections )
         after {
             rejections.doneChain.each { Closure c ->
@@ -180,7 +182,8 @@ public class Pipeline {
      * @param callback A callback that is passed a row, and returns a boolean.  All rows that return a false are rejected.
      * @return A Pipeline that contains only the rows that matched the filter.
      */
-    public Pipeline filter(Closure callback) {
+    public Pipeline filter(@DelegatesTo(Pipeline) Closure callback) {
+        callback.delegate = this
         addStep( "filter()" ) { Map row ->
             return callback(row) ? row : reject("Row did not match the filter closure.", RejectionCategory.IGNORE_ROW )
         }
@@ -230,6 +233,7 @@ public class Pipeline {
             if( comparator instanceof Collection ) {
                 return match && ((Collection)comparator).contains( row[key] )
             } else if(comparator instanceof Closure ) {
+                comparator.delegate = this
                 return match && comparator(row[key])
             } else if( comparator instanceof Pattern ) {
                 return match && row[key] =~ comparator
@@ -643,7 +647,7 @@ public class Pipeline {
      * @param filename the filename to write the CSV file to
      * @param separator the field separator to use between each field value (default ",")
      * @param columns the list of fields to write from each row.  (default null)
-     * @return A Pipeline
+     * @return A Pipeline that returns a row for the csv file.
      */
     public Pipeline save( String filename, String separator = ",", List<String> columns = null ) {
         CSVFile out = new CSVFile( filename, separator )
@@ -653,10 +657,14 @@ public class Pipeline {
             return row
         }
 
+        Pipeline next = new Pipeline( filename )
+        next.src = new ChainedSource( this )
         after {
             out.close()
+            next.process([ file: out.getFile(), filename: filename, stream: new FileOpenable(out.getFile()) ])
+            return
         }
-        return this
+        return next
     }
 
     /**
@@ -740,7 +748,8 @@ public class Pipeline {
      * @param fieldValue The closure that returns a value to set the given field's name to.
      * @return The Pipeline where the fieldname exists in every row
      */
-    public Pipeline addField(String fieldName, Closure fieldValue) {
+    public Pipeline addField(String fieldName, @DelegatesTo(Pipeline) Closure fieldValue) {
+        fieldValue.delegate = this
         addStep("addField(${fieldName})") { Map row ->
             Object value = fieldValue(row)
             if( value instanceof Rejection ) return value
@@ -759,7 +768,8 @@ public class Pipeline {
      * the field or not.  If not provided the field is always removed.
      * @return The pipeline where the fieldName has been removed when the removeLogic closure returns true or itself is null.
      */
-    public Pipeline removeField(String fieldName, Closure removeLogic = null) {
+    public Pipeline removeField(String fieldName, @DelegatesTo(Pipeline) Closure removeLogic = null) {
+        removeLogic.delegate = this
         addStep( "removeField(${fieldName})") { Map row ->
             if( removeLogic == null || removeLogic(row) ) {
                 row.remove(fieldName)
@@ -812,10 +822,10 @@ public class Pipeline {
      * @param closure Takes a Map and returns a Collection&lt;Map&gt; that will be fed into the downstream steps
      * @return The Pipeline that will received all members of the Collection returned from the closure.
      */
-    public Pipeline inject(String name, Closure closure) {
+    public Pipeline inject(String name, @DelegatesTo(Pipeline) Closure closure) {
         Pipeline next = new Pipeline(name)
         next.src = new ChainedSource( this )
-
+        closure.delegate = this
         addStep(name) { Map row ->
             def result = closure( row )
             if( result instanceof Rejection ) {
@@ -871,12 +881,13 @@ public class Pipeline {
     public Pipeline exchange(Closure<Pipeline> closure) {
         Pipeline next = new Pipeline( name )
         next.src = new ChainedSource(this)
-        addStep("exchange()") { Map row ->
+        addStep("exchange(${next.name})") { Map row ->
             Pipeline pipeline = closure( row )
-            pipeline.start { Map current ->
+            pipeline.addStep("Exchange Bridge(${pipeline.name})") { Map current ->
                 next.process( current )
                 return current
             }
+            pipeline.start()
             return row
         }
         next.copyStatistics( this )
@@ -888,7 +899,7 @@ public class Pipeline {
      * @param closure Takes a Map and returns a Collection&lt;Map&gt; that will be fed into the downstream steps
      * @return The Pipeline that will received all members of the Collection returned from the closure.
      */
-    public Pipeline inject( Closure closure) {
+    public Pipeline inject( @DelegatesTo(Pipeline) Closure closure) {
         this.inject("inject()", closure )
     }
 
@@ -949,13 +960,74 @@ public class Pipeline {
     }
 
     /**
-     * Start processing rows from the source of the pipeline, and add a closure onto after chain.
-     * @param closure closure to add to the after chain.
+     * Encrypts using PGP a stream on the pipeline and rewrite that stream back to the pipeline.  It looks for
+     * a stream on the Pipeline at streamProperty. Further configuration is performed by the provided Closure
+     * that is passed a {@link gratum.pgp.PpgContext}.  You are required to setup the identities, secret key collection,
+     * and/or public key collection in order to encrypt.  This will write the encrypted stream back to the Pipeline
+     * on the provided streamProperty.  It also adds the file and filename properties to the existing row.
+     * @param streamProperty The property that holds a stream object to be encrypted.
+     * @param configure The Closure that is passed the PgpContext used to configure how the stream will be encrypted.
      */
-    public void start(Closure closure = null) {
-        try {
-            if (closure) addStep("tail", closure)
+    public Pipeline encryptPgp(String streamProperty, Closure configure ) {
+        PgpContext pgp = new PgpContext()
+        configure.call( pgp )
+        addStep("encrypt(${streamProperty})") { Map row ->
+            File encryptedTemp = File.createTempFile("pgp-encrypted-output-${streamProperty}".toString(), ".gpg")
+            InputStream stream = row[streamProperty] as InputStream
+            try {
+                encryptedTemp.withOutputStream { OutputStream out ->
+                    pgp.encrypt((String) row.filename, new Date(), stream, out)
+                }
+            } finally {
+                stream.close()
+            }
+            if( pgp.isOverwrite() ) {
+                row?.file?.delete()
+            }
+            row.file = encryptedTemp
+            row.filename = encryptedTemp.getName()
+            row[streamProperty] = new FileOpenable(encryptedTemp)
+            return row
+        }
+        return this
+    }
 
+    /**
+     * Decrypts using PGP a stream on the Pipeline and rewrites the stream back onto the Pipeline.  It looks for
+     * a stream at the given streamProperty.  Further configuration is performed by the provided Closure
+     * that is passed a {@link gratum.pgp.PpgContext}.  You are required to setup the identity passphrase and the secret
+     * key collection used to decrypt. It also adds the file and filename properties to the existing row.
+     * @param streamProperty The property within the row on the Pipeline that stores a stream.
+     * @param configure The closure called with a PgpContext object to further configure how it will decrypt the stream.
+     * @return a Pipeline where the streamProperty contains decrypted stream.
+     */
+    public Pipeline decryptPgp(String streamProperty, Closure configure ) {
+        PgpContext pgp = new PgpContext()
+        configure.call( pgp )
+        addStep("decrypt(${streamProperty})") { Map row ->
+            InputStream stream = row[streamProperty] as InputStream
+            File decryptedFile = File.createTempFile("pgp-decrypted-output-${streamProperty}", "out")
+            try {
+                decryptedFile.withOutputStream { OutputStream out ->
+                    pgp.decrypt( stream, out )
+                }
+            } finally {
+                stream.close()
+            }
+
+            // todo should we get the original file name??!!
+            row.file = decryptedFile
+            row.filename = decryptedFile.name
+            row[streamProperty] = new FileOpenable( decryptedFile )
+            return row
+        }
+    }
+
+    /**
+     * Start processing rows from the source of the pipeline.
+     */
+    public void start() {
+        try {
             statistic.start = System.currentTimeMillis()
             src?.start(this)
             statistic.end = System.currentTimeMillis()
@@ -974,13 +1046,12 @@ public class Pipeline {
     /**
      * Starts processing the rows returned from the {@link gratum.source.Source} into the Pipeline.  When the
      * {@link gratum.source.Source} is finished this method returns the {@link gratum.etl.LoadStatistic} for
-     * this Pipeline.  The given closure is added as the final step in the Pipeline if provided.
+     * this Pipeline.
      *
-     * @param closure The final step added to the Pipeline if non-null.
      * @return The LoadStatistic instance from this Pipeline.
      */
-    public LoadStatistic go(Closure<Map> closure = null) {
-        start(closure)
+    public LoadStatistic go() {
+        start()
         return statistic
     }
 

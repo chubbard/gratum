@@ -470,25 +470,33 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 ### Output
 
-[save](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#save(java.lang.String,%20java.lang.String,%20List%3CString%3E))
+[save](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#save(java.lang.String,%20java.lang.String,%20List%3CString%3E))
 
-[printRow](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#printRow(java.lang.String))
+[printRow](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#printRow(java.lang.String))
+
+[encryptPgp](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#encryptPgp(java.lang.String,%20groovy.lang.Closure))
+
+[decryptPgp](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#decryptPgp(java.lang.String,%20groovy.lang.Closure))
 
 ## Sources
 
 Operations are great, but you need data for those operations to work on.  Sources are how that data is 
 passed into the Pipeline.  These are the Sources you can use to provide data.
 
-[csv](https://chubbard.github.io/gratum/gratum/source/CsvSource.html)
+[csv](https://chubbard.github.io/gratum/groovydoc/gratum/source/CsvSource.html)
 
-[xlsx](https://chubbard.github.io/gratum/gratum/source/XlsxSource.html)
+[xlsx](https://chubbard.github.io/gratum/groovydoc/gratum/source/XlsxSource.html)
 
-[collection](https://chubbard.github.io/gratum/gratum/source/CollectionSource.html)
+[collection](https://chubbard.github.io/gratum/groovydoc/gratum/source/CollectionSource.html)
 
-[zip](https://chubbard.github.io/gratum/gratum/source/ZipSource.html)
+[zip](https://chubbard.github.io/gratum/groovydoc/gratum/source/ZipSource.html)
 
-[http/https](https://chubbard.github.io/gratum/gratum/source/HttpSource.html)
+[http/https](https://chubbard.github.io/gratum/groovydoc/gratum/source/HttpSource.html)
 
-[jdbc](https://chubbard.github.io/gratum/gratum/source/JdbcSource.html)
+[jdbc](https://chubbard.github.io/gratum/groovydoc/gratum/source/JdbcSource.html)
 
-[concat](https://chubbard.github.io/gratum/gratum/source/ConcatSource.html)
+[concat](https://chubbard.github.io/gratum/groovydoc/gratum/source/ConcatSource.html)
+
+[ssh](https://chubbard.github.io/gratum/groovydoc/gratum/source/SshSource.html)
+
+[archived](https://chubbard.github.io/gratum/groovydoc/gratum/source/ArchivedSource.html)
