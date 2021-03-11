@@ -227,7 +227,7 @@ That should produce the following:
 So how do Pipelines work?  A pipeline is a series of ordered steps.  Every
 Pipeline has a Source.  A source feeds a Pipeline.  In the example below
 the `from` method creates the source, attaches it to a Pipeline, and returns
-the Pipeline.  The [`CollectionSource.from`](https://chubbard.github.io/gratum/gratum/source/CollectionSource.html)
+the Pipeline.  The [`CollectionSource.from`](https://chubbard.github.io/gratum/groovydoc/gratum/source/CollectionSource.html)
 method takes in a collection as the source for the row data.
 
     from([
@@ -279,7 +279,7 @@ there is a better way.
 
 What is often most important is the reason for why a rejections occurred.  In
 the examples above we rejected by returning null, but that doesn't tell us
-why something was rejected.  Using the [`reject`](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#reject(java.lang.String,%20gratum.etl.RejectionCategory))
+why something was rejected.  Using the [`reject`](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#reject(java.lang.String,%20gratum.etl.RejectionCategory))
 method we can specify more detail about why a row was rejected.
 
     from([
@@ -295,7 +295,7 @@ method we can specify more detail about why a row was rejected.
        }.
        go()
 
-This allows you to provide a [`RejectionCategory`](https://chubbard.github.io/gratum/gratum/etl/RejectionCategory.html) 
+This allows you to provide a [`RejectionCategory`](https://chubbard.github.io/gratum/groovydoc/gratum/etl/RejectionCategory.html) 
 and a free form description.  Using categories is a great way to quickly group types of 
 rejections into more easily managed sets.
 
@@ -398,75 +398,81 @@ It's much easier to use the existing operation methods that are included in the 
 we used an `addStep` to add a step that filtered out rows.  This is so common there is already an operation
 that does this for you called `filter`.  There are plenty of existing methods to perform common operations.
 
+## API Docs
+
+[groovydoc](https://chubbard.github.io/gratum/groovydoc)
+
+[javadoc](https://chubbard.github.io/gratum/javadoc)
+
 ### Basics
 
-[addStep](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#addStep(java.lang.String,%20Closure%3CMap%3E))
+[addStep](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#addStep(java.lang.String,%20Closure%3CMap%3E))
 
 #### Column Manipulation
 
-[addField](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#addField(java.lang.String,%20groovy.lang.Closure))
+[addField](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#addField(java.lang.String,%20groovy.lang.Closure))
 
-[renameFields](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#renameFields(java.util.Map))
+[renameFields](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#renameFields(java.util.Map))
 
-[setField](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#setField(java.lang.String,%20java.lang.Object))
+[setField](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#setField(java.lang.String,%20java.lang.Object))
 
-[clip](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#clip(java.lang.String))
+[clip](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#clip(java.lang.String))
 
-[defaultValues](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#defaultValues(java.util.Map))
+[defaultValues](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#defaultValues(java.util.Map))
 
-[defaultsBy](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#defaultsBy(java.util.Map))
+[defaultsBy](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#defaultsBy(java.util.Map))
 
 #### Data Types
 
-[asInt](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#asInt(java.lang.String))
+[asInt](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#asInt(java.lang.String))
 
-[asDouble](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#asDouble(java.lang.String))
+[asDouble](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#asDouble(java.lang.String))
 
-[asBoolean](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#asBoolean(java.lang.String))
+[asBoolean](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#asBoolean(java.lang.String))
 
-[asDate](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#asDate(java.lang.String,%20java.lang.String))
+[asDate](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#asDate(java.lang.String,%20java.lang.String))
 
 #### Filtering
 
-[filter(Map)](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#filter(java.util.Map))
+[filter(Map)](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#filter(java.util.Map))
 
-[filter(Closure)](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#filter(groovy.lang.Closure))
+[filter(Closure)](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#filter(groovy.lang.Closure))
 
-[groupBy](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#groupBy(java.lang.String))
+[groupBy](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#groupBy(java.lang.String))
 
 ### Data Manipulation
 
-[sort](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#sort(java.lang.String))
+[sort](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#sort(java.lang.String))
 
-[trim](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#trim())
+[trim](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#trim())
 
-[unique](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#unique(java.lang.String))
+[unique](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#unique(java.lang.String))
 
-[limit](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#limit(long,boolean))
+[limit](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#limit(long,boolean))
 
 ### Branching
 
-[branch](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#branch(Closure%3CVoid%3E))
+[branch](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#branch(Closure%3CVoid%3E))
 
-[branch](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#branch(Map%3CString,%20Object%3E,%20Closure%3CVoid%3E))
+[branch](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#branch(Map%3CString,%20Object%3E,%20Closure%3CVoid%3E))
 
-[onRejection](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#onRejection(Closure%3CVoid%3E))
+[onRejection](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#onRejection(Closure%3CVoid%3E))
 
 #### Pipeline Manipulation
 
-[concat](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#concat(gratum.etl.Pipeline))
+[concat](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#concat(gratum.etl.Pipeline))
 
-[exchange](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#exchange(Closure%3CPipeline%3E))
+[exchange](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#exchange(Closure%3CPipeline%3E))
 
-[inject(Closure)](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(groovy.lang.Closure))
+[inject(Closure)](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#inject(groovy.lang.Closure))
 
-[inject(String, Closure)](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#inject(java.lang.String,%20groovy.lang.Closure))
+[inject(String, Closure)](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#inject(java.lang.String,%20groovy.lang.Closure))
 
-[intersect](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#intersect(gratum.etl.Pipeline,%20def))
+[intersect](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#intersect(gratum.etl.Pipeline,%20def))
 
-[join](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#join(gratum.etl.Pipeline,%20def,%20boolean))
+[join](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#join(gratum.etl.Pipeline,%20def,%20boolean))
 
-[fillDownBy](https://chubbard.github.io/gratum/gratum/etl/Pipeline.html#fillDownBy(Closure%3CBoolean%3E))
+[fillDownBy](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#fillDownBy(Closure%3CBoolean%3E))
 
 ### Output
 
@@ -484,6 +490,8 @@ Operations are great, but you need data for those operations to work on.  Source
 passed into the Pipeline.  These are the Sources you can use to provide data.
 
 [csv](https://chubbard.github.io/gratum/groovydoc/gratum/source/CsvSource.html)
+
+[file](https://chubbard.github.io/gratum/groovydoc/gratum/source/FileSystemSource.html)
 
 [xlsx](https://chubbard.github.io/gratum/groovydoc/gratum/source/XlsxSource.html)
 
