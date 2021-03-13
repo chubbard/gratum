@@ -608,7 +608,7 @@ class PipelineTest {
     void testSave() {
         File tmp = File.createTempFile("people", ".csv")
         try {
-            from(GratumFixture.people)
+            LoadStatistic stat = from(GratumFixture.people)
                     .save(tmp.absolutePath, "|")
                     .addStep("Verify we have a CSV file on the Pipeline") { Map row ->
                         assert row.file != null
@@ -618,6 +618,8 @@ class PipelineTest {
                         return row
                     }
                     .go()
+            assert stat.loaded == GratumFixture.people.size()
+            assert stat.rejections == 0
 
             csv(tmp.absolutePath, "|")
                 .addStep("assert 5 columns") { Map row ->

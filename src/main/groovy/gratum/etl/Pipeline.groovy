@@ -664,6 +664,7 @@ public class Pipeline {
             next.process([ file: out.getFile(), filename: filename, stream: new FileOpenable(out.getFile()) ])
             return
         }
+        next.copyStatistics( this, true )
         return next
     }
 
@@ -846,9 +847,12 @@ public class Pipeline {
      * pipeline's statistics.  The start time is overwritten, but the rejections are added together.  This results in a
      * consistent statistics over the whole chain of pipelines.  The rows loaded by this pipeline are not modified.
      */
-    void copyStatistics(Pipeline src) {
+    void copyStatistics(Pipeline src, boolean copyLoaded = false) {
         after {
             this.statistic.start = src.statistic.start
+            if( copyLoaded ) {
+                this.statistic.loaded = src.statistic.loaded
+            }
             for( RejectionCategory cat : src.statistic.rejectionsByCategory.keySet() ) {
                 if( !this.statistic.rejectionsByCategory.containsKey(cat) ) {
                     this.statistic.rejectionsByCategory[ cat ] = [:]
