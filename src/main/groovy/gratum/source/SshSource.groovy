@@ -99,7 +99,7 @@ class SshSource extends AbstractSource {
                     if( attributes.isDir() ) {
                         Vector<ChannelSftp.LsEntry> directory = channel.ls( path )
                         directory.each { ChannelSftp.LsEntry entry ->
-                            pipeline.process( [ host: host, port: port, filename: entry.filename, stream: channel.get(path + "/" + entry.filename) ], line++ )
+                            pipeline.process( [ host: host, port: port, entry: entry, filename: entry.filename, stream: channel.get(path + "/" + entry.filename) ], line++ )
                         }
                     } else {
                         Vector<ChannelSftp.LsEntry> entry = channel.ls( path )
