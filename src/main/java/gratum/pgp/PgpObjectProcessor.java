@@ -77,9 +77,6 @@ public class PgpObjectProcessor {
         while ((pgpObj = factory.nextObject()) != null) {
             if (callbacks.containsKey(pgpObj.getClass())) {
                 processed = callbacks.get(pgpObj.getClass()).handle(pgpObj);
-                if (processed) {
-//                    logger.warn("Could not process type " + pgpObj.getClass() );
-                }
             }
         }
         return processed;
