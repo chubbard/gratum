@@ -35,7 +35,7 @@ class Step {
  * Rows orginate from the Pipeline's {@link gratum.source.Source}.  The {@link gratum.source.Source} sends 
  * rows into the Pipeline until it finishes.  The Pipeline keeps a set of statistics about how many rows
  * were loaded, rejected, the types of rejections, timing, etc.  This is kept in the {@link gratum.etl.LoadStatistic}
- * instance and returned from the {@link Pipeline#go(Closure)} method.
+ * instance and returned from the {@link Pipeline#go()} method.
  *
  * Example:
  *
