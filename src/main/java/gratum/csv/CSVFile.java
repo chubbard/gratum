@@ -1,6 +1,5 @@
 package gratum.csv;
 
-import gratum.csv.HaltPipelineException;
 import gratum.util.Utilities;
 import org.apache.commons.io.input.BOMInputStream;
 
@@ -19,6 +18,7 @@ public class CSVFile {
     private List<String> columnHeaders;
     private HashSet<String> rowHashes = new HashSet<String>();
     private boolean allowDuplicateRows=true;
+    private boolean escaped = true;
 
     public CSVFile(String filename, String separator) {
         this( new File(filename), separator );
@@ -37,6 +37,10 @@ public class CSVFile {
     public CSVFile(PrintWriter out, String separator) {
         this.writer = out;
         this.separator = separator;
+    }
+
+    public void setEscaped(boolean escaped) {
+        this.escaped = escaped;
     }
 
     public void setAllowDuplicateRows(boolean allowDuplicateRows) {
@@ -98,10 +102,26 @@ public class CSVFile {
             if( lastLine == null ) return null;
         } while( lastLine.length() == 0 );
 
-        return parseColumns();
+        return escaped ? parseColumnsWithEscaping() : parseColumnsWithoutEscaping();
     }
 
-    private List<String> parseColumns() {
+    private List<String> parseColumnsWithoutEscaping() {
+        List<String> row = new ArrayList<>( columnHeaders != null ? columnHeaders.size() : 10 );
+        int columnStart = 0;
+        while( columnStart < lastLine.length() ) {
+            int index = lastLine.indexOf( separator, columnStart );
+            if( index < 0 ) {
+                row.add( columnStart == 0 ? lastLine : lastLine.substring( columnStart ) );
+                columnStart = lastLine.length();
+            } else {
+                row.add( lastLine.substring(columnStart, index ) );
+                columnStart = index + separator.length();
+            }
+        }
+        return row;
+    }
+
+    private List<String> parseColumnsWithEscaping() {
         List<String> line = new ArrayList<>( columnHeaders != null ? columnHeaders.size() : 10 );
         int columnStart = 0;
         char sep = separator.charAt(0);

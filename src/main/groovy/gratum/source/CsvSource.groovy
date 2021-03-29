@@ -78,6 +78,21 @@ public class CsvSource extends AbstractSource {
         return this
     }
 
+    /**
+     * Turn on/off CSV escaping rules.  Some files do not properly escape columns so turning
+     * off those rules can help in parsing such files.  This means columns surrounded in double
+     * quotes will not be removed, or handling embedded separators within columns.  Turning off
+     * escaping renders the parsing as a straight separator parse.  The default is escaping is
+     * turned on.
+     *
+     * @param escaped turn on (ie true) or turn off (ie false) escaping
+     * @return this
+     */
+    public CsvSource escaping( boolean escaped ) {
+        csvFile.setEscaped( escaped )
+        return this
+    }
+
     @Override
     void start(Pipeline pipeline) {
         int line = 1

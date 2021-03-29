@@ -746,4 +746,30 @@ class PipelineTest {
         assert stats.rejections == 0
         assert headerCallback
     }
+
+    @Test
+    public void testCsvWithoutEscaping() {
+        int line = 1
+        CsvSource.of("src/test/resources/unescaped.csv", "|")
+                .escaping(false)
+                .into()
+                .trim()
+                .addStep("Test csv without escaping") { Map row ->
+                    switch( line ) {
+                        case 1:
+                            assert row.ConNameFirst == "martini"
+                            break
+                        case 2:
+                            assert row.ConNameFirst == 'La\"Quint'
+                            break
+                        case 3:
+                            assert row.ConNameLast == 'o"neill'
+                            break
+                    }
+                    assert row.size() == 55
+                    line++
+                    return row
+                }
+                .go()
+    }
 }

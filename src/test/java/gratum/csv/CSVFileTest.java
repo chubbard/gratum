@@ -5,6 +5,8 @@ import junit.framework.TestCase;
 import java.io.*;
 import java.util.*;
 
+import static junit.framework.TestCase.assertFalse;
+
 /**
  * Created by charlie on 8/16/15.
  */
@@ -200,5 +202,51 @@ public class CSVFileTest extends TestCase {
         assertTrue( output.contains("Ryan\"||")); // verify that it wrote out nothing for a blank string
         assertTrue( output.contains("Taylor\"||")); // verify that it wrote out nothing for a null
         assertTrue( output.contains("\\n") );
+    }
+
+    public void testWithoutEscaping() throws IOException {
+        Reader reader = new InputStreamReader( CSVFileTest.class.getResourceAsStream("/unescaped.csv") );
+        CSVFile csv = new CSVFile(reader, "|");
+        csv.setEscaped(false);
+        csv.parse(new CSVReader() {
+            int line = 1;
+            @Override
+            public void processHeaders(List<String> header) throws Exception {
+                assertEquals( 55, header.size() );
+                assertEquals( "ConRecType", header.get(0));
+                assertEquals( "ConWorkNumber", header.get( header.size() - 1 ));
+            }
+
+            @Override
+            public boolean processRow(List<String> header, List<String> row) throws Exception {
+                int index;
+//                assertEquals( 55, row.size() );
+                switch( line ) {
+                    case 1:
+                        index = header.indexOf("ConNameFirst");
+                        assertFalse(row.get(index).contains("\""));
+                        assertEquals( "martini", row.get(index).trim() );
+                        break;
+                    case 2:
+                        index = header.indexOf("ConNameFirst");
+                        assertTrue( row.get(index).contains("\"") );
+                        assertEquals( "La\"Quint", row.get(index).trim() );
+                        break;
+                    case 3:
+                        index = header.indexOf("ConNameLast");
+                        assertTrue( row.get(index).contains("\"") );
+                        assertEquals( row.get(index).trim(), "o\"neill" );
+                        break;
+                }
+
+                line++;
+                return false;
+            }
+
+            @Override
+            public void afterProcessing() {
+                assertEquals( 4, line );
+            }
+        });
     }
 }
