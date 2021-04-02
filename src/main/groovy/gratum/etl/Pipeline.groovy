@@ -227,22 +227,6 @@ public class Pipeline {
         return this
     }
 
-    private boolean matches(Map columns, Map row) {
-        return columns.keySet().inject(true) { match, key ->
-            Object comparator = columns[key]
-            if( comparator instanceof Collection ) {
-                return match && ((Collection)comparator).contains( row[key] )
-            } else if(comparator instanceof Closure ) {
-                comparator.delegate = this
-                return match && comparator(row[key])
-            } else if( comparator instanceof Pattern ) {
-                return match && row[key] =~ comparator
-            } else {
-                return match && row[key] == comparator
-            }
-        }
-    }
-
     /**
      * Returns a Pipeline where all white space is removed from all columns contained within the rows.
      *
