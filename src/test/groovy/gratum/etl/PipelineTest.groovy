@@ -77,7 +77,7 @@ class PipelineTest {
         assert statistic.loaded == 209
         assert statistic.rejections == 209
         assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 209
-        assert statistic.getRejections( RejectionCategory.IGNORE_ROW, "filter Pclass->[3, 2],Sex->male" ) == 209
+        assert statistic.getRejections( RejectionCategory.IGNORE_ROW, "filter Pclass -> [3, 2],Sex -> male" ) == 209
     }
 
     @Test
@@ -96,7 +96,7 @@ class PipelineTest {
         assert statistic.loaded == 146
         assert statistic.rejections == 272
         assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 272
-        assert statistic.getRejections( RejectionCategory.IGNORE_ROW, "filter Pclass->3,Sex->male" ) == 272
+        assert statistic.getRejections( RejectionCategory.IGNORE_ROW, "filter Pclass -> 3,Sex -> male" ) == 272
     }
 
     @Test
@@ -178,7 +178,7 @@ class PipelineTest {
         assertEquals( "Assert rows loaded == 1", 1, statistic.loaded )
         assertEquals( "Assert all rows rejected", 418, statistic.rejections )
 
-        assertTrue( "Assert that the timings inlude the filter(Sex->K)) step", statistic.stepTimings.containsKey("filter Sex->K") )
+        assertTrue( "Assert that the timings include the filter(Sex->K)) step", statistic.stepTimings.containsKey("filter Sex -> K") )
         assertFalse( "Assert that timings does NOT include groupBy because all rows are filtered out.", statistic.stepTimings.containsKey("groupBy(Sex)") )
     }
 
@@ -404,7 +404,7 @@ class PipelineTest {
         List<Map> rejections = []
 
         LoadStatistic stats = from(GratumFixture.hobbies)
-                .addStep("Rejection") { Map row -> row.id > 1 ? row : reject("${row.id} is too small", RejectionCategory.REJECTION) }
+                .addStep("Rejection") { Map row -> row.id > 1 ? row : reject( row,"${row.id} is too small", RejectionCategory.REJECTION) }
                 .onRejection { Pipeline pipeline ->
                     pipeline.addStep("Save rejections") { Map row ->
                         rejections << row

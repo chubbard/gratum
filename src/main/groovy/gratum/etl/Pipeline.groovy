@@ -9,20 +9,12 @@ import gratum.source.ClosureSource
 import gratum.source.Source
 import groovy.json.JsonOutput
 
+import groovy.transform.CompileStatic
+
+import org.apache.commons.math3.util.Pair
+
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.util.regex.Pattern
-
-class Step {
-    public String name
-    public Closure step
-
-    Step(String name, Closure step) {
-        this.name = name
-        this.step = step
-    }
-}
-
 
 /**
  * A Pipeline represents a series of steps that will be performed on 1 or more rows.  Rows are Map objects
@@ -66,7 +58,10 @@ class Step {
  *    took 1 ms
  * </pre>
  */
+//@CompileStatic
 public class Pipeline {
+
+    public static final String REJECTED_KEY = "__reject__"
 
     LoadStatistic statistic
     Source src
@@ -99,7 +94,7 @@ public class Pipeline {
      *
      * @return The name of the Pipeline
      */
-    public getName() {
+    public String getName() {
         return this.statistic.name
     }
 
@@ -119,7 +114,7 @@ public class Pipeline {
         return this
     }
 
-    public Pipeline addStep(GString name, @DelegatesTo(Pipeline) Closure<Map> step) {
+    public Pipeline addStep(GString name, @DelegatesTo(Pipeline) Closure<Map<String,Object>> step) {
         this.addStep( name.toString(), step )
     }
 
@@ -184,8 +179,11 @@ public class Pipeline {
      */
     public Pipeline filter(@DelegatesTo(Pipeline) Closure callback) {
         callback.delegate = this
-        addStep( "filter()" ) { Map row ->
-            return callback(row) ? row : reject("Row did not match the filter closure.", RejectionCategory.IGNORE_ROW )
+        addStep( "filter()" ) { Map<String,Object> row ->
+            if( !callback(row) ) {
+                return reject(row,"Row did not match the filter closure.", RejectionCategory.IGNORE_ROW )
+            }
+            return row
         }
         return this
     }
@@ -217,11 +215,11 @@ public class Pipeline {
      */
     public Pipeline filter( Map columns ) {
         Condition condition = new Condition( columns )
-        addStep( "filter ${ nameOf(columns) }" ) { Map row ->
+        addStep( "filter ${ condition }" ) { Map row ->
             if( condition.matches(row) ) {
                 return row
             } else {
-                return reject("Row did not match the filter ${columns}", RejectionCategory.IGNORE_ROW )
+                return reject( row,"Row did not match the filter ${columns}", RejectionCategory.IGNORE_ROW )
             }
         }
         return this
@@ -233,7 +231,7 @@ public class Pipeline {
      * @return Pipeline where all columns of each row has white space removed.
      */
     public Pipeline trim() {
-        addStep("trim()") { Map row ->
+        addStep("trim()") { Map<String,Object> row ->
             row.each { String key, Object value -> row[key] = (value as String)?.trim() }
             return row
         }
@@ -299,7 +297,7 @@ public class Pipeline {
      * @return A Pipeline where the rows contain all columns from the this Pipeline and right Pipeline joined on the given columns.
      */
     public Pipeline join( Pipeline other, def columns, boolean left = false ) {
-        Map<String,List<Map>> cache =[:]
+        Map<String,List<Map<String,Object>>> cache =[:]
         other.addStep("join(${other.name}, ${columns}).cache") { Map row ->
             String key = keyOf(row, rightColumn(columns) )
             if( !cache.containsKey(key) ) cache.put(key, [])
@@ -307,7 +305,7 @@ public class Pipeline {
             return row
         }
 
-        return inject("join(${this.name}, ${columns})") { Map row ->
+        return this.inject("join(${this.name}, ${columns})") { Map<String,Object> row ->
             if( !other.complete ) {
                 other.go()
             }
@@ -337,7 +335,7 @@ public class Pipeline {
                     return j
                 }
             } else {
-                reject("Could not join on ${columns}", RejectionCategory.IGNORE_ROW )
+                return [ reject( row,"Could not join on ${columns}", RejectionCategory.IGNORE_ROW ) ]
             }
         }
     }
@@ -351,17 +349,17 @@ public class Pipeline {
      * @return A Pipeline where the row's empty column values are filled in by the previous row.
      */
     public Pipeline fillDownBy( Closure<Boolean> decider ) {
-        Map previousRow = null
-        addStep("fillDownBy()") { Map row ->
+        Map<String,Object> previousRow = null
+        addStep("fillDownBy()") { Map<String,Object> row ->
             if( previousRow && decider( row, previousRow ) ) {
                 row.each { String col, Object value ->
                     // todo refactor valid_to out for excluded
-                    if (col != "valid_To" && (value == null || value.isEmpty())) {
+                    if (col != "valid_To" && (value == null || !value)) {
                         row[col] = previousRow[col]
                     }
                 }
             }
-            previousRow = row.clone()
+            previousRow = (Map<String,Object>)row.clone()
             return row
         }
         return this
@@ -419,7 +417,7 @@ public class Pipeline {
 
     private List<String> leftColumn(def columns) {
         if( columns instanceof Collection ) {
-            return ((Collection)columns).toList()
+            return ((Collection<String>)columns).toList()
         } else if( columns instanceof Map ) {
             return ((Map)columns).keySet().asList()
         } else {
@@ -429,16 +427,12 @@ public class Pipeline {
 
     private List<String> rightColumn(def columns) {
         if( columns instanceof Collection ) {
-            return ((Collection)columns).toList()
+            return ((Collection<String>)columns).toList()
         } else if( columns instanceof Map ) {
             return ((Map)columns).values().asList()
         } else {
             return [columns.toString()]
         }
-    }
-
-    private String nameOf(Map columns) {
-        return columns.keySet().collect() { key -> key + "->" + columns[key] }.join(',')
     }
 
     /**
@@ -468,7 +462,7 @@ public class Pipeline {
                 }
             }
 
-            current[ row[columns.last()] ] << row
+            ((List)current[ row[columns.last()] ]) << row
             return row
         }
 
@@ -478,7 +472,7 @@ public class Pipeline {
             @Override
             void start(Pipeline pipeline) {
                 parent.start() // first start our parent pipeline
-                pipeline.process( cache, 1 );
+                pipeline.process( cache, 1 )
             }
         }
         other.copyStatistics( this )
@@ -498,7 +492,7 @@ public class Pipeline {
             @Override
             int compare(Map o1, Map o2) {
                 for( String key : columns ) {
-                    int value = o1[key] <=> o2[key]
+                    int value = (Comparable)o1[key] <=> (Comparable)o2[key]
                     if( value != 0 ) return value;
                 }
                 return 0
@@ -538,7 +532,7 @@ public class Pipeline {
                 if (value) row[column] = Double.parseDouble(value)
                 return row
             } catch( NumberFormatException ex) {
-                reject("Could not parse ${value} as a Double", RejectionCategory.INVALID_FORMAT)
+                return reject( row,"Could not parse ${value} as a Double", RejectionCategory.INVALID_FORMAT)
             }
         }
     }
@@ -555,7 +549,7 @@ public class Pipeline {
                 if( value ) row[column] = Integer.parseInt(value)
                 return row
             } catch( NumberFormatException ex ) {
-                reject("Could not parse ${value} to an integer.", RejectionCategory.INVALID_FORMAT)
+                return reject( row,"Could not parse ${value} to an integer.", RejectionCategory.INVALID_FORMAT)
             }
         }
     }
@@ -618,7 +612,7 @@ public class Pipeline {
                 if (val) row[column] = dateFormat.parse(val)
                 return row
             } catch( ParseException ex ) {
-                reject( "${row[column]} could not be parsed by format ${format}", RejectionCategory.INVALID_FORMAT )
+                return reject( row, "${row[column]} could not be parsed by format ${format}", RejectionCategory.INVALID_FORMAT )
             }
         }
         return this
@@ -737,7 +731,10 @@ public class Pipeline {
         fieldValue.delegate = this
         addStep("addField(${fieldName})") { Map row ->
             Object value = fieldValue(row)
-            if( value instanceof Rejection ) return value
+            if( value instanceof Rejection ) {
+                row[REJECTED_KEY] = value
+                return row
+            }
             row[fieldName] = value
             return row
         }
@@ -772,7 +769,7 @@ public class Pipeline {
      */
     public Pipeline clip(String... columns) {
         addStep( "clip(${columns.join(",")}") { Map row ->
-            Map result = [:]
+            Map<String,Object> result = [:] as Map<String,Object>
             for( String key : row.keySet() ) {
                 if( columns.contains(key) ) {
                     result[key] = row[key]
@@ -792,11 +789,24 @@ public class Pipeline {
     Pipeline unique(String column) {
         Set<Object> unique = [:] as HashSet
         addStep("unique(${column})") { Map row ->
-            if( unique.contains(row[column]) ) return reject("Non-unique row returned", RejectionCategory.IGNORE_ROW)
+            if( unique.contains(row[column]) ) {
+                return reject(row, "Non-unique row returned", RejectionCategory.IGNORE_ROW)
+            }
             unique.add( row[column] )
             return row
         }
         return this
+    }
+
+    /**
+     * Just a helper method for using GString in {@link #inject(String,Closure)}.
+     *
+     * @param name Name of the inject step
+     * @param closure Closure returns a an Iterable used to inject those rows into down stream steps.
+     * @return Pipeline that will receive all members of the Iterable returned from the given closure.
+     */
+    public Pipeline inject(GString name, @DelegatesTo(Pipeline) Closure<Iterable<Map<String,Object>>> closure ) {
+        return this.inject( name.toString(), closure )
     }
 
     /**
@@ -805,20 +815,27 @@ public class Pipeline {
      * collection will be fed into downstream steps as separate rows.
      * @param name The name of the step
      * @param closure Takes a Map and returns a Collection&lt;Map&gt; that will be fed into the downstream steps
-     * @return The Pipeline that will received all members of the Collection returned from the closure.
+     * @return The Pipeline that will receive all members of the Iterable returned from the closure.
      */
-    public Pipeline inject(String name, @DelegatesTo(Pipeline) Closure closure) {
+    public Pipeline inject(String name, @DelegatesTo(Pipeline) Closure<Iterable<Map<String,Object>>> closure) {
         Pipeline next = new Pipeline(name)
         next.src = new ChainedSource( this )
         closure.delegate = this
         addStep(name) { Map row ->
-            def result = closure( row )
-            if( result instanceof Rejection ) {
-                next.doRejections((Rejection)result, row, name, -1)
+            Iterable<Map<String,Object>> result = closure.call( row )
+            if( result == null ) {
+                row = reject( row, "Unknown Reason", RejectionCategory.REJECTION )
+                next.doRejections(row, name, -1)
                 return row
             } else {
-                Collection<Map> cc = result
-                ((ChainedSource)next.src).process( cc )
+                Iterable<Map<String,Object>> cc = result
+                for( Map<String,Object> r : result ) {
+                    if( r[REJECTED_KEY] ) {
+                        next.doRejections(r, name, -1)
+                    } else {
+                        next.process( r, -1 )
+                    }
+                }
             }
             return row
         }
@@ -833,19 +850,20 @@ public class Pipeline {
      */
     void copyStatistics(Pipeline src, boolean copyLoaded = false) {
         after {
-            this.statistic.start = src.statistic.start
+            Pipeline dest = this
+            dest.statistic.start = src.statistic.start
             if( copyLoaded ) {
-                this.statistic.loaded = src.statistic.loaded
+                dest.statistic.loaded = src.statistic.loaded
             }
             for( RejectionCategory cat : src.statistic.rejectionsByCategory.keySet() ) {
-                if( !this.statistic.rejectionsByCategory.containsKey(cat) ) {
-                    this.statistic.rejectionsByCategory[ cat ] = [:]
+                if( !dest.statistic.rejectionsByCategory.containsKey(cat) ) {
+                    dest.statistic.rejectionsByCategory[ cat ] = [:] as Map<String,Integer>
                 }
                 for( String step : src.statistic.rejectionsByCategory[cat].keySet() ) {
-                    if( !this.statistic.rejectionsByCategory[cat].containsKey(step) ) {
-                        this.statistic.rejectionsByCategory[cat][step] = 0
+                    if( !dest.statistic.rejectionsByCategory[cat].containsKey(step) ) {
+                        dest.statistic.rejectionsByCategory[cat][step] = 0
                     }
-                    this.statistic.rejectionsByCategory[cat][ step ] = this.statistic.rejectionsByCategory[ cat ][step] + src.statistic.rejectionsByCategory[ cat ][step]
+                    dest.statistic.rejectionsByCategory[cat][ step ] = dest.statistic.rejectionsByCategory[ cat ][step] + src.statistic.rejectionsByCategory[ cat ][step]
                 }
             }
 
@@ -940,7 +958,7 @@ public class Pipeline {
                 if( halt ) {
                     throw new HaltPipelineException("Over the maximum limit of ${limit}")
                 } else {
-                    return reject("Over the maximum limit of ${limit}", RejectionCategory.IGNORE_ROW)
+                    return reject(row, "Over the maximum limit of ${limit}", RejectionCategory.IGNORE_ROW)
                 }
             }
             return row
@@ -970,7 +988,8 @@ public class Pipeline {
                 stream.close()
             }
             if( pgp.isOverwrite() ) {
-                row?.file?.delete()
+                File f = row?.file as File
+                f?.delete()
             }
             row.file = encryptedTemp
             row.filename = encryptedTemp.getName()
@@ -1050,31 +1069,32 @@ public class Pipeline {
      * @param lineNumber The lineNumber from the {@link gratum.source.Source} to use when tracking this row through the Pipeline
      */
     public boolean process(Map row, int lineNumber = -1) {
-        Map current = new LinkedHashMap(row)
+        Map<String,Object> next = row
         for (Step step : processChain) {
             try {
-                boolean stop = statistic.timed(step.name) {
-                    def ret = step.step(current)
-                    if (ret == null || ret instanceof Rejection) {
-                        doRejections((Rejection) ret, current, step.name, lineNumber)
-                        return true
+                Pair<Boolean,Map<String,Object>> pair = statistic.timed(step.name, {
+                    // super annoying, groovy with compile static doesn't see the closure return type generics for some reason
+                    Map<String,Object> ret = step.step.call(next)
+                    if( ret == null || ret.containsKey(REJECTED_KEY) ) {
+                        doRejections(ret, step.name, lineNumber)
+                        return new Pair<>( true, ret )
                     }
-                    current = ret
-                    return false
-                }
-                if (stop) return false
+                    return new Pair<>(false, ret )
+                })
+                if (pair.getKey()) return false
+                next = (Map<String,Object>)pair.getValue()
             } catch( HaltPipelineException ex ) {
                 throw ex
             } catch (Exception ex) {
-                throw new RuntimeException("Line ${lineNumber > 0 ? lineNumber : row}: Error encountered in step ${statistic.name}.${step.name}", ex)
+                throw new RuntimeException("Line ${(lineNumber > 0 ? lineNumber : row)}: Error encountered in step ${statistic.getName()}.${step.name}", ex)
             }
         }
         statistic.loaded++
         return false // don't stop!
     }
 
-    private void doRejections(Rejection ret, Map current, String stepName, int lineNumber) {
-        Rejection rejection = ret ?: new Rejection("Unknown reason", RejectionCategory.REJECTION)
+    private void doRejections(Map<String,Object> current, String stepName, int lineNumber) {
+        Rejection rejection = (Rejection)current.remove(REJECTED_KEY);
         rejection.step = stepName
         current.rejectionCategory = rejection.category
         current.rejectionReason = rejection.reason
@@ -1095,6 +1115,11 @@ public class Pipeline {
      */
     public static Rejection reject( String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
         return new Rejection( reason, category )
+    }
+
+    public static Map reject(Map row, String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
+        row[ REJECTED_KEY ] = reject( reason, category )
+        return row
     }
   
 }

@@ -1,7 +1,7 @@
 package gratum.etl
 
 class GratumFixture {
-    public static final List<Map> people = [
+    public static final List<Map> _people = [
             [id: 1, name: 'Bill Rhodes', age: 53, gender: 'male', comment: """
 I had the single cheese burger.  It was juicy and well seasoned.  The fries 
 were on the soggy side and I had to wait for a while to get my milkshake.
@@ -22,7 +22,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
 """]
     ]
 
-    public static final Collection<Map> hobbies = [
+    public static final Collection<Map> _hobbies = [
             [id:1, hobby: 'Stamp Collecting'],
             [id:1, hobby: 'Bird Watching'],
             [id:2, hobby: 'Biking'],
@@ -32,5 +32,13 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
             [id:4, hobby: 'Crossfit'],
             [id:4, hobby: 'Obstacle Races']
     ]
+
+    public static Collection<Map<String,Object>> getHobbies() {
+        return _hobbies.collect() { (Map<String,Object>)it.clone() }
+    }
+
+    public static Collection<Map<String,Object>> getPeople() {
+        return _people.collect() { (Map<String,Object>)it.clone() }
+    }
 
 }
