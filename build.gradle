@@ -42,6 +42,7 @@ publishing {
         gratum(MavenPublication) {
             //customizePom(pom)
             from components.java
+            artifact sourceJar
 
             pom {
                 name = project.name
