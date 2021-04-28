@@ -9,18 +9,21 @@ class XlsxSourceTest {
     void testXlsxLoading() {
         int id = 1
         LoadStatistic stat = XlsxSource.xlsx( "Players", Class.getResourceAsStream("/players.xlsx") ).into()
+            .asInt("ID")
             .addStep("Verify") { Map row ->
                 assert row.size() == 6 // should have 6 columns
-                row.each { String col, Object value ->
-                    assert value != null
+                if( row.ID != 7 ) {
+                    row.each { String col, Object value ->
+                        assert value != null
+                    }
                 }
-                row.id == id
+                assert row.ID == id
                 id++
                 return row
             }
             .go()
 
-        assert stat.loaded == 6
+        assert stat.loaded == 7
         assert stat.rejections == 0
     }
 
@@ -29,7 +32,7 @@ class XlsxSourceTest {
         LoadStatistic stat = XlsxSource.xlsx("Players", Class.getResourceAsStream("/players.xlsx")).into()
             .groupBy("color")
                     .addStep("Verify groups") { Map<String,List<Map<String,Object>>> row ->
-                assert row.size() == 5
+                assert row.size() == 6
                 assert row.green.size() == 2
                 assert row.blue.size() == 1
                 assert row.purple.size() == 1
@@ -51,7 +54,7 @@ class XlsxSourceTest {
             }
             .go()
 
-        assert stat.loaded == 6
+        assert stat.loaded == 7
         assert stat.rejections == 0
     }
 

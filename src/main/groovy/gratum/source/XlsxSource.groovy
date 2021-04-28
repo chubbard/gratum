@@ -3,6 +3,7 @@ package gratum.source
 import gratum.etl.Pipeline
 import org.apache.poi.openxml4j.opc.OPCPackage
 import org.apache.poi.ss.usermodel.DataFormatter
+import org.apache.poi.ss.util.CellAddress
 import org.apache.poi.util.XMLHelper
 import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable
 import org.apache.poi.xssf.eventusermodel.XSSFReader
@@ -135,7 +136,6 @@ class XlsxSource extends AbstractSource {
         List<String> headers
         Pipeline pipeline
         Map current
-        int col = 0
         int currentRow = 0
 
         XslxSheetHandler(Pipeline pipeline) {
@@ -151,24 +151,31 @@ class XlsxSource extends AbstractSource {
                 current = [:]
             }
             currentRow = rowNum
-            col = 0
         }
 
         @Override
         void endRow(int rowNum) {
             if( rowNum != headerRow ) {
-                pipeline.process( current, rowNum)
+                if( !current.isEmpty() ) {
+                    pipeline.process( current, rowNum)
+                }
             }
         }
 
         @Override
         void cell(String cellReference, String formattedValue, XSSFComment comment) {
             if( currentRow != headerRow ) {
-                current[ headers[col] ] = formattedValue
+                CellAddress cellRef = new CellAddress( cellReference)
+                current[ headers[cellRef.getColumn()] ] = formattedValue
+                if( current.size() - 1 < cellRef.getColumn() ) {
+                    // we encountered a skip, add missing cols
+                    for( int i = current.size() - 1; i < cellRef.getColumn(); i++ ) {
+                        current[ headers[i] ] = null
+                    }
+                }
             } else {
                 headers.add( formattedValue )
             }
-            col++
         }
     }
 
