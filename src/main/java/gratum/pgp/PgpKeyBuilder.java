@@ -53,6 +53,9 @@ public class PgpKeyBuilder {
     /**
      * @param keySize - 1024, 2048, 4096
      * @return the El Gamal generated key pair
+     * @throws InvalidAlgorithmParameterException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
      */
     protected final KeyPair generateElGamalKeyPair(ElGamalKeySize keySize) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
         return generateElGamalKeyPair(keySize.getElGamalParameterSpec());
@@ -61,6 +64,9 @@ public class PgpKeyBuilder {
     /**
      * @param paramSpecs - the pre-defined parameter specs
      * @return the El Gamal generated key pair
+     * @throws InvalidAlgorithmParameterException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
      */
     protected final KeyPair generateElGamalKeyPair(ElGamalParameterSpec paramSpecs) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("ELGAMAL", "BC");
