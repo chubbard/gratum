@@ -44,14 +44,24 @@ public class PgpContext {
 
     public PgpContext addPublicKeys( File publicKeyRing ) throws IOException, PGPException {
         try(InputStream stream = new ArmoredInputStream(new FileInputStream(publicKeyRing))) {
-            this.publicKeys = new PGPPublicKeyRingCollection(stream, new JcaKeyFingerprintCalculator());
+            if( this.publicKeys == null ) {
+                this.publicKeys = new PGPPublicKeyRingCollection(stream, new JcaKeyFingerprintCalculator());
+            } else {
+                PGPPublicKeyRing keyRing = new PGPPublicKeyRing( stream, new JcaKeyFingerprintCalculator());
+                this.publicKeys = PGPPublicKeyRingCollection.addPublicKeyRing( this.publicKeys, keyRing );
+            }
             return this;
         }
     }
 
     public PgpContext addSecretKeys( File secretKeyRing ) throws IOException, PGPException {
         try(InputStream stream = new ArmoredInputStream(new FileInputStream(secretKeyRing))) {
-            this.secretKeys = new PGPSecretKeyRingCollection(stream, new JcaKeyFingerprintCalculator());
+            if( this.secretKeys == null ) {
+                this.secretKeys = new PGPSecretKeyRingCollection(stream, new JcaKeyFingerprintCalculator());
+            } else {
+                PGPSecretKeyRing keyRing = new PGPSecretKeyRing( stream, new JcaKeyFingerprintCalculator());
+                this.secretKeys = PGPSecretKeyRingCollection.addSecretKeyRing( this.secretKeys, keyRing );
+            }
             return this;
         }
     }
