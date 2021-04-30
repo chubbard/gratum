@@ -1,6 +1,5 @@
 package gratum.csv;
 
-import gratum.util.Utilities;
 import org.apache.commons.io.input.BOMInputStream;
 
 import java.io.*;
@@ -16,8 +15,6 @@ public class CSVFile {
 
     private int rows = 0;
     private List<String> columnHeaders;
-    private HashSet<String> rowHashes = new HashSet<String>();
-    private boolean allowDuplicateRows=true;
     private boolean escaped = true;
 
     public CSVFile(String filename, String separator) {
@@ -41,14 +38,6 @@ public class CSVFile {
 
     public void setEscaped(boolean escaped) {
         this.escaped = escaped;
-    }
-
-    public void setAllowDuplicateRows(boolean allowDuplicateRows) {
-        this.allowDuplicateRows = allowDuplicateRows;
-    }
-
-    public boolean getAllowDuplicateRows() {
-        return this.allowDuplicateRows;
     }
 
     public int parse( CSVReader callback ) throws IOException {
@@ -75,7 +64,7 @@ public class CSVFile {
         }
 
         try {
-            List<String> row = null;
+            List<String> row;
             while ((row = readNext(lineNumberReader)) != null) {
                 boolean stop = callback.processRow(columnHeaders, row);
                 if (stop) {
@@ -169,7 +158,7 @@ public class CSVFile {
         for (String columnHeader : this.columnHeaders) {
             rowArray[i++] = row.get(columnHeader) == null ? "" : row.get(columnHeader).toString();
         }
-        write(rowArray);
+        write((Object[]) rowArray);
     }
 
     public void write( Map row ) throws IOException {
@@ -190,39 +179,23 @@ public class CSVFile {
                 rowArray[i++] = row.get(columnHeader).toString();
             }
         }
-        write(rowArray);
+        write((Object[]) rowArray);
     }
     public void write( Object... row ) throws IOException {
-        boolean addRow = true;
-        if(!allowDuplicateRows) {
-            String rowString = "";
-            for(Object rowValue : row) {
-                rowString += "_"+rowValue.toString();
+        if( writer == null ) {
+            writer = new PrintWriter( new FileWriter(file) );
+        }
+        StringBuilder buffer = new StringBuilder();
+        for( int i = 0; i < row.length; i++ ) {
+            if( i > 0 ) {
+                buffer.append(separator);
             }
-            String rowHash = Utilities.MD5(rowString);
-            if(!rowHashes.contains(rowHash)) {
-                rowHashes.add(rowHash);
-            }else {
-                addRow = false;
+            if( row[i] != null ) {
+                buffer.append( escape( format( row[i] ) ) );
             }
         }
-
-        if(addRow) {
-            if( writer == null ) {
-                writer = new PrintWriter( new FileWriter(file) );
-            }
-            StringBuilder buffer = new StringBuilder();
-            for( int i = 0; i < row.length; i++ ) {
-                if( i > 0 ) {
-                    buffer.append(separator);
-                }
-                if( row[i] != null ) {
-                    buffer.append( escape( format( row[i] ) ) );
-                }
-            }
-            writer.println( buffer.toString() );
-            rows++;
-        }
+        writer.println( buffer.toString() );
+        rows++;
     }
 
     private String format(Object o) {
