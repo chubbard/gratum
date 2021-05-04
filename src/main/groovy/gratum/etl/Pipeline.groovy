@@ -250,7 +250,7 @@ public class Pipeline {
         Pipeline tail = split( branch )
 
         addStep( "branch()" ) { Map row ->
-            branch.process( row )
+            branch.process( new LinkedHashMap(row) )
             return row
         }
 
@@ -275,7 +275,7 @@ public class Pipeline {
         Condition selection = new Condition( condition )
         addStep( "branch(${condition})" ) { Map row ->
             if( selection.matches( row )) {
-                branch.process( row )
+                branch.process( new LinkedHashMap(row) )
             }
             return row
         }
