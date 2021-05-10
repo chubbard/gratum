@@ -11,8 +11,6 @@ import groovy.json.JsonOutput
 
 import groovy.transform.CompileStatic
 
-import org.apache.commons.math3.util.Pair
-
 import java.text.ParseException
 import java.text.SimpleDateFormat
 
@@ -67,11 +65,13 @@ public class Pipeline {
     Source src
     List<Step> processChain = []
     List<Closure> doneChain = []
+    Pipeline parent
     Pipeline rejections
     boolean complete = false
 
-    Pipeline(String name) {
+    Pipeline(String name, Pipeline parent = null) {
         this.statistic = new LoadStatistic([name: name])
+        this.parent = parent
     }
 
     /**
@@ -138,14 +138,26 @@ public class Pipeline {
      * @return this Pipeline
      */
     public Pipeline onRejection( @DelegatesTo(Pipeline) Closure<Void> branch ) {
-        if( !rejections ) rejections = new Pipeline("Rejections(${name})")
-        branch.delegate = rejections
-        branch( rejections )
-        after {
-            rejections.doneChain.each { Closure c ->
-                c()
+        if( parent ) {
+            parent.onRejection( branch )
+        } else {
+            if( !rejections ) rejections = new Pipeline("Rejections(${name})")
+            rejections.addStep("Remap rejections to columns") { Map row ->
+                Map current = (Map)row.clone()
+                Rejection rejection = (Rejection)current.remove(REJECTED_KEY)
+                current.rejectionCategory = rejection.category
+                current.rejectionReason = rejection.reason
+                current.rejectionStep = rejection.step
+                return current
             }
-            return
+            branch.delegate = rejections
+            branch( rejections )
+            after {
+                rejections.doneChain.each { Closure c ->
+                    c()
+                }
+                return
+            }
         }
         return this
     }
@@ -245,7 +257,7 @@ public class Pipeline {
      * @return this Pipeline
      */
     public Pipeline branch( Closure<Pipeline> split) {
-        Pipeline branch = new Pipeline( name )
+        final Pipeline branch = new Pipeline( name, this )
 
         Pipeline tail = split( branch )
 
@@ -269,7 +281,7 @@ public class Pipeline {
      * @return this Pipeline
      */
     public Pipeline branch(Map<String,Object> condition, Closure<Pipeline> split) {
-        Pipeline branch = new Pipeline( name )
+        Pipeline branch = new Pipeline( name, this )
         Pipeline tail = split(branch)
 
         Condition selection = new Condition( condition )
@@ -467,7 +479,7 @@ public class Pipeline {
         }
 
         Pipeline parent = this
-        Pipeline other = new Pipeline( statistic.name )
+        Pipeline other = new Pipeline( statistic.name, this )
         other.src = new AbstractSource() {
             @Override
             void start(Pipeline pipeline) {
@@ -507,7 +519,7 @@ public class Pipeline {
             return row
         }
 
-        Pipeline next = new Pipeline(statistic.name)
+        Pipeline next = new Pipeline(statistic.name, this)
         next.src = new ChainedSource( this )
         after {
             next.statistic.rejectionsByCategory = this.statistic.rejectionsByCategory
@@ -635,7 +647,7 @@ public class Pipeline {
             return row
         }
 
-        Pipeline next = new Pipeline( filename )
+        Pipeline next = new Pipeline( filename, this )
         next.src = new ChainedSource( this )
         after {
             out.close()
@@ -818,7 +830,7 @@ public class Pipeline {
      * @return The Pipeline that will receive all members of the Iterable returned from the closure.
      */
     public Pipeline inject(String name, @DelegatesTo(Pipeline) Closure<Iterable<Map<String,Object>>> closure) {
-        Pipeline next = new Pipeline(name)
+        Pipeline next = new Pipeline(name, this)
         next.src = new ChainedSource( this )
         closure.delegate = this
         addStep(name) { Map row ->
@@ -830,9 +842,7 @@ public class Pipeline {
             } else {
                 Iterable<Map<String,Object>> cc = result
                 for( Map<String,Object> r : result ) {
-                    if( r[REJECTED_KEY] ) {
-                        next.doRejections(r, name, -1)
-                    } else {
+                    if( !r[REJECTED_KEY] ) {
                         next.process( r, -1 )
                     }
                 }
@@ -876,16 +886,17 @@ public class Pipeline {
     }
 
     /**
-     * This takes a closure that returns a Pipeline which is used to feed the returned Pipeline.  The closure will be called
-     * for each row emitted from this Pipeline so the closure could create multiple Pipelines, and all data from every Pipeline
-     * will be fed into the returned Pipeline.
+     * This takes a closure that returns a Pipeline which is used to feed the Pipeline returned by exchange().  The
+     * closure will be called for each row emitted from this Pipeline so the closure could create multiple Pipelines,
+     * and all data from every Pipeline will be fed into the returned Pipeline.
      *
-     * @param closure A closure that takes a Map and returns a pipeline that it's data will be fed on to the returned pipeline.
+     * @param closure A closure that takes a Map and returns a pipeline that it's data will be fed on to the
+     * returned pipeline.
      *
-     * @return A Pipeilne whose reocrds consist of the records from all Pipelines returned from the closure
+     * @return A Pipeline whose records consist of the records from all Pipelines returned from the closure
      */
     public Pipeline exchange(Closure<Pipeline> closure) {
-        Pipeline next = new Pipeline( name )
+        Pipeline next = new Pipeline( name, this )
         next.src = new ChainedSource(this)
         addStep("exchange(${next.name})") { Map row ->
             Pipeline pipeline = closure( row )
@@ -1072,17 +1083,10 @@ public class Pipeline {
         Map<String,Object> next = row
         for (Step step : processChain) {
             try {
-                Pair<Boolean,Map<String,Object>> pair = statistic.timed(step.name, {
-                    // super annoying, groovy with compile static doesn't see the closure return type generics for some reason
-                    Map<String,Object> ret = step.step.call(next)
-                    if( ret == null || ret.containsKey(REJECTED_KEY) ) {
-                        doRejections(ret, step.name, lineNumber)
-                        return new Pair<>( true, ret )
-                    }
-                    return new Pair<>(false, ret )
-                })
-                if (pair.getKey()) return false
-                next = (Map<String,Object>)pair.getValue()
+                next = statistic.timed(step.name) {
+                    step.execute( this, next, lineNumber )
+                }
+                if( next[REJECTED_KEY] ) return false
             } catch( HaltPipelineException ex ) {
                 throw ex
             } catch (Exception ex) {
@@ -1093,14 +1097,15 @@ public class Pipeline {
         return false // don't stop!
     }
 
-    private void doRejections(Map<String,Object> current, String stepName, int lineNumber) {
-        Rejection rejection = (Rejection)current.remove(REJECTED_KEY);
-        rejection.step = stepName
-        current.rejectionCategory = rejection.category
-        current.rejectionReason = rejection.reason
-        current.rejectionStep = rejection.step
-        statistic.reject( rejection )
-        rejections?.process(current, lineNumber)
+    protected void doRejections(Map<String,Object> current, String stepName, int lineNumber) {
+        if( parent ) {
+            parent.doRejections( current, stepName, lineNumber )
+        } else {
+            Rejection rejection = (Rejection)current[REJECTED_KEY]
+            rejection.step = stepName
+            statistic.reject( rejection )
+            rejections?.process(current, lineNumber)
+        }
     }
 
     private String keyOf( Map row, List<String> columns ) {

@@ -1,5 +1,6 @@
 package gratum.etl
 
+import gratum.source.CollectionSource
 import gratum.source.CsvSource
 import org.junit.Test
 
@@ -160,9 +161,9 @@ class PipelineTest {
             .go()
 
         // verify that step timings for steps before the groupBy() are included in the returned statistics
-        assertTrue( "Assert that the timings inlude the asInt step", statistic.stepTimings.containsKey("asInt(Age)") )
-        assertTrue( "Assert that the timings inlude the filter step", statistic.stepTimings.containsKey("filter()") )
-        assertTrue( "Assert that the timings inlude the groupBy(Sex,Pclass) step", statistic.stepTimings.containsKey("groupBy(Sex,Pclass)") )
+        assertTrue( "Assert that the timings include the asInt step", statistic.stepTimings.containsKey("asInt(Age)") )
+        assertTrue( "Assert that the timings include the filter step", statistic.stepTimings.containsKey("filter()") )
+        assertTrue( "Assert that the timings include the groupBy(Sex,Pclass) step", statistic.stepTimings.containsKey("groupBy(Sex,Pclass)") )
     }
 
     @Test
@@ -484,9 +485,9 @@ class PipelineTest {
         ]).asInt('hits')
         .go()
 
-        assertEquals( 3, stats.loaded )
-        assertEquals( 1, stats.rejections )
-        assertEquals( 1, stats.getRejections(RejectionCategory.INVALID_FORMAT))
+        assert 3 == stats.loaded
+        assert 1 == stats.rejections
+        assert 1 == stats.getRejections(RejectionCategory.INVALID_FORMAT)
     }
 
     @Test
@@ -783,5 +784,82 @@ class PipelineTest {
                     return row
                 }
                 .go()
+    }
+
+    @Test
+    void testRejectionsFilterAcrossMultiplePipelines() {
+        try {
+            boolean rejectionsCalled = false
+            CollectionSource.of(GratumFixture.getPeople()).into()
+                    .filter(gender: "male")
+                    .save("testRejectionsFilterAcrossMultiplePipelines.csv", "|")
+                    .onRejection { Pipeline rejections ->
+                        rejections.addStep("Assert We see males") { Map row ->
+                            rejectionsCalled = true
+                            assert row.gender == "female"
+                            return row
+                        }
+                        return
+                    }
+                    .go()
+
+            assert rejectionsCalled
+        } finally {
+            File f = new File("testRejectionsFilterAcrossMultiplePipelines.csv")
+            f.delete()
+        }
+    }
+
+    @Test
+    void testExchange() {
+        LoadStatistic stats = from([
+                [ product: "IDW - TEQ-77", features: [
+                        [ name: 'doors', value: 2 ],
+                        [ name: 'configuration', value: 'chest' ],
+                        [ name: 'refrigerant', value: 'R-600a'],
+                        [ name: 'Energy Use', value: 0.26],
+                        [ name: 'Volume', value: 2.3]
+                    ]
+                ],
+                [ product: 'IDW - RCM-VISID', features: [
+                        [ name: 'doors', value: 1],
+                        [ name: 'configuration', value: 'chest'],
+                        [ name: 'refrigerant', value: 'R-600a'],
+                        [ name: 'Energy Use', value: 0.29],
+                        [ name: 'Volume', value: 2.3]
+                    ]
+                ],
+                [ product: 'IDW - TEQ2', features: [
+                        [ name: 'doors', value: 1],
+                        [ name: 'configuration', value: 'vertical'],
+                        [ name: 'refrigerant', value: 'R-600a'],
+                        [ name: 'Energy Use', value: 0.31],
+                        [ name: 'Volume', value: 2.27]
+                    ]
+                ],
+                [ product: 'True Refrigeration - TMC-34-DS-S-SS-HC', features: [
+                        [ name: 'doors', value: 2],
+                        [ name: 'configuration', value: 'Chest'],
+                        [ name: 'refrigerant', value: 'R-290'],
+                        [ name: 'Energy Use', value: 0.72],
+                        [ name: 'Volume', value: 11.06]
+                    ]
+                ]
+            ]).exchange { Map row ->
+                return from((Collection<Map>)row.features).setField("product", row.product )
+            }
+            .addStep("Check the rows and files") { Map row ->
+                assert row.containsKey("product")
+                assert row.containsKey("name")
+                assert row.containsKey("value")
+                assert row.product != null
+                assert row.name != null
+                assert row.value != null
+                return row
+            }
+            .go()
+
+        assert stats.loaded == 20
+        assert stats.rejections == 0
     }
 }
