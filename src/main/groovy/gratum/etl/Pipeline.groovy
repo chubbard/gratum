@@ -65,7 +65,7 @@ public class Pipeline {
     String name
     Source src
     List<Step> processChain = []
-    List<Closure> doneChain = []
+    List<AfterStep> doneChain = []
     Pipeline parent
     Pipeline rejections
     boolean complete = false
@@ -128,7 +128,7 @@ public class Pipeline {
      * @return this Pipeline.
      */
     public Pipeline after( @DelegatesTo(Pipeline) Closure<Void> step ) {
-        doneChain << step
+        doneChain << new AfterStep(step)
         return this
     }
 
@@ -155,8 +155,8 @@ public class Pipeline {
             branch.delegate = rejections
             branch( rejections )
             after {
-                rejections.doneChain.each { Closure c ->
-                    c()
+                rejections.doneChain.each { AfterStep step ->
+                    step.execute()
                 }
                 return
             }
@@ -1014,12 +1014,9 @@ public class Pipeline {
         try {
             src?.start(this)
 
-            // todo how to handle measuring done callback timings!
-//            statistic.timed("Done Callbacks") {
-                doneChain.each { Closure current ->
-                    current()
-                }
-//            }
+            doneChain.each { AfterStep current ->
+                current.execute()
+            }
         } catch( HaltPipelineException ex ) {
             // ignore as we were asked to halt.
         }
@@ -1106,6 +1103,11 @@ public class Pipeline {
 
             stat.addTiming(s.name, s.duration )
         }
+
+        if( doneChain ) {
+            stat.addTiming("${name}.after", (Long)doneChain.sum() {it.duration } )
+        }
+
         if( loaded > DO_NOT_TRACK ) stat.loaded = loaded
         return stat
     }

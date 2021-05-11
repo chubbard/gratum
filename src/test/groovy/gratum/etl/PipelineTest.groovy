@@ -880,4 +880,12 @@ class PipelineTest {
         assert stats.loaded == 20
         assert stats.rejections == 0
     }
+
+    @Test
+    void testDoneCallbacksInTimings() {
+        LoadStatistic stat = from(GratumFixture.hobbies).sort("hobby").go()
+
+        assert stat.stepTimings.containsKey("${stat.name}.after".toString())
+        assert stat.stepTimings["${stat.name}.after".toString()] > 0
+    }
 }
