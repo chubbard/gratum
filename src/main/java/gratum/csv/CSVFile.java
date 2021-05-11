@@ -3,6 +3,7 @@ package gratum.csv;
 import org.apache.commons.io.input.BOMInputStream;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class CSVFile {
@@ -183,7 +184,7 @@ public class CSVFile {
     }
     public void write( Object... row ) throws IOException {
         if( writer == null ) {
-            writer = new PrintWriter( new FileWriter(file) );
+            writer = new PrintWriter( new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8) );
         }
         StringBuilder buffer = new StringBuilder();
         for( int i = 0; i < row.length; i++ ) {
