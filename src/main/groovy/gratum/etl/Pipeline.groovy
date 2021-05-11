@@ -60,17 +60,19 @@ import java.text.SimpleDateFormat
 public class Pipeline {
 
     public static final String REJECTED_KEY = "__reject__"
+    public static final int DO_NOT_TRACK = -1
 
-    LoadStatistic statistic
+    String name
     Source src
     List<Step> processChain = []
     List<Closure> doneChain = []
     Pipeline parent
     Pipeline rejections
     boolean complete = false
+    int loaded = 0
 
     Pipeline(String name, Pipeline parent = null) {
-        this.statistic = new LoadStatistic([name: name])
+        this.name = name
         this.parent = parent
     }
 
@@ -95,7 +97,7 @@ public class Pipeline {
      * @return The name of the Pipeline
      */
     public String getName() {
-        return this.statistic.name
+        return this.name
     }
 
     /**
@@ -171,6 +173,7 @@ public class Pipeline {
      */
     public Pipeline concat( Pipeline src ) {
         Pipeline original = this
+        src.parent = this
         this.after {
             int line = 0
             src.addStep("concat(${src.name})") { Map row ->
@@ -479,7 +482,7 @@ public class Pipeline {
         }
 
         Pipeline parent = this
-        Pipeline other = new Pipeline( statistic.name, this )
+        Pipeline other = new Pipeline( name, this )
         other.src = new AbstractSource() {
             @Override
             void start(Pipeline pipeline) {
@@ -487,7 +490,6 @@ public class Pipeline {
                 pipeline.process( cache, 1 )
             }
         }
-        other.copyStatistics( this )
         return other
     }
 
@@ -519,11 +521,9 @@ public class Pipeline {
             return row
         }
 
-        Pipeline next = new Pipeline(statistic.name, this)
+        Pipeline next = new Pipeline(name, this)
         next.src = new ChainedSource( this )
         after {
-            next.statistic.rejectionsByCategory = this.statistic.rejectionsByCategory
-            next.statistic.start = this.statistic.start
             ordered.sort( comparator )
             ((ChainedSource)next.src).process( ordered )
             null
@@ -648,13 +648,13 @@ public class Pipeline {
         }
 
         Pipeline next = new Pipeline( filename, this )
+        next.loaded = DO_NOT_TRACK
         next.src = new ChainedSource( this )
         after {
             out.close()
             next.process([ file: out.getFile(), filename: filename, stream: new FileOpenable(out.getFile()) ])
             return
         }
-        next.copyStatistics( this, true )
         return next
     }
 
@@ -849,40 +849,7 @@ public class Pipeline {
             }
             return row
         }
-        next.copyStatistics( this )
         return next
-    }
-
-    /*
-     * Registers an after closure onto this Pipeline to copy the start time and rejections from the src pipeline to this
-     * pipeline's statistics.  The start time is overwritten, but the rejections are added together.  This results in a
-     * consistent statistics over the whole chain of pipelines.  The rows loaded by this pipeline are not modified.
-     */
-    void copyStatistics(Pipeline src, boolean copyLoaded = false) {
-        after {
-            Pipeline dest = this
-            dest.statistic.start = src.statistic.start
-            if( copyLoaded ) {
-                dest.statistic.loaded = src.statistic.loaded
-            }
-            for( RejectionCategory cat : src.statistic.rejectionsByCategory.keySet() ) {
-                if( !dest.statistic.rejectionsByCategory.containsKey(cat) ) {
-                    dest.statistic.rejectionsByCategory[ cat ] = [:] as Map<String,Integer>
-                }
-                for( String step : src.statistic.rejectionsByCategory[cat].keySet() ) {
-                    if( !dest.statistic.rejectionsByCategory[cat].containsKey(step) ) {
-                        dest.statistic.rejectionsByCategory[cat][step] = 0
-                    }
-                    dest.statistic.rejectionsByCategory[cat][ step ] = dest.statistic.rejectionsByCategory[ cat ][step] + src.statistic.rejectionsByCategory[ cat ][step]
-                }
-            }
-
-            Map<String,Long> timings = [:]
-            timings.putAll( src.statistic.stepTimings )
-            timings.putAll( this.statistic.stepTimings )
-            this.statistic.stepTimings = timings
-            return
-        }
     }
 
     /**
@@ -907,7 +874,6 @@ public class Pipeline {
             pipeline.start()
             return row
         }
-        next.copyStatistics( this )
         return next
     }
 
@@ -1046,15 +1012,14 @@ public class Pipeline {
      */
     public void start() {
         try {
-            statistic.start = System.currentTimeMillis()
             src?.start(this)
-            statistic.end = System.currentTimeMillis()
 
-            statistic.timed("Done Callbacks") {
+            // todo how to handle measuring done callback timings!
+//            statistic.timed("Done Callbacks") {
                 doneChain.each { Closure current ->
                     current()
                 }
-            }
+//            }
         } catch( HaltPipelineException ex ) {
             // ignore as we were asked to halt.
         }
@@ -1069,8 +1034,10 @@ public class Pipeline {
      * @return The LoadStatistic instance from this Pipeline.
      */
     public LoadStatistic go() {
+        long s = System.currentTimeMillis()
         start()
-        return statistic
+        long e = System.currentTimeMillis()
+        return toLoadStatistic(s, e)
     }
 
     /**
@@ -1083,17 +1050,15 @@ public class Pipeline {
         Map<String,Object> next = row
         for (Step step : processChain) {
             try {
-                next = statistic.timed(step.name) {
-                    step.execute( this, next, lineNumber )
-                }
+                next = step.execute( this, next, lineNumber )
                 if( next[REJECTED_KEY] ) return false
             } catch( HaltPipelineException ex ) {
                 throw ex
             } catch (Exception ex) {
-                throw new RuntimeException("Line ${(lineNumber > 0 ? lineNumber : row)}: Error encountered in step ${statistic.getName()}.${step.name}", ex)
+                throw new RuntimeException("Line ${(lineNumber > 0 ? lineNumber : row)}: Error encountered in step ${name}.${step.name}", ex)
             }
         }
-        statistic.loaded++
+        if( loaded > DO_NOT_TRACK ) loaded++
         return false // don't stop!
     }
 
@@ -1103,7 +1068,6 @@ public class Pipeline {
         } else {
             Rejection rejection = (Rejection)current[REJECTED_KEY]
             rejection.step = stepName
-            statistic.reject( rejection )
             rejections?.process(current, lineNumber)
         }
     }
@@ -1126,5 +1090,23 @@ public class Pipeline {
         row[ REJECTED_KEY ] = reject( reason, category )
         return row
     }
-  
+
+    LoadStatistic toLoadStatistic(long start, long end) {
+        LoadStatistic stat
+        if( parent ) {
+            stat = parent.toLoadStatistic(start, end)
+        } else {
+            stat = new LoadStatistic(name: name, start: start, end: end)
+        }
+
+        for( Step s : processChain ) {
+            s.rejections.each { RejectionCategory cat, Integer count ->
+                stat.addRejection( cat, s.name, count )
+            }
+
+            stat.addTiming(s.name, s.duration )
+        }
+        if( loaded > DO_NOT_TRACK ) stat.loaded = loaded
+        return stat
+    }
 }

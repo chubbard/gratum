@@ -180,7 +180,12 @@ class PipelineTest {
         assertEquals( "Assert all rows rejected", 418, statistic.rejections )
 
         assertTrue( "Assert that the timings include the filter(Sex->K)) step", statistic.stepTimings.containsKey("filter Sex -> K") )
-        assertFalse( "Assert that timings does NOT include groupBy because all rows are filtered out.", statistic.stepTimings.containsKey("groupBy(Sex)") )
+        // I'm not entirely sure why this assert was added.  It seems logical to include
+        // it as it's a step on the Pipeline but it was done for specific reasons, but
+        // those reasons are lost to history.  I'm leaving it in case I remember why this was
+        // important or not.
+//        assertFalse( "Assert that timings does NOT include groupBy because all rows are filtered out.", statistic.stepTimings.containsKey("groupBy(Sex)") )
+        assertTrue( "Assert that timings does include groupBy because all rows are filtered out.", statistic.stepTimings.containsKey("groupBy(Sex)") )
     }
 
     @Test
@@ -190,16 +195,23 @@ class PipelineTest {
 
     @Test
     void testConcat() {
+        int called = 0
         LoadStatistic stats = from([
                 [name: 'Chuck', atBats: '200', hits: '100', battingAverage: '0.5'],
                 [name: 'Sam', atBats: '300', hits: '125', battingAverage: '0.4166']
         ]).concat( from([
                 [name: 'Rob', atBats: '100', hits: '75', battingAverage: '0.75'],
                 [name: 'Sean', atBats: '20', hits: 'none', battingAverage: 'none']
-        ])).go()
+        ]))
+        .addStep("Assert we get rows") { Map row ->
+            called++
+            return row
+        }
+        .go()
 
         assertEquals( 4, stats.loaded )
         assertEquals( 0, stats.rejections )
+        assertEquals( stats.loaded, called )
     }
 
     @Test
@@ -547,9 +559,15 @@ class PipelineTest {
 
     @Test
     void testSort2() {
+        Integer last = -1
         LoadStatistic stats = from( GratumFixture.people )
                 .filter([gender: 'male'])
                 .sort('age')
+                .addStep('ageN > age1') {Map row ->
+                    assert row.age >= last
+                    last = (Integer)row.age
+                    return row
+                }
                 .go()
 
         assertEquals( 2, stats.loaded )

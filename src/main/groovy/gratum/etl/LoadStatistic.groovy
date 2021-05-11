@@ -58,14 +58,17 @@ class LoadStatistic {
     }
 
     public void reject(Rejection rejection) {
-        RejectionCategory category = rejection?.category ?: RejectionCategory.REJECTION
+        addRejection( rejection?.category ?: RejectionCategory.REJECTION, rejection.step)
+    }
+
+    public void addRejection( RejectionCategory category, String stepName, Integer count = 1 ) {
         if( !rejectionsByCategory[category] ) {
-            rejectionsByCategory[category] = [(rejection.step): 0]
-        } else if( !rejectionsByCategory[category][rejection.step] ) {
-            rejectionsByCategory[category][rejection.step] = 0
+            rejectionsByCategory[category] = [(stepName): 0]
+        } else if( !rejectionsByCategory[category][stepName] ) {
+            rejectionsByCategory[category][stepName] = 0
         }
-        Integer count = rejectionsByCategory[category][rejection.step] + 1
-        rejectionsByCategory[category][rejection.step] = count
+        Integer total = rejectionsByCategory[category][stepName] + count
+        rejectionsByCategory[category][stepName] = total
     }
 
     public Map<RejectionCategory, Map<String,Integer>> getRejectionsByCategory() {
@@ -126,5 +129,9 @@ class LoadStatistic {
         pw.println("\n----")
         pw.printf( "==> %s %nloaded %,d %nrejected %,d %ntook %,d ms%n", this.name, this.loaded, this.rejections,this.elapsed )
         return out.toString()
+    }
+
+    void addTiming(String step, long duration) {
+        stepTimings[step] = duration
     }
 }

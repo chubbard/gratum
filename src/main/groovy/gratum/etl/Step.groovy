@@ -32,4 +32,16 @@ class Step {
             this.duration = this.duration + elapsed
         }
     }
+
+    public Map<RejectionCategory,Integer> getRejections() {
+        return rejections
+    }
+
+    public long getDuration() {
+        return duration
+    }
+
+    public int getLoaded() {
+        return loaded
+    }
 }
