@@ -16,29 +16,67 @@ import org.xml.sax.ContentHandler
 
 import javax.xml.parsers.ParserConfigurationException
 
+/**
+ * A {@link gratum.source.Source} that implements reading excel workbooks in xlsx
+ * format.
+ */
 class XlsxSource extends AbstractSource {
 
     File excelFile
     InputStream stream
     String sheet
+    Closure<Void> headerClosure = null
 
+    /**
+     * Reads the given InputStream as an excel format file (xlsx), and processes
+     * the tabular data on the given sheet.  If no sheet is provided it reads the
+     * first sheet of the workbook.
+     *
+     * @param name The name of the underlying file
+     * @param stream The InputStream of the excel (xlsx) file
+     * @param sheet The name of the sheet to process
+     */
     XlsxSource(String name, InputStream stream, String sheet = null) {
         this.name = name
         this.stream = stream
         this.sheet = sheet
     }
 
-
+    /**
+     * Reads the given excelFile and pulls out all of the tabular data on the given sheet.
+     * If not sheet is provided it will read the first sheet in the workbook.
+     *
+     * @param excelFile The excel file to read
+     * @param sheet the name of the sheet to pull out, default is the first sheet.
+     */
     XlsxSource(File excelFile, String sheet = null) {
         this.name = excelFile.name
         this.excelFile = excelFile
         this.sheet = sheet
     }
 
+    /**
+     * Reads the given InputStream as an excel format file (xlsx), and processes
+     * the tabular data on the given sheet.  If no sheet is provided it reads the
+     * first sheet of the workbook.
+     *
+     * @param name The name of the underlying file
+     * @param stream The InputStream of the excel (xlsx) file
+     * @param sheet The name of the sheet to process
+     * @return The XlsxSource of the underlying excel data.
+     */
     public static XlsxSource xlsx(String name, InputStream stream, String sheet = null) {
         return new XlsxSource( name, stream, sheet )
     }
 
+    /**
+     * Reads the given excelFile and pulls out all of the tabular data on the given sheet.
+     * If not sheet is provided it will read the first sheet in the workbook.
+     *
+     * @param excelFile The excel file to read
+     * @param sheet the name of the sheet to pull out, default is the first sheet.
+     * @return The XlsxSource of the underlying excel data.
+     */
     public static XlsxSource xlsx( File file, String sheet = null ) {
         return new XlsxSource( file, sheet )
     }
@@ -74,60 +112,17 @@ class XlsxSource extends AbstractSource {
         } finally {
             ocp?.close()
         }
-/*
-        Workbook wb = null
-        if( excelFile ) wb = WorkbookFactory.create( excelFile )
-        if( stream ) wb = WorkbookFactory.create( stream )
+    }
 
-        try {
-            Sheet s = sheet ? wb.getSheet(sheet) : wb.getSheetAt(0)
-            Row header
-            int line = 1
-            for (Row r : s) {
-                if (header == null) {
-                    header = r
-                } else {
-                    Map<String, Object> row = [:]
-                    for (Cell cell : r) {
-                        int c = cell.getColumnIndex()
-                        Cell headerCell = header.getCell(c)
-                        Object value = null
-                        switch (cell.cellType) {
-                            case CellType.STRING:
-                                value = cell.getStringCellValue()
-                                break
-                            case CellType.NUMERIC:
-                                if (DateUtil.isCellDateFormatted(cell)) {
-                                    value = cell.getDateCellValue()
-                                } else {
-                                    value = cell.getNumericCellValue()
-                                }
-                                break
-                            case CellType.BOOLEAN:
-                                value = cell.getBooleanCellValue()
-                                break
-                            case CellType.FORMULA:
-                                // todo recursively evaluate the formula!
-                                value = cell.getCellFormula()
-                                break
-                            case CellType.ERROR:
-                                value = cell.getErrorCellValue()
-                                break
-                            case CellType.BLANK:
-                            case CellType._NONE:
-                                value = null
-                                break
-                        }
-                        row[headerCell.getStringCellValue()] = value
-                    }
-                    pipeline.process(row, line)
-                    line++
-                }
-            }
-        } finally {
-            wb.close()
-        }
-*/
+    /**
+     * Attaches a closure that will be called back when the headers are available.
+     *
+     * @param headerClosure the closure to call passing the headers as a {@link java.util.List}
+     * @return The XlsxSource for method chaining
+     */
+    public XlsxSource header( Closure<Void> headerClosure ) {
+        this.headerClosure = headerClosure
+        return this
     }
 
     class XslxSheetHandler implements XSSFSheetXMLHandler.SheetContentsHandler {
@@ -159,6 +154,8 @@ class XlsxSource extends AbstractSource {
                 if( !current.isEmpty() ) {
                     pipeline.process( current, rowNum)
                 }
+            } else if( headerClosure ) {
+                headerClosure.call( headers )
             }
         }
 
