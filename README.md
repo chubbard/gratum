@@ -279,7 +279,7 @@ there is a better way.
 
 What is often most important is the reason for why a rejections occurred.  In
 the examples above we rejected by returning null, but that doesn't tell us
-why something was rejected.  Using the [`reject`](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#reject(java.lang.String,%20gratum.etl.RejectionCategory))
+why something was rejected.  Using the [`reject`](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#reject(java.util.Map,java.lang.String,%20gratum.etl.RejectionCategory))
 method we can specify more detail about why a row was rejected.
 
     from([
@@ -291,7 +291,7 @@ method we can specify more detail about why a row was rejected.
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
        addStep { Map row ->
-          return row.gender == 'Female' ? row : reject("Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
+          return row.gender == 'Female' ? row : reject(row, "Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
        }.
        go()
 
@@ -314,7 +314,7 @@ identify where in the pipeline a rejection occurs.
             [ name: 'Jenny', gender: 'Female', age: 43]
         ]).
        addStep('Filter by Gender = Female') { Map row ->
-          return row.gender == 'Female' ? row : reject("Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
+          return row.gender == 'Female' ? row : reject(row, "Rejected gender ${row.gender}", RejectionCategory.IGNORE_ROW) 
        }.
        go()
 
