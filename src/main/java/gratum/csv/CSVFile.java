@@ -17,6 +17,7 @@ public class CSVFile {
     private int rows = 0;
     private List<String> columnHeaders;
     private boolean escaped = true;
+    private boolean writeBom = false;
 
     public CSVFile(String filename, String separator) {
         this( new File(filename), separator );
@@ -44,7 +45,7 @@ public class CSVFile {
     public int parse( CSVReader callback ) throws IOException {
         if( file != null ) {
             BOMInputStream bom = new BOMInputStream(new FileInputStream(file));
-            Reader reader = bom.hasBOM() ? new InputStreamReader(bom, bom.getBOMCharsetName()) : new InputStreamReader(bom, "UTF-8");
+            Reader reader = bom.hasBOM() ? new InputStreamReader(bom, bom.getBOMCharsetName()) : new InputStreamReader(bom, StandardCharsets.UTF_8);
             return parse(reader, callback);
         } else {
             return parse(reader,callback);
@@ -184,7 +185,9 @@ public class CSVFile {
     }
     public void write( Object... row ) throws IOException {
         if( writer == null ) {
+            // make sure we write BOM since excel seems to need this to recognize UTF8
             writer = new PrintWriter( new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8) );
+            if( writeBom ) writer.print('\ufeff');
         }
         StringBuilder buffer = new StringBuilder();
         for( int i = 0; i < row.length; i++ ) {
@@ -268,5 +271,9 @@ public class CSVFile {
 
     public void setColumnHeaders(List<String> columnHeaders) {
         this.columnHeaders = columnHeaders;
+    }
+
+    public void setWriteBom(boolean writeBom) {
+        this.writeBom = writeBom;
     }
 }

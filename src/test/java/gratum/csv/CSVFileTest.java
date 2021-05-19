@@ -3,6 +3,7 @@ package gratum.csv;
 import junit.framework.TestCase;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static junit.framework.TestCase.assertFalse;
@@ -248,5 +249,71 @@ public class CSVFileTest extends TestCase {
                 assertEquals( 4, line );
             }
         });
+    }
+
+    public void testReadUnicode() throws IOException {
+        File tmp = writeTestUnicodeFile();
+        try {
+            CSVFile csv = new CSVFile( tmp, ",");
+
+            csv.parse(new CSVReader() {
+
+                int lines = 0;
+                @Override
+                public void processHeaders(List<String> header) throws Exception {
+                }
+
+                @Override
+                public boolean processRow(List<String> header, List<String> row) throws Exception {
+                    lines++;
+                    assertTrue("Line contains an \u00e9", row.get(0).contains("\u00e9"));
+                    return false;
+                }
+
+                @Override
+                public void afterProcessing() {
+                    assertEquals(2, lines);
+                }
+            });
+        } finally {
+            tmp.delete();
+        }
+    }
+
+    public void testWriteUnicode() throws IOException {
+        File tmp = writeTestUnicodeFile();
+        try {
+//            try( BufferedReader reader = new BufferedReader( new FileReader(tmp) ) ) {
+            try( BufferedReader reader = new BufferedReader( new InputStreamReader( new FileInputStream(tmp), StandardCharsets.UTF_8) ) ) {
+                String line;
+                int n = 1;
+                while( (line = reader.readLine()) != null ) {
+                    if( n > 1 ) {
+                        assertTrue("Line contains a \u00e9", line.contains("\u00e9"));
+                    }
+                    n++;
+                }
+            }
+        } finally {
+            tmp.delete();
+        }
+    }
+
+    private File writeTestUnicodeFile() throws IOException {
+        Map<String,Object> person1 =new HashMap<>();
+        person1.put("Name", "Andri\u00e9");
+
+        Map<String,Object> person2 =new HashMap<>();
+        person2.put("Name", "Ren\u00e9e");
+
+        File tmp = File.createTempFile("testWriteUnicode", ".csv");
+        CSVFile file = new CSVFile(tmp, ",");
+        try {
+            file.write(person1);
+            file.write(person2);
+        } finally {
+            file.close();
+        }
+        return tmp;
     }
 }
