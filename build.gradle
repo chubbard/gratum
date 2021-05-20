@@ -1,6 +1,9 @@
-apply plugin: 'groovy'
-apply plugin: 'maven-publish'
-apply plugin: 'signing'
+plugins {
+    id 'groovy'
+    id 'maven-publish'
+    id 'signing'
+//    id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
+}
 
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
@@ -42,7 +45,7 @@ publishing {
         gratum(MavenPublication) {
             //customizePom(pom)
             from components.java
-            artifact sourceJar
+            artifact source: sourceJar, classifier: 'sources', extension: 'zip'
 
             pom {
                 name = project.name
@@ -81,6 +84,7 @@ publishing {
             // create the signed artifacts
             project.tasks.signArchives.signatureFiles.each {
                 artifact(it) {
+                    println( it.file.name )
                     def matcher = it.file =~ /-(sources|javadoc|groovydoc)\.zip\.asc$/
                     if (matcher.find()) {
                         classifier = matcher.group(1)
