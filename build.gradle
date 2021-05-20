@@ -101,8 +101,8 @@ publishing {
         maven {
             url project.version.endsWith('-SNAPSHOT') ? "https://oss.sonatype.org/content/repositories/snapshots/" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
             credentials {
-                username sonatypeUsername
-                password sonatypePassword
+                username property("sonatypeUsername")
+                password property("sonatypePassword")
             }
         }
         mavenLocal()
