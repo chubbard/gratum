@@ -2,6 +2,9 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/cz.jirutka.rsql/rsql-parser/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.chubbard/gratum)
+
+
 A simplified standalone ETL engine for groovy.  Gratum is groovy + datum.
 And gratum just happens to mean thank you or pleasant in Latin.  We built 
 gratum with a couple of beliefs about data transformations.
@@ -21,7 +24,7 @@ For Maven:
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.2</version>
       </dependency>
       
 ## Oh Shell Yeah!
