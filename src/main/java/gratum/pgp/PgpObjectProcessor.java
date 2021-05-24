@@ -25,8 +25,8 @@ public class PgpObjectProcessor {
 
             PGPPublicKeyEncryptedData publicKeyEncryptedData = null;
 
-            boolean processed = true;
-            while (processed && it.hasNext()) {
+            boolean processed = false;
+            while (!processed && it.hasNext()) {
                 publicKeyEncryptedData = (PGPPublicKeyEncryptedData) it.next();
                 PGPSecretKey pgpSecKey = context.getSecretKey(publicKeyEncryptedData.getKeyID());
 
@@ -51,8 +51,6 @@ public class PgpObjectProcessor {
                             }
                         }
                     }
-                } else {
-                    throw new PGPException("Could not find a secret key " + Long.toHexString(publicKeyEncryptedData.getKeyID()) + " for encrypted data.");
                 }
             }
             return processed;
@@ -72,7 +70,7 @@ public class PgpObjectProcessor {
     }
 
     protected boolean process(PGPObjectFactory factory) throws PGPException, IOException {
-        boolean processed = true;
+        boolean processed = false;
         Object pgpObj;
         while ((pgpObj = factory.nextObject()) != null) {
             if (callbacks.containsKey(pgpObj.getClass())) {
