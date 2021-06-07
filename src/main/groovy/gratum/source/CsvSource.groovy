@@ -34,6 +34,14 @@ import gratum.etl.Pipeline
  * <pre>
  *     csv( "External InputStream", stream, "|" ).filter( [ someColumn: "someValue" ] ).go()
  * </pre>
+ *
+ * Using {@link #of} to configure CsvSource.
+ *
+ * <pre>
+ *     CsvSource.of("/resources/titanic-unescaped.csv", "," ).escaping(false).into()
+ *          .filter([ Embarked: "Q"])
+ *          .go()
+ * </pre>
  */
 public class CsvSource extends AbstractSource {
 
@@ -81,6 +89,11 @@ public class CsvSource extends AbstractSource {
         return src.into()
     }
 
+    /**
+     * Register a closure to receive the header before processing starts
+     * @param headerClosure closure that is passed the List<String> header as a parameter
+     * @return this
+     */
     public CsvSource header( Closure<Void> headerClosure ) {
         this.headerClosure = headerClosure
         return this
