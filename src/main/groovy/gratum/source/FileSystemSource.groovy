@@ -17,14 +17,14 @@ import java.util.regex.Pattern
  */
 class FileSystemSource extends AbstractSource {
 
-    File[] file
+    File[] files
     Pattern filter = ~/.*/
     int line = 1
     boolean recursive = true
 
-    FileSystemSource(File[] file) {
-        this.name = file.collect {it.name }.join(",")
-        this.file = file
+    FileSystemSource(File[] files) {
+        this.name = files.collect {it.name }.join(",")
+        this.files = files
     }
 
     /**
@@ -39,7 +39,7 @@ class FileSystemSource extends AbstractSource {
 
     @Override
     void start(Pipeline pipeline) {
-        for( File f : file ) {
+        for( File f : files ) {
             process( f, pipeline )
         }
     }
@@ -68,8 +68,10 @@ class FileSystemSource extends AbstractSource {
     }
 
     void process(File file, Pipeline pipeline) {
-        if( file.isFile() && file.name =~ filter ) {
-            pipeline.process([file: file, stream: new FileOpenable(file)], line++)
+        if( file.isFile() ) {
+            if( file.name =~ filter ) {
+                pipeline.process([file: file, stream: new FileOpenable(file)], line++)
+            }
         } else {
             if( recursive ) {
                 file.eachFileRecurse(FileType.FILES) { File current ->
@@ -77,7 +79,7 @@ class FileSystemSource extends AbstractSource {
                 }
             } else {
                 file.eachFile( FileType.FILES ) { File current ->
-                    process(current, pipeline)
+                    process( current, pipeline )
                 }
             }
         }
