@@ -763,7 +763,7 @@ public class Pipeline {
      * @return The pipeline where the fieldName has been removed when the removeLogic closure returns true or itself is null.
      */
     public Pipeline removeField(String fieldName, @DelegatesTo(Pipeline) Closure removeLogic = null) {
-        removeLogic.delegate = this
+        removeLogic?.delegate = this
         addStep( "removeField(${fieldName})") { Map row ->
             if( removeLogic == null || removeLogic(row) ) {
                 row.remove(fieldName)
