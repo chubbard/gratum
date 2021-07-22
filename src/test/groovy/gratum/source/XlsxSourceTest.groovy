@@ -47,9 +47,12 @@ class XlsxSourceTest {
     @Test
     void testXlsxDates() {
         LoadStatistic stat = XlsxSource.xlsx("Players", Class.getResourceAsStream("/players.xlsx")).into()
-            .asDate("birth_date", "MM/dd/yyyy")
+            .asDate("birth_date", "yyyy-MM-dd")
             .addStep("Verify Dates") { Map<String,Object> row ->
                 assert row.birth_date instanceof Date
+                Calendar cal = Calendar.getInstance()
+                cal.setTime( row.birth_date )
+                assert cal.get( Calendar.YEAR ) > 1900
                 return row
             }
             .go()
@@ -58,4 +61,20 @@ class XlsxSourceTest {
         assert stat.rejections == 0
     }
 
+    @Test
+    void testXlsxCustomDateFormat() {
+        LoadStatistic stat = XlsxSource.xlsx("Players", Class.getResourceAsStream("/players.xlsx")).dateFormat("MM/dd/yyyy").into()
+                .asDate("birth_date", "MM/dd/yyyy")
+                .addStep("Verify Dates") { Map<String,Object> row ->
+                    assert row.birth_date instanceof Date
+                    Calendar cal = Calendar.getInstance()
+                    cal.setTime( row.birth_date )
+                    assert cal.get( Calendar.YEAR ) > 1900
+                    return row
+                }
+                .go()
+
+        assert stat.loaded == 7
+        assert stat.rejections == 0
+    }
 }

@@ -26,6 +26,7 @@ class XlsxSource extends AbstractSource {
     InputStream stream
     String sheet
     Closure<Void> headerClosure = null
+    String dateFormat = "yyyy-MM-dd"
 
     /**
      * Reads the given InputStream as an excel format file (xlsx), and processes
@@ -81,6 +82,18 @@ class XlsxSource extends AbstractSource {
         return new XlsxSource( file, sheet )
     }
 
+    /**
+     * Sets the default format for dates (default format is yyyy-MM-dd).  POI tends to return dates in Locale formats
+     * which aren't always convenient for working with so this sets the date format using
+     * the SimpleDateFormat syntax in Java.
+     * @param format format string following the rules set out in SimpleDateFormat
+     * @return this instance
+     */
+    public XlsxSource dateFormat(String format) {
+        this.dateFormat = format
+        return this
+    }
+
     @Override
     void start(Pipeline pipeline) {
         OPCPackage ocp = null
@@ -95,7 +108,7 @@ class XlsxSource extends AbstractSource {
                 InputStream is = iter.next()
                 String name = iter.getSheetName()
                 if( name == this.sheet || this.sheet == null) {
-                    DataFormatter formatter = new DataFormatter()
+                    DataFormatter formatter = new CustomDateDataFormatter(dateFormat)
                     InputSource sheetSource = new InputSource(is)
                     try {
                         XMLReader sheetParser = XMLHelper.newXMLReader()

@@ -346,7 +346,7 @@ with the `onRejection` method.  Here is an example:
 In this example of non-Male rows will be rejected by the `filter` method.  Then the `onRejection` registers
 a closure, but instead of the normal Map argument it takes another Pipeline.  That pipeline is the rejections
 pipeline, and we can add steps and call operations on it just like any normal pipeline.  But what travels over
-that Pipeline are all of the rejected rows from the parent Pipeline.  In this example, we used the `save` 
+that Pipeline are all the rejected rows from the parent Pipeline.  In this example, we used the `save` 
 method to write out a pipe-delimited text file (ie a CSV).
 
 What's different about the rows that travel through the rejection pipeline is that they have 3 addition columns:
