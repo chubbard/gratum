@@ -101,13 +101,25 @@ public class Pipeline {
     }
 
     /**
+     * Prepend a step to the pipeline.
+     * @param name The Step name
+     * @param step The code used to process each row on the Pipeline.
+     * @return this Pipeline.
+     */
+    public Pipeline prependStep( String name = null, @DelegatesTo(Pipeline) Closure<Map> step ) {
+        step.delegate = this
+        processChain.add(0, new Step( name, step ) )
+        return this
+    }
+
+    /**
      * Adds a step to the pipeline.  It's passed an optional name to identify the step by, and a closure that represents
      * the individual step.  It returns the Map to be processed by the next step in the pipeline, typically it simply returns the same
      * row it was passed.  If it returns null or {@link Rejection} then it will reject this row, stop processing additional
      * steps, and pass the current row to the rejections pipeline.
      *
      * @param name The step name
-     * @param step The code used to process each row processed by the Pipeline.
+     * @param step The code used to process each row on the Pipeline.
      * @return this Pipeline.
      */
     public Pipeline addStep( String name = null, @DelegatesTo(Pipeline) Closure<Map> step ) {

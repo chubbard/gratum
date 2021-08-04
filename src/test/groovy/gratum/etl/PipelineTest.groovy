@@ -16,6 +16,26 @@ import static gratum.source.CollectionSource.*
 class PipelineTest {
 
     @Test
+    void testPrependStep() {
+        int afterRows = 0, beforeRows = 0
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+            .filter([Sex: "male"])
+            .addStep("Count the rows") { Map row ->
+                afterRows++
+                return row
+            }
+            .prependStep("Count the rows before") { Map row ->
+                beforeRows++
+                return row
+            }
+            .go()
+        assert statistic != null
+        assert statistic.loaded == 266
+        assert afterRows == 266
+        assert beforeRows > afterRows
+    }
+
+    @Test
     void testSimpleFilter() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .filter([Sex:"male"])
