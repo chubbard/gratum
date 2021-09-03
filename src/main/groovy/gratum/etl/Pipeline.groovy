@@ -204,9 +204,9 @@ public class Pipeline {
      * @param callback A callback that is passed a row, and returns a boolean.  All rows that return a false are rejected.
      * @return A Pipeline that contains only the rows that matched the filter.
      */
-    public Pipeline filter(@DelegatesTo(Pipeline) Closure callback) {
+    public Pipeline filter(String name = "filter()", @DelegatesTo(Pipeline) Closure callback) {
         callback.delegate = this
-        addStep( "filter()" ) { Map<String,Object> row ->
+        addStep( name ) { Map<String,Object> row ->
             if( !callback(row) ) {
                 return reject(row,"Row did not match the filter closure.", RejectionCategory.IGNORE_ROW )
             }
