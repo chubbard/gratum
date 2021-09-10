@@ -134,4 +134,29 @@ class LoadStatistic {
     void addTiming(String step, long duration) {
         stepTimings[step] = duration
     }
+
+    void merge( LoadStatistic src, boolean shouldMergeTimings = true ) {
+        this.loaded += src.loaded
+        mergeRejections( src )
+        if( shouldMergeTimings ) mergeTimings( src )
+    }
+
+    void mergeRejections(LoadStatistic src) {
+        src.rejectionsByCategory.each { RejectionCategory cat, Map<String,Integer> steps ->
+            if( !this.rejectionsByCategory[ cat ] ) {
+                this.rejectionsByCategory.put(cat, [:])
+            }
+            steps.each { String step, Integer count ->
+                if( !this.rejectionsByCategory[ cat ].containsKey( step ) ) this.rejectionsByCategory[cat][step] = 0
+                this.rejectionsByCategory[cat][step] = this.rejectionsByCategory[cat][step] + count
+            }
+        }
+    }
+
+    void mergeTimings(LoadStatistic src) {
+        src.stepTimings.each { String step, Long time ->
+            if( !this.stepTimings[ step ] ) this.stepTimings.put( step, 0L )
+            this.stepTimings[ step ] = this.stepTimings[ step ] + src.stepTimings [ step ]
+        }
+    }
 }
