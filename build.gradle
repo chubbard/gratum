@@ -9,8 +9,8 @@ targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
 group = 'com.github.chubbard'
-version = '1.0.2'
-//version = '1.0.2-SNAPSHOT'
+//version = '1.0.2'
+version = '1.0.3-SNAPSHOT'
 description = """
 A simplified standalone ETL engine for groovy.  Gratum is groovy + datum.
 """
@@ -45,7 +45,7 @@ publishing {
         gratum(MavenPublication) {
             //customizePom(pom)
             from components.java
-            artifact source: sourceJar, classifier: 'sources', extension: 'zip'
+            //artifact source: sourceJar, classifier: 'sources', extension: 'zip'
 
             pom {
                 name = project.name
