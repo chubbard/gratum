@@ -101,6 +101,18 @@ public class Pipeline {
     }
 
     /**
+     * Apply a closure to the Pipeline allowing it to configure the Pipeline by passing this Pipeline as an argument
+     * to the closure.  The Pipeline returned by the closure will be returned by this method for chaining.
+     *
+     * @param template A Closure that will be passed this Pipeline and returns a Pipeline.
+     * @return The Pipeline returned by the given Closure.
+     */
+    public Pipeline configure( Closure<Pipeline> template ) {
+        return template.call( this )
+    }
+
+
+    /**
      * Prepend a step to the pipeline.
      * @param name The Step name
      * @param step The code used to process each row on the Pipeline.
