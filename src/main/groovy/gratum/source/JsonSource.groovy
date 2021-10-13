@@ -9,21 +9,25 @@ class JsonSource extends AbstractSource {
     List<String> jsonPath = []
     def rootJson
 
-    JsonSource(reader, List<String> path = Collections.emptyList() ) {
+    JsonSource(reader ) {
         this.reader = reader
-        this.jsonPath = path
     }
 
-    public static JsonSource json(File file, List<String> path = Collections.emptyList() ) {
-        return json( new FileReader( file ), path )
+    public JsonSource path(List<String> aPath) {
+        this.jsonPath = aPath
+        return this
     }
 
-    public static JsonSource json(Reader reader, List<String> path = Collections.emptyList() ) {
-        return new JsonSource( reader, path )
+    public static JsonSource json(File file ) {
+        return json( new FileReader( file ) )
     }
 
-    public static JsonSource json(String json, List<String> path = Collections.emptyList() ) {
-        return new JsonSource( new StringReader(json), path )
+    public static JsonSource json(Reader reader ) {
+        return new JsonSource( reader )
+    }
+
+    public static JsonSource json(String json ) {
+        return new JsonSource( new StringReader(json) )
     }
 
     @Override

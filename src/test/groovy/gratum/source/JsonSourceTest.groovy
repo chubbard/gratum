@@ -31,7 +31,7 @@ class JsonSourceTest {
                 { "name": "Desk", "price": 90.00, "color": ["oak", "pine", "white", "brushed nickel"]  },
                 { "name": "Chair", "price": 125.00, "color": ["gray", "black"] }
             ] 
-        }""", ["items"]).into()
+        }""").path(["items"]).into()
             .addStep("Assert colors") { Map row ->
                 assert row["_root_json"]
                 assert row.color?.size() > 0
