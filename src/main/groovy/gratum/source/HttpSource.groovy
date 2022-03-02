@@ -8,7 +8,7 @@ import gratum.etl.Pipeline
  * A source that retrieves data from a URL.  For example,
  *
  * <pre>
- *  http("http://api.open-notify.org/astros.json").inject { Map json ->
+ *  http("http://api.open-notify.org/astros.json").into().inject { Map json ->
  *     json.people
  *  }
  *  .filter([craft: "ISS"])
