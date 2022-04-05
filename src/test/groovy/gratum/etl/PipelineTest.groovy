@@ -470,7 +470,7 @@ class PipelineTest {
         String message = null
         int actualCount = 0
         int expectedCount = 0
-        LoadStatistic stats = http("http://api.open-notify.org/astros.json").into()
+        LoadStatistic stats = http("http://api.open-notify.org/astros.json").get()
             .inject { Map json ->
                 expectedCount = json.number
                 message = json.message

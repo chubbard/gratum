@@ -283,12 +283,12 @@ public class Pipeline {
      * @param split The closure that is passed a new Pipeline where all the rows from this Pipeline are copied onto.
      * @return this Pipeline
      */
-    public Pipeline branch( Closure<Pipeline> split) {
-        final Pipeline branch = new Pipeline( name, this )
+    public Pipeline branch( String branchName = "branch", Closure<Pipeline> split) {
+        final Pipeline branch = new Pipeline( "${name}/${branchName}", this )
 
         Pipeline tail = split( branch )
 
-        addStep( "branch()" ) { Map row ->
+        addStep( "branch(${branchName})" ) { Map row ->
             branch.process( new LinkedHashMap(row) )
             return row
         }
@@ -308,7 +308,7 @@ public class Pipeline {
      * @return this Pipeline
      */
     public Pipeline branch(Map<String,Object> condition, Closure<Pipeline> split) {
-        Pipeline branch = new Pipeline( name, this )
+        Pipeline branch = new Pipeline( "${name}/branch(${condition})", this )
         Pipeline tail = split(branch)
 
         Condition selection = new Condition( condition )
