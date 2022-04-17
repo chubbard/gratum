@@ -2,7 +2,6 @@ package gratum.source
 
 import org.apache.poi.ss.usermodel.DataFormatter
 import org.apache.poi.ss.usermodel.DateUtil
-import org.apache.poi.util.POILogger
 
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
@@ -29,7 +28,7 @@ class CustomDateDataFormatter extends DataFormatter {
                 try {
                     return new SimpleDateFormat(pattern).format(d)
                 } catch (Exception e) {
-                    logger.log(POILogger.ERROR, "Bad date value in Excel: " + d, e)
+                    LOG.error("Bad date value in Excel: " + d, e)
                 }
             }
         }
