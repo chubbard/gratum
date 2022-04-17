@@ -16,14 +16,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '1.0.1'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '1.0.4'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>1.0.2</version>
+        <version>1.0.4</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -494,6 +494,8 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 [csv](https://chubbard.github.io/gratum/groovydoc/gratum/source/CsvSource.html)
 
 [file](https://chubbard.github.io/gratum/groovydoc/gratum/source/FileSystemSource.html)
+
+[xls](https://chubbard.github.io/gratum/groovydoc/gratum/source/XlsSource.html)
 
 [xlsx](https://chubbard.github.io/gratum/groovydoc/gratum/source/XlsxSource.html)
 
