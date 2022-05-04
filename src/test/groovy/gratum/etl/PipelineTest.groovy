@@ -908,4 +908,10 @@ class PipelineTest {
         assert stat.stepTimings.containsKey("${stat.name}.after".toString())
         assert stat.stepTimings["${stat.name}.after".toString()] > 0
     }
+
+    @Test
+    void testNameOverride() {
+        LoadStatistic stat = CsvSource.of("src/test/resources/titanic.csv").name("bill_and_ted_do_the_titanic").into().go()
+        assert stat.name == "bill_and_ted_do_the_titanic"
+    }
 }
