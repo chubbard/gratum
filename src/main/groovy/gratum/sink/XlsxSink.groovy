@@ -1,4 +1,4 @@
-package gratum.sink.Sink
+package gratum.sink
 
 import gratum.etl.FileOpenable
 import gratum.etl.Pipeline

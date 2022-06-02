@@ -1,9 +1,9 @@
 package gratum.etl
 
 import gratum.pgp.PgpContext
-import gratum.sink.Sink.CsvSink
-import gratum.sink.Sink.JsonSink
-import gratum.sink.Sink.Sink
+import gratum.sink.CsvSink
+import gratum.sink.JsonSink
+import gratum.sink.Sink
 import gratum.source.AbstractSource
 import gratum.csv.HaltPipelineException
 import gratum.source.ChainedSource
@@ -675,7 +675,7 @@ public class Pipeline {
      * @param sink the concrete Sink instance to save data to.
      * @return The resulting {@link gratum.etl.Pipeline}.
      */
-    public Pipeline save( Sink<Map<String,Object>> sink ) {
+    public Pipeline save(Sink<Map<String,Object>> sink ) {
         sink.attach( this )
 
         Pipeline next = new Pipeline( sink.name, this )
