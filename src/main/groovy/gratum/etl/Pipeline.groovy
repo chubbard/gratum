@@ -950,6 +950,18 @@ public class Pipeline {
     }
 
     /**
+     * Passed a closure that is called with this Pipeline.  This enables you to perform operation
+     * on the Pipeline itself without breaking the flow of functional chain.  This does not
+     * add a step to the Pipeline.
+     * @param The Closure
+     * @return this Pipeline
+     */
+    public Pipeline apply(Closure<Void> applyToPipeline) {
+        applyToPipeline.call( this )
+        return this
+    }
+
+    /**
      * Encrypts using PGP a stream on the pipeline and rewrite that stream back to the pipeline.  It looks for
      * a stream on the Pipeline at streamProperty. Further configuration is performed by the provided Closure
      * that is passed a {@link gratum.pgp.PpgContext}.  You are required to setup the identities, secret key collection,
