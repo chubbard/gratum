@@ -476,9 +476,15 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 [fillDownBy](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#fillDownBy(Closure%3CBoolean%3E))
 
+[configure](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#configure(Closure%3CPipeline%3E))
+
+[apply](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#apply(Closure%3CVoid%3E))
+
 ### Output
 
 [save](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#save(java.lang.String,%20java.lang.String,%20List%3CString%3E))
+
+[save](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#save(Sink%3CMap%3CString,%20Object%3E%3E))
 
 [printRow](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#printRow(java.lang.String))
 
