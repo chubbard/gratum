@@ -1,13 +1,14 @@
 package gratum.etl
 
-import gratum.csv.CSVFile
 import gratum.pgp.PgpContext
+import gratum.sink.CsvSink
+import gratum.sink.JsonSink
+import gratum.sink.Sink
 import gratum.source.AbstractSource
 import gratum.csv.HaltPipelineException
 import gratum.source.ChainedSource
 import gratum.source.ClosureSource
 import gratum.source.Source
-import groovy.json.JsonOutput
 
 import groovy.transform.CompileStatic
 
@@ -22,7 +23,7 @@ import java.text.SimpleDateFormat
  * the entire Pipeline are said to have been loaded.  Any row that does not pass through all steps is said 
  * to be rejected.
  * 
- * Rows orginate from the Pipeline's {@link gratum.source.Source}.  The {@link gratum.source.Source} sends 
+ * Rows originate from the Pipeline's {@link gratum.source.Source}.  The {@link gratum.source.Source} sends
  * rows into the Pipeline until it finishes.  The Pipeline keeps a set of statistics about how many rows
  * were loaded, rejected, the types of rejections, timing, etc.  This is kept in the {@link gratum.etl.LoadStatistic}
  * instance and returned from the {@link Pipeline#go()} method.
@@ -663,20 +664,26 @@ public class Pipeline {
      * @param columns the list of fields to write from each row.  (default null)
      * @return A Pipeline that returns a row for the csv file.
      */
-    public Pipeline save( String filename, String separator = ",", List<String> columns = null ) {
-        CSVFile out = new CSVFile( filename, separator )
-        if( columns ) out.setColumnHeaders( columns )
-        addStep("Save to ${out.file.name}") { Map row ->
-            out.write( row )
-            return row
-        }
+    public Pipeline save(String filename, String separator = ",", List<String> columns = null ) {
+        return this.save( new CsvSink(filename, separator, columns) )
+    }
 
-        Pipeline next = new Pipeline( filename, this )
+    /**
+     * Write the rows to a provided {@link gratum.sink.Sink}.  It returns the
+     * {@link gratum.etl.Pipeline} that returns the results of the given sink.
+     *
+     * @param sink the concrete Sink instance to save data to.
+     * @return The resulting {@link gratum.etl.Pipeline}.
+     */
+    public Pipeline save(Sink<Map<String,Object>> sink ) {
+        sink.attach( this )
+
+        Pipeline next = new Pipeline( sink.name, this )
         next.loaded = DO_NOT_TRACK
         next.src = new ChainedSource( this )
         after {
-            out.close()
-            next.process([ file: out.getFile(), filename: filename, stream: new FileOpenable(out.getFile()) ])
+            sink.close()
+            next.process(sink.result)
             return
         }
         return next
@@ -690,31 +697,7 @@ public class Pipeline {
      * @return A Pipeline unmodified.
      */
     public Pipeline json(String filename, List<String> columns = null) {
-        File file = new File( filename )
-        Writer writer = file.newWriter("UTF-8")
-        writer.writeLine("[")
-        if( columns ) {
-            addStep("Json to ${file.name}") { Map row ->
-                String json = JsonOutput.toJson( row.subMap( columns ) )
-                writer.write( json )
-                writer.write(",\n")
-                return row
-            }
-        } else {
-            addStep("Json to ${file.name}") { Map row ->
-                String json = JsonOutput.toJson( row )
-                writer.write( json )
-                writer.write(",\n")
-                return row
-            }
-        }
-
-        after {
-            writer.write("\n]")
-            writer.flush()
-            writer.close()
-        }
-        return this
+        return save( new JsonSink( new File(filename), columns) )
     }
 
     /**
