@@ -66,7 +66,7 @@ class XlsxSink implements Sink<Map<String,Object>> {
 
     @Override
     Map<String, Object> getResult() {
-        return [ file: output.name, filename: this.name, stream: new FileOpenable(output) ]
+        return [ file: output.name, filename: output.absolutePath, stream: new FileOpenable(output) ]
     }
 
     @Override

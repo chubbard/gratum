@@ -1,5 +1,6 @@
 package gratum.sink
 
+import gratum.etl.FileOpenable
 import gratum.etl.Pipeline
 import groovy.json.JsonOutput
 
@@ -8,8 +9,10 @@ class JsonSink implements Sink<Map<String,Object>> {
     String name
     BufferedWriter writer
     Collection<String> columns
+    File output
 
     JsonSink(File file, Collection<String> columns = null){
+        this.output = file
         this.name = file.name
         this.writer = file.newWriter("UTF-8")
         this.columns = columns
@@ -48,7 +51,11 @@ class JsonSink implements Sink<Map<String,Object>> {
 
     @Override
     Map<String, Object> getResult() {
-        return [name: name]
+        if( output ) {
+            return [file: output, filename: output.absolutePath, stream: new FileOpenable(output)]
+        } else {
+            return [name: name]
+        }
     }
 
     @Override
