@@ -916,4 +916,34 @@ class PipelineTest {
         LoadStatistic stat = CsvSource.of("src/test/resources/titanic.csv").name("bill_and_ted_do_the_titanic").into().go()
         assert stat.name == "bill_and_ted_do_the_titanic"
     }
+
+    @Test
+    void testReplaceAll() {
+        LoadStatistic stat = from([date: '(Tue) 12/12/1999'], [date: '(Thu) 9/17/2001'], [date:'(Wed) 3/1/2022'])
+            .replaceAll("date", ~/\(\w+\)/, "")
+            .addStep("Test for date") { Map row ->
+                assert ["(Tue)", "(Wed)", "(Thu)"].findAll() {r -> !row.date.contains(r) }.size() == 3
+                row
+            }
+            .go()
+        assert stat.loaded == 3
+        assert stat.rejections == 0
+    }
+
+    @Test
+    void testReplaceValues() {
+        LoadStatistic stat = from([color_code: 1], [color_code: 2], [color_code: 3])
+                .replaceValues("color_code", [
+                        '1':'blue',
+                        '2':'red',
+                        '3':'green'
+                ])
+                .addStep("Assert") { Map row ->
+                    assert ['blue', 'red', 'green'].contains(row.color_code)
+                    return row
+                }
+                .go()
+        assert stat.loaded == 3
+        assert stat.rejections == 0
+    }
 }
