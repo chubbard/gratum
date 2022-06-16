@@ -963,7 +963,7 @@ public class Pipeline {
     }
 
     /**
-     * Replaces all occurences of the regular expression with given withClause.  The
+     * Replaces all occurrences of the regular expression with given withClause.  The
      * withClause can use $1, $2, $3, etc to refer to groups within the regular expression
      * just like in replaceAll method.
      *
