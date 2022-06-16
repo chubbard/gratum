@@ -14,6 +14,7 @@ import groovy.transform.CompileStatic
 
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.util.regex.Pattern
 
 /**
  * A Pipeline represents a series of steps that will be performed on 1 or more rows.  Rows are Map objects
@@ -959,6 +960,45 @@ public class Pipeline {
     public Pipeline apply(Closure<Void> applyToPipeline) {
         applyToPipeline.call( this )
         return this
+    }
+
+    /**
+     * Replaces all occurrences of the regular expression with given withClause.  The
+     * withClause can use $1, $2, $3, etc to refer to groups within the regular expression
+     * just like in replaceAll method.
+     *
+     * @param column the name of the column to pull the value from.
+     * @param regEx the regular expression to use for replacing sections of the value.
+     * @param withClause the replacement clause swap out the portion matched by the
+     * regular expression.
+     * @return this Pipeline where the content matched by the regular expression
+     * replaced with the given withClause
+     */
+    public Pipeline replaceAll(String column, Pattern regEx, String withClause) {
+        addStep( "replaceAll(${column}, ${regEx.toString()})") { Map row ->
+            String v = row[column]
+            row[column] = v?.replaceAll( regEx, withClause )
+            return row
+        }
+    }
+
+    /**
+     * Given a column replace all values at that column that match the given
+     * key with the value of the values Map.  This basically transform values[key]
+     * into values[value] and stores that in the given column.
+     *
+     * @param column the column to compare against the value map key.
+     * @param values the key and value pair that will be substituted given the value at the column
+     * @return this Pipeline
+     */
+    public Pipeline replaceValues(String column, Map<String,String> values ) {
+        addStep( "replaceValues(${column}, ${values})" ) { Map row ->
+            String v = row[column]
+            if( values.containsKey(v) ) {
+                row[column] = values[ v ] ?: row[column]
+            }
+            return row
+        }
     }
 
     /**

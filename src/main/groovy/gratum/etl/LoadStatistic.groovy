@@ -143,20 +143,20 @@ class LoadStatistic {
 
     void mergeRejections(LoadStatistic src) {
         src.rejectionsByCategory.each { RejectionCategory cat, Map<String,Integer> steps ->
-            if( !this.rejectionsByCategory[ cat ] ) {
-                this.rejectionsByCategory.put(cat, [:])
+            if( !rejectionsByCategory[ cat ] ) {
+                rejectionsByCategory.put(cat, [:])
             }
             steps.each { String step, Integer count ->
-                if( !this.rejectionsByCategory[ cat ].containsKey( step ) ) this.rejectionsByCategory[cat][step] = 0
-                this.rejectionsByCategory[cat][step] = this.rejectionsByCategory[cat][step] + count
+                if( !rejectionsByCategory[ cat ].containsKey( step ) ) rejectionsByCategory[cat][step] = 0
+                rejectionsByCategory[cat][step] = rejectionsByCategory[cat][step] + count
             }
         }
     }
 
     void mergeTimings(LoadStatistic src) {
         src.stepTimings.each { String step, Long time ->
-            if( !this.stepTimings[ step ] ) this.stepTimings.put( step, 0L )
-            this.stepTimings[ step ] = this.stepTimings[ step ] + src.stepTimings [ step ]
+            if( !stepTimings[ step ] ) stepTimings.put( step, 0L )
+            stepTimings[ step ] = stepTimings[ step ] + src.stepTimings [ step ]
         }
     }
 }

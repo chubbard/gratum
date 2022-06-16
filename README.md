@@ -16,14 +16,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '1.0.5'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '1.0.6'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>1.0.5</version>
+        <version>1.0.6</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -451,6 +451,10 @@ that does this for you called `filter`.  There are plenty of existing methods to
 [unique](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#unique(java.lang.String))
 
 [limit](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#limit(long,boolean))
+
+[replaceAll](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#replaceAll(java.lang.String,%20java.util.regex.Pattern,%20java.lang.String))
+
+[replaceValues](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#replaceValues(java.lang.String,%20Map%3CString,%20String%3E))
 
 ### Branching
 
