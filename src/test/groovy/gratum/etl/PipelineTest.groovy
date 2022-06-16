@@ -903,7 +903,9 @@ class PipelineTest {
 
     @Test
     void testDoneCallbacksInTimings() {
-        LoadStatistic stat = from(GratumFixture.hobbies).sort("hobby").go()
+        LoadStatistic stat = from(GratumFixture.hobbies).sort("hobby").after {
+            Thread.sleep(10) // ensure we don't go too fast :-)
+        }.go()
 
         assert stat.stepTimings.containsKey("${stat.name}.after".toString())
         assert stat.stepTimings["${stat.name}.after".toString()] > 0
