@@ -645,6 +645,7 @@ public class Pipeline {
     Pipeline asDate(String column, String format = "yyyy-MM-dd") {
         SimpleDateFormat dateFormat = new SimpleDateFormat(format)
         addStep("asDate(${column}, ${format})") { Map row ->
+            if(row[column] instanceof Date ) return row
             String val = row[column] as String
             try {
                 if (val) row[column] = dateFormat.parse(val)
