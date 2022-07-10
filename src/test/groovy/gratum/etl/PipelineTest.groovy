@@ -494,6 +494,7 @@ class PipelineTest {
 
     @Test
     void testAsDate() {
+        boolean kirby = false
         LoadStatistic stats = from([
                 [name: 'Chuck', dateOfBirth: '1992-08-11'],
                 [name: 'Sam', dateOfBirth: '1980-04-12'],
@@ -501,11 +502,35 @@ class PipelineTest {
                 [name: 'Sean' ],
                 [name: 'Kirby', dateOfBirth: new Date()]
         ]).asDate('dateOfBirth')
+        .addStep("Assert all are Dates") { Map row ->
+            if( row['name'] == 'Kirby' ) {
+                kirby = true
+            }
+            if( row.containsKey('dateOfBirth') ) {
+                assert row['dateOfBirth'] instanceof Date
+            }
+            row
+        }
         .go()
 
         assertEquals( 4, stats.loaded )
         assertEquals( 1, stats.rejections )
         assertEquals( 1, stats.getRejections(RejectionCategory.INVALID_FORMAT) )
+        assert kirby
+    }
+
+    @Test
+    void testAsDateFormat() {
+        LoadStatistic stats = from([
+                [name: 'Chuck', dateOfBirth: '08/11/1992'],
+                [name: 'Sam', dateOfBirth: '1980-04-12'],
+                [name: 'Rob', dateOfBirth: '07/17/1980'],
+        ]).asDate('dateOfBirth', 'MM/dd/yyyy')
+        .asDate('dateOfBirth')  // make sure it doesn't do anything if it's already a date.
+        .go()
+
+        assert stats.loaded == 2
+        assert stats.rejections == 1
     }
 
     @Test
