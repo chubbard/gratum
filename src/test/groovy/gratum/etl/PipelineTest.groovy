@@ -500,8 +500,9 @@ class PipelineTest {
                 [name: 'Sam', dateOfBirth: '1980-04-12'],
                 [name: 'Rob', dateOfBirth: 'unknown'],
                 [name: 'Sean' ],
-                [name: 'Kirby', dateOfBirth: new Date()]
-        ]).asDate('dateOfBirth')
+                [name: 'Kirby', dateOfBirth: new Date()],
+                [name: 'Huck', dateOfBirth: '08/12/1994']
+        ]).asDate('dateOfBirth', 'yyyy-MM-dd', 'MM/dd/yyyy')
         .addStep("Assert all are Dates") { Map row ->
             if( row['name'] == 'Kirby' ) {
                 kirby = true
@@ -513,7 +514,7 @@ class PipelineTest {
         }
         .go()
 
-        assertEquals( 4, stats.loaded )
+        assertEquals( 5, stats.loaded )
         assertEquals( 1, stats.rejections )
         assertEquals( 1, stats.getRejections(RejectionCategory.INVALID_FORMAT) )
         assert kirby

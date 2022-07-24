@@ -639,20 +639,27 @@ public class Pipeline {
      * Parses the string at the given column name into a Date object using the given format.  Any value that
      * cannot be parsed by the format is rejected.  Null values or empty strings are not rejected.
      * @param column The field to use to find the string value to parse
-     * @param format The format of the string to use to parse into a java.util.Date
+     * @param formats One or more formats of the string to use to parse into a java.util.Date.  The first format
+     * that parses without exception will be used. (default format is "yyyy-MM-dd")
      * @return A Pipeline where all rows contain a java.util.Date at given field name
      */
-    Pipeline asDate(String column, String format = "yyyy-MM-dd") {
-        SimpleDateFormat dateFormat = new SimpleDateFormat(format)
-        addStep("asDate(${column}, ${format})") { Map row ->
+    Pipeline asDate(String column, String... formats = ["yyyy-MM-dd"]) {
+        List<SimpleDateFormat> dateFormats = formats.collect { new SimpleDateFormat(it) }
+        addStep("asDate(${column}, ${formats})") { Map<String,Object> row ->
             if(row[column] instanceof Date ) return row
             String val = row[column] as String
-            try {
-                if (val) row[column] = dateFormat.parse(val)
-                return row
-            } catch( ParseException ex ) {
-                return reject( row, "${row[column]} could not be parsed by format ${format}", RejectionCategory.INVALID_FORMAT )
+            if (val) {
+                row[column] = dateFormats.findResult { format ->
+                    try {
+                        format.parse(val)
+                    } catch( ParseException ex ) {
+                        return null
+                    }
+                }
+            } else {
+                return row // null is a no-op
             }
+            return row[column] ? row : reject( row, "${val} could not be parsed by format ${formats}", RejectionCategory.INVALID_FORMAT )
         }
         return this
     }

@@ -9,7 +9,7 @@ targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
 group = 'com.github.chubbard'
-version = '1.0.7'
+version = '1.0.8'
 //version = '1.0.8-SNAPSHOT'
 description = """
 A simplified standalone ETL engine for groovy.  Gratum is groovy + datum.
@@ -46,9 +46,10 @@ dependencies {
 publishing {
     publications {
         gratum(MavenPublication) {
-            //customizePom(pom)
             from components.java
-            //artifact source: sourceJar, classifier: 'sources', extension: 'zip'
+            artifact sourceJar
+            artifact groovydocJar
+            artifact javadocJar
 
             pom {
                 name = project.name
@@ -88,7 +89,7 @@ publishing {
             project.tasks.signArchives.signatureFiles.each {
                 artifact(it) {
                     println( it.file.name )
-                    def matcher = it.file =~ /-(sources|javadoc|groovydoc)\.zip\.asc$/
+                    def matcher = it.file =~ /-(sources|javadoc|groovydoc)\.jar\.asc$/
                     if (matcher.find()) {
                         classifier = matcher.group(1)
                     } else {
@@ -113,20 +114,17 @@ publishing {
 }
 
 task sourceJar(type: Jar) {
-    classifier "sources"
-    extension 'zip'
+    classifier 'sources'
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
     classifier 'javadoc'
-    extension  'zip'
     from javadoc.destinationDir
 }
 
 task groovydocJar(type: Jar, dependsOn: groovydoc ) {
     classifier 'groovydoc'
-    extension 'zip'
     from groovydoc.destinationDir
 }
 
