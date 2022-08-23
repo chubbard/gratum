@@ -18,9 +18,7 @@ abstract class AbstractSource implements Source {
      */
     @Override
     Pipeline into() {
-        Pipeline pipeline = new Pipeline( name )
-        pipeline.src = this
-        return pipeline
+        return new Pipeline( name ).source( this )
     }
 
     /**

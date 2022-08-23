@@ -1178,4 +1178,14 @@ public class Pipeline {
         if( loaded > DO_NOT_TRACK ) stat.loaded = loaded
         return stat
     }
+
+    /**
+     * Assigned a new source to a Pipeline and returns the pipeline.
+     * @param source to use as the Pipeline's source
+     * @return this Pipeline.
+     */
+    Pipeline source(Source source) {
+        this.src = source
+        return this
+    }
 }
