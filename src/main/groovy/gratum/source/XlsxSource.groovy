@@ -38,7 +38,7 @@ class XlsxSource extends AbstractSource {
      * @param sheet The name of the sheet to process
      */
     XlsxSource(String name, InputStream stream, String sheet = null) {
-        this.name = name
+        super(name)
         this.stream = stream
         this.sheet = sheet
     }
@@ -51,7 +51,7 @@ class XlsxSource extends AbstractSource {
      * @param sheet the name of the sheet to pull out, default is the first sheet.
      */
     XlsxSource(File excelFile, String sheet = null) {
-        this.name = excelFile.name
+        super(excelFile.name)
         this.excelFile = excelFile
         this.sheet = sheet
     }

@@ -9,7 +9,7 @@ public class ChainedSource extends AbstractSource {
     int line = 1
 
     ChainedSource(Pipeline parent) {
-        this.name = parent.name
+        super( parent.name )
         this.parent = parent
     }
 

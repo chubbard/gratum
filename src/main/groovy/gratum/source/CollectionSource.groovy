@@ -22,7 +22,7 @@ class CollectionSource extends AbstractSource {
     Collection<Map> source
 
     CollectionSource(Collection<Map> source) {
-        this.name = "Collection"
+        super( "Collection" )
         this.source = source
     }
 

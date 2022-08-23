@@ -16,7 +16,7 @@ class XlsSource extends AbstractSource {
     String sheet = null
 
     XlsSource(String name, POIFSFileSystem pfs, String sheet = null) {
-        this.name = name
+        super(name)
         this.pfs = pfs
         this.sheet = sheet
     }

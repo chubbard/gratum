@@ -37,7 +37,7 @@ class HttpSource extends AbstractSource {
     Closure requestConfiguration
 
     public HttpSource(String url) {
-        this.name = url
+        super(url)
         this.url = url
     }
 
@@ -47,7 +47,7 @@ class HttpSource extends AbstractSource {
     }
 
     public HttpSource( HttpBuilder builder ) {
-        this.name = "http"
+        super("http")
         this.httpBuilder = builder
     }
 

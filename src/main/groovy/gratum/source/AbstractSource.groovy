@@ -6,7 +6,13 @@ abstract class AbstractSource implements Source {
 
     String name
 
-    /**
+    AbstractSource() {
+    }
+
+    AbstractSource(String name) {
+        this.name = name
+    }
+/**
      * This converts the source into a Pipeline to attach steps to.
      * @return The Pipeline connected to this Source.
      */

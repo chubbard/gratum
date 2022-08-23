@@ -54,7 +54,7 @@ class ArchivedSource extends AbstractSource {
     String format
 
     ArchivedSource(File file) {
-        this.name = file.name
+        super( file.name )
         this.file = file
     }
 

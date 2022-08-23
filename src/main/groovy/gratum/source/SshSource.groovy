@@ -61,7 +61,7 @@ class SshSource extends AbstractSource {
     int line = 1
 
     SshSource(String host, int port) {
-        this.name = host + ":" + port
+        super( host + ":" + port )
         jsch = new JSch()
         this.host = host
         this.port = port

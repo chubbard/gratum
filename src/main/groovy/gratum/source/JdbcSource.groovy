@@ -23,12 +23,12 @@ class JdbcSource extends AbstractSource {
     GString query
 
     JdbcSource(Sql db) {
-        this.name = "jdbc"
+        super("jdbc")
         this.db = db
     }
 
     JdbcSource(String url, String username, String password) {
-        this.name = url
+        super(url)
         db = Sql.newInstance(url, username, password)
     }
 

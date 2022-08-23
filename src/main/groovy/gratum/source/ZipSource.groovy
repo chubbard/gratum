@@ -15,7 +15,7 @@ class ZipSource extends AbstractSource {
     }
 
     ZipSource(File zip) {
-        this.name = zip.name
+        super(zip.name)
         this.file = zip
     }
 

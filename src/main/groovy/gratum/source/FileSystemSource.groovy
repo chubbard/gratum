@@ -23,7 +23,7 @@ class FileSystemSource extends AbstractSource {
     boolean recursive = true
 
     FileSystemSource(File[] files) {
-        this.name = files.collect {it.name }.join(",")
+        super( files.collect {it.name }.join(",") )
         this.files = files
     }
 

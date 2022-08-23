@@ -50,13 +50,13 @@ public class CsvSource extends AbstractSource {
     Closure<Void> headerClosure = null
 
     CsvSource(File file, String separator = ",", List<String> headers = null) {
-        this.name = file.name
+        super(file.name)
         csvFile = new CSVFile( file, separator );
         if( headers ) csvFile.setColumnHeaders( headers )
     }
 
     CsvSource( Reader reader, String separator = ",", List<String> headers = null) {
-        this.name = "Reader"
+        super("Reader")
         csvFile = new CSVFile( reader, separator )
         if( headers ) csvFile.setColumnHeaders( headers )
     }
@@ -70,9 +70,7 @@ public class CsvSource extends AbstractSource {
     }
 
     public static CsvSource of(String filename, InputStream stream, String separator = ",", List<String> headers = null) {
-        CsvSource src = new CsvSource( new InputStreamReader(stream), separator, headers )
-        src.name = filename
-        return src
+        return new CsvSource( new InputStreamReader(stream), separator, headers ).name(filename)
     }
 
     public static Pipeline csv( File filename, String separator = ",", List<String> headers = null ) {
@@ -84,9 +82,7 @@ public class CsvSource extends AbstractSource {
     }
 
     public static Pipeline csv(String name, InputStream stream, String separator = ",", List<String> headers = null) {
-        CsvSource src = new CsvSource( new InputStreamReader(stream), separator, headers )
-        src.name = name
-        return src.into()
+        return new CsvSource( new InputStreamReader(stream), separator, headers ).name(name)
     }
 
     /**
