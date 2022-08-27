@@ -66,7 +66,7 @@ public class CsvSource extends AbstractSource {
     }
 
     public static CsvSource of(String filename, String separator = ",", List<String> headers = null) {
-        return of( new File( filename ), separator )
+        return of( new File( filename ), separator, headers )
     }
 
     public static CsvSource of(String filename, InputStream stream, String separator = ",", List<String> headers = null) {
@@ -82,7 +82,7 @@ public class CsvSource extends AbstractSource {
     }
 
     public static Pipeline csv(String name, InputStream stream, String separator = ",", List<String> headers = null) {
-        return new CsvSource( new InputStreamReader(stream), separator, headers ).name(name)
+        return new CsvSource( new InputStreamReader(stream), separator, headers ).name(name).into()
     }
 
     /**
