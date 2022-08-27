@@ -1113,14 +1113,8 @@ public class Pipeline {
     public boolean process(Map row, int lineNumber = -1) {
         Map<String,Object> next = row
         for (Step step : processChain) {
-            try {
-                next = step.execute( this, next, lineNumber )
-                if( next[REJECTED_KEY] ) return false
-            } catch( HaltPipelineException ex ) {
-                throw ex
-            } catch (Exception ex) {
-                throw new RuntimeException("Line ${(lineNumber > 0 ? lineNumber : row)}: Error encountered in step ${name}.${step.name}", ex)
-            }
+            next = step.execute( this, next, lineNumber )
+            if( next == null || next[REJECTED_KEY] ) return false
         }
         if( loaded > DO_NOT_TRACK ) loaded++
         return false // don't stop!

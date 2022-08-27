@@ -24,7 +24,7 @@ dependencies {
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
-    implementation('org.codehaus.groovy:groovy-all:3.0.12') {
+    implementation('org.codehaus.groovy:groovy-all:2.5.18') {
         exclude group: 'org.codehaus.groovy', module:'groovy-swing'
         exclude group: 'org.codehaus.groovy', module:'groovy-testng'
         exclude group: 'org.codehaus.groovy', module:'groovy-console'
