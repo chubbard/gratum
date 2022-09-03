@@ -139,6 +139,24 @@ class PipelineTest {
     }
 
     @Test
+    void testWildcardFilterClosure() {
+        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+            .filter([ "*": { Map row -> row['Pclass'] == "3" || row['Sex'] == "Male"  } ])
+            .onRejection { Pipeline rej ->
+                rej.addStep("Verify all rejections Pclass <> 3 and Sex <> Male") { Map row ->
+                    assert row.Pclass != "3" && row.Sex != "Male"
+                    return row
+                }
+                return
+            }
+            .go()
+
+        assert statistic.loaded == 218
+        assert statistic.rejections == 200
+        assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 200
+    }
+
+    @Test
     void testSimpleGroupBy() {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .groupBy("Sex")

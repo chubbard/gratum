@@ -251,6 +251,12 @@ public class Pipeline {
      * In this example it invokes the Closure with the value at row['hair'] and the Closure evaluates
      * to a boolean to decide if a row is filtered or not.
      *
+     * .filter( "*": { Map row -> row['hair'] == "Brown" || row['eyeColor'] == 'Blue' } )
+     *
+     * This is the wildcard example, that allows you to embed a closure into the filter Map to create
+     * much more complex queries using the entire row.  So implementing OR logic is possible between
+     * multiple fields.
+     *
      * @param columns a Map that contains the columns, and their values that are passed through
      * @return A pipeline that only includes the rows matching the given filter.
      */

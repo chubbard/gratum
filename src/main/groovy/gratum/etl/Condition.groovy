@@ -16,7 +16,11 @@ class Condition {
 
         for( String col : filterColumns.keySet() ) {
             Object comp = filterColumns[col]
-            if( comp instanceof Collection ) {
+            if( col == "*" ) {
+                if( comp instanceof Closure ) {
+                    comparators.add( comp )
+                }
+            } else if( comp instanceof Collection ) {
                 comparators.add(createInCollectionCallback(col, comp))
             } else if( comp instanceof Pattern ) {
                 comparators.add( createPatternCallback( col, comp) )
