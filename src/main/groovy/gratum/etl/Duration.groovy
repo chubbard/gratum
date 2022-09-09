@@ -91,4 +91,8 @@ public class Duration {
     public long getHours() {
         return HOURS.convert( duration % MILLISECONDS.convert(1,DAYS), MILLISECONDS);
     }
+
+    long toMillis() {
+        return duration
+    }
 }

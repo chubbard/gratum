@@ -33,6 +33,7 @@ class PipelineTest {
         assert statistic.loaded == 266
         assert afterRows == 266
         assert beforeRows > afterRows
+        assert statistic.duration.toMillis() < 100
     }
 
     @Test
@@ -48,11 +49,12 @@ class PipelineTest {
             }
             .go()
 
-        assertNotNull( statistic )
-        assertEquals( "Assert that we successfully loaded ", statistic.name, "titanic.csv" )
-        assertEquals( "Assert that we successfully loaded all male passengers", 266, statistic.loaded )
-        assertEquals( "Assert that we rejected non-male passengers", 152, statistic.rejections )
-        assertEquals( "Assert the rejection category", 152, statistic.getRejections(RejectionCategory.IGNORE_ROW) )
+        assert statistic
+        assert statistic.name == "titanic.csv"
+        assert statistic.loaded == 266
+        assert statistic.rejections == 152
+        assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 152
+        assert statistic.duration.toMillis() < 100
     }
 
     @Test
@@ -70,14 +72,14 @@ class PipelineTest {
             }
             .go()
 
-        assertNotNull( statistic )
-        assertEquals( "Assert that we successfully loaded ", statistic.name, "titanic.csv" )
-        assertEquals( "Assert that we successfully loaded all male passengers", 185, statistic.loaded )
-        assertEquals( "Assert that we rejected non-male passengers", 233, statistic.rejections )
-        assertEquals( "Assert the rejection category", 233, statistic.getRejections(RejectionCategory.IGNORE_ROW) )
-        assertEquals("Assert rejection step is 1", 1, statistic.getRejectionsFor(RejectionCategory.IGNORE_ROW).size() )
-        assertEquals("Assert rejection step is filter()", "filter()", statistic.getRejectionsFor(RejectionCategory.IGNORE_ROW).keySet().first())
-        assertEquals("Assert rejection step filter() == 233", 233, statistic.getRejections(RejectionCategory.IGNORE_ROW,"filter()"))
+        assert statistic
+        assert statistic.name == "titanic.csv"
+        assert statistic.loaded == 185
+        assert statistic.rejections == 233
+        assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 233
+        assert statistic.getRejectionsFor(RejectionCategory.IGNORE_ROW).size() == 1
+        assert statistic.getRejectionsFor(RejectionCategory.IGNORE_ROW).keySet().first()
+        assert statistic.getRejections(RejectionCategory.IGNORE_ROW,"filter()") == 233
     }
 
     @Test
@@ -161,14 +163,14 @@ class PipelineTest {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .groupBy("Sex")
             .addStep("Assert groupBy(Sex)") { Map row ->
-                assertEquals(266, row.male?.size())
-                assertEquals(152, row.female?.size())
+                assert row.male?.size() == 266
+                assert row.female?.size() == 152
                 return row
             }
             .go()
 
-        assertEquals("Assert rows loaded == 1", 1, statistic.loaded )
-        assertEquals("Assert rows rejected == 0", 0, statistic.rejections )
+        assert statistic.loaded == 1
+        assert statistic.rejections == 0
     }
 
     @Test
@@ -183,25 +185,25 @@ class PipelineTest {
                 // size reflects how many sub-values there are for each group.
                 // not total items fitting into this group, only
                 // the leaves hold that information.
-                assertEquals( 3, row.male?.size() )
-                assertEquals( 3, row.female?.size() )
+                assert row.male?.size() == 3
+                assert row.female?.size() == 3
 
-                assertEquals( 3, row.male['1'].size() )
-                assertEquals( 7, row.male['2'].size() )
-                assertEquals( 16, row.male['3'].size() )
+                assert row.male['1'].size() == 3
+                assert row.male['2'].size() == 7
+                assert row.male['3'].size() == 16
 
-                assertEquals( 2, row.female['1'].size() )
-                assertEquals( 7, row.female['2'].size() )
-                assertEquals( 16, row.female['3'].size() )
+                assert row.female['1'].size() == 2
+                assert row.female['2'].size() == 7
+                assert row.female['3'].size() == 16
 
                 return row
             }
             .go()
 
         // verify that step timings for steps before the groupBy() are included in the returned statistics
-        assertTrue( "Assert that the timings include the asInt step", statistic.stepTimings.containsKey("asInt(Age)") )
-        assertTrue( "Assert that the timings include the filter step", statistic.stepTimings.containsKey("filter()") )
-        assertTrue( "Assert that the timings include the groupBy(Sex,Pclass) step", statistic.stepTimings.containsKey("groupBy(Sex,Pclass)") )
+        assert statistic.stepTimings.containsKey("asInt(Age)")
+        assert statistic.stepTimings.containsKey("filter()")
+        assert statistic.stepTimings.containsKey("groupBy(Sex,Pclass)")
     }
 
     @Test
@@ -214,8 +216,8 @@ class PipelineTest {
                 return row
             }
             .go()
-        assertEquals( "Assert rows loaded == 1", 1, statistic.loaded )
-        assertEquals( "Assert all rows rejected", 418, statistic.rejections )
+        assert statistic.loaded == 1
+        assert statistic.rejections == 418
 
         assertTrue( "Assert that the timings include the filter(Sex->K)) step", statistic.stepTimings.containsKey("filter Sex -> K") )
         // I'm not entirely sure why this assert was added.  It seems logical to include
@@ -223,7 +225,7 @@ class PipelineTest {
         // those reasons are lost to history.  I'm leaving it in case I remember why this was
         // important or not.
 //        assertFalse( "Assert that timings does NOT include groupBy because all rows are filtered out.", statistic.stepTimings.containsKey("groupBy(Sex)") )
-        assertTrue( "Assert that timings does include groupBy because all rows are filtered out.", statistic.stepTimings.containsKey("groupBy(Sex)") )
+        assert statistic.stepTimings.containsKey("groupBy(Sex)")
     }
 
     @Test
@@ -247,9 +249,9 @@ class PipelineTest {
         }
         .go()
 
-        assertEquals( 4, stats.loaded )
-        assertEquals( 0, stats.rejections )
-        assertEquals( stats.loaded, called )
+        assert stats.loaded == 4
+        assert stats.rejections == 0
+        assert stats.loaded == called
     }
 
     @Test
@@ -383,18 +385,18 @@ class PipelineTest {
                     assertNotNull( row["male"]["2"] )
                     assertNotNull( row["male"]["1"] )
 
-                    assertEquals( 146, row["male"]["3"].size() )
-                    assertEquals( 63, row["male"]["2"].size() )
-                    assertEquals( 57, row["male"]["1"].size() )
+                    assert row["male"]["3"].size() == 146
+                    assert row["male"]["2"].size() == 63
+                    assert row["male"]["1"].size() == 57
 
-                    assertNotNull( row["female"] )
-                    assertNotNull( row["female"]["3"] )
-                    assertNotNull( row["female"]["2"] )
-                    assertNotNull( row["female"]["1"] )
+                    assert row["female"]
+                    assert row["female"]["3"]
+                    assert row["female"]["2"]
+                    assert row["female"]["1"]
 
-                    assertEquals( 72, row["female"]["3"].size() )
-                    assertEquals( 30, row["female"]["2"].size() )
-                    assertEquals( 50, row["female"]["1"].size() )
+                    assert row["female"]["3"].size() == 72
+                    assert row["female"]["2"].size() == 30
+                    assert row["female"]["1"].size() == 50
                     return row
                 }
             }
@@ -418,9 +420,9 @@ class PipelineTest {
             }
             .go()
 
-        assertEquals( 8, stats.loaded )
-        assertEquals( 1, stats.rejections )
-        assertEquals( 1, rejections )
+        assert stats.loaded == 8
+        assert stats.rejections == 1
+        assert rejections == 1
     }
 
     @Test
@@ -436,8 +438,8 @@ class PipelineTest {
             }
             .go()
 
-        assertEquals( 9, stats.loaded )
-        assertEquals( 0, stats.rejections )
+        assert stats.loaded == 9
+        assert stats.rejections == 0
     }
 
     @Test
@@ -457,9 +459,9 @@ class PipelineTest {
         LoadStatistic stats = from(GratumFixture.hobbies).unique("id")
         .go()
 
-        assertEquals( 4, stats.loaded )
-        assertEquals( 4, stats.rejections )
-        assertEquals( 4, stats.getRejections(RejectionCategory.IGNORE_ROW) )
+        assert stats.loaded == 4
+        assert stats.rejections == 4
+        assert stats.getRejections(RejectionCategory.IGNORE_ROW) == 4
     }
 
     @Test
@@ -477,10 +479,10 @@ class PipelineTest {
                 }
                 .go()
 
-        assertEquals( 6, stats.loaded )
-        assertEquals( 2, stats.rejections )
-        assertEquals( 2, stats.getRejections(RejectionCategory.REJECTION) )
-        assertEquals( 2, rejections.size() )
+        assert stats.loaded == 6
+        assert stats.rejections == 2
+        assert stats.getRejections(RejectionCategory.REJECTION) == 2
+        assert rejections.size() == 2
     }
 
     @Test(timeout = 5000L)
@@ -502,11 +504,11 @@ class PipelineTest {
             }.go()
 
         assertNotNull( "Message should be non-null if we called the service", message )
-        assertEquals( "success", message )
-        assertEquals( expectedCount, stats.loaded )
+        assert message == "success"
+        assert stats.loaded == expectedCount
         // provided someone is in space!
         if( expectedCount > 0 ) {
-            assertEquals( expectedCount, actualCount )
+            assert actualCount == expectedCount
         }
     }
 
@@ -532,9 +534,9 @@ class PipelineTest {
         }
         .go()
 
-        assertEquals( 5, stats.loaded )
-        assertEquals( 1, stats.rejections )
-        assertEquals( 1, stats.getRejections(RejectionCategory.INVALID_FORMAT) )
+        assert stats.loaded == 5
+        assert stats.rejections == 1
+        assert stats.getRejections(RejectionCategory.INVALID_FORMAT) == 1
         assert kirby
     }
 
@@ -577,9 +579,9 @@ class PipelineTest {
         ]).asDouble('battingAverage')
                 .go()
 
-        assertEquals( 3, stats.loaded )
-        assertEquals( 1, stats.rejections )
-        assertEquals( 1, stats.getRejections(RejectionCategory.INVALID_FORMAT))
+        assert stats.loaded == 3
+        assert stats.rejections == 1
+        assert stats.getRejections(RejectionCategory.INVALID_FORMAT) == 1
     }
 
     @Test
@@ -635,9 +637,9 @@ class PipelineTest {
                 }
                 .go()
 
-        assertEquals( 2, stats.loaded )
-        assertEquals( 3, stats.rejections )
-        assertEquals( GratumFixture.people.size(), stats.loaded + stats.rejections )
+        assert stats.loaded == 2
+        assert stats.rejections == 3
+        assert GratumFixture.people.size() == stats.loaded + stats.rejections
     }
 
     @Test
@@ -651,27 +653,27 @@ class PipelineTest {
                 assert !row.Date.isEmpty()
                 assert !row.client.isEmpty()
                 assert !row.server.isEmpty()
-                assertEquals(9, row.size())
+                assert row.size() == 9
                 return row
             }
             .trim()
             .go()
 
-        assertEquals(18, stats.loaded)
-        assertEquals( 0, stats.rejections )
+        assert stats.loaded == 18
+        assert stats.rejections == 0
     }
 
     @Test
     void testClip() {
         LoadStatistic stat = from(GratumFixture.people).clip("name", "gender").addStep("Test resulting rows") { Map row ->
-            assertEquals( 2, row.size() )
+            assert row.size() == 2
             assertTrue( row.containsKey("name") )
             assertTrue( row.containsKey("gender") )
             return row
         }.go()
 
-        assertEquals( 5, stat.loaded )
-        assertEquals( 0, stat.rejections )
+        assert stat.loaded == 5
+        assert stat.rejections == 0
     }
 
     @Test
@@ -696,8 +698,8 @@ class PipelineTest {
                 return row
             }.go()
 
-        assertEquals( 4, stats.loaded )
-        assertEquals( 0, stats.rejections )
+        assert stats.loaded == 4
+        assert stats.rejections == 0
     }
 
     @Test
