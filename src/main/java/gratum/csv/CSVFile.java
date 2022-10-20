@@ -61,7 +61,7 @@ public class CSVFile {
                 callback.processHeaders( columnHeaders );
                 lines++;
             } catch( Exception ex ) {
-                throw new IOException( "Could not process header " + lines + ": " + lastLine, ex );
+                throw new IOException( getName() + ": Could not process header " + lines + ": " + lastLine, ex );
             }
         }
 
@@ -78,13 +78,17 @@ public class CSVFile {
         } catch( HaltPipelineException ex ) {
             throw ex;
         } catch( RuntimeException ex ) {
-            throw new RuntimeException( "Could not parse line " + lines + ": " +  lastLine, ex );
+            throw new RuntimeException( getName() + ": Could not parse line " + lines + ": " +  lastLine, ex );
         } catch( Exception ex ) {
-            throw new IOException( "Could not process line " + lines + ": " + lastLine, ex );
+            throw new IOException( getName() + ": Could not process line " + lines + ": " + lastLine, ex );
         } finally {
             lineNumberReader.close();
             callback.afterProcessing();
         }
+    }
+
+    private String getName() {
+        return file != null ? file.getName() : "<stream>";
     }
 
     private List<String> readNext( LineNumberReader reader ) throws IOException {
