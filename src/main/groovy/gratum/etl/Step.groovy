@@ -36,13 +36,13 @@ class Step {
         } catch(Exception ex) {
             Map<String,Object> next = handleExceptionToRejection(ex, lineNumber, row, pipeline)
             if( loaded == 0 && rejections[RejectionCategory.SCRIPT_ERROR]  > MAX_ERROR_THRESHOLD ) {
-                throw new PipelineAbortException("${pipeline.name}:${name}:${lineNumber}: Halting pipeline due too many script errors encountered: ${ex}.")
+                throw new PipelineAbortException("${pipeline.name}:${name}:${lineNumber}: Halting pipeline due too many script errors encountered: ${ex}.", ex)
             } else {
                 return next
             }
         } catch(Throwable t ) {
             handleExceptionToRejection(t, lineNumber, row, pipeline)
-            throw new PipelineAbortException("${pipeline.name}:${name}:${lineNumber}: Halting pipeline due to a terminating exception encountered: ${t}.")
+            throw new PipelineAbortException("${pipeline.name}:${name}:${lineNumber}: Halting pipeline due to a terminating exception encountered: ${t}.", t)
         } finally {
             long elapsed = System.currentTimeMillis() - start
             this.duration = this.duration + elapsed
