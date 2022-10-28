@@ -338,6 +338,17 @@ public class Pipeline {
      * row even if it doesn't find a match row on the right (also known as a left join).  A right join (ie left = false) will not return a
      * row if it doesn't find a matching row on the right (Also known as an inner join).  Default is left = false.
      *
+     * Columns can be specified in 3 different ways: Map, Collection or Object.  Using a Map allows you to specify both
+     * keys from the left Pipeline and the right Pipeline thus mapping column to column.  For example, a Pipeline that
+     * has People objects on it might have an id column, and the right Pipeline has Hobbies which carry a person_id column.
+     * To Map id -> person_id you'd use the following:
+     *
+     * people.join( hobbies, [id: "person_id"] ]
+     *
+     * That would mean match up rows such that people[id] = hobbies[person_id].  Using a Collection simply means the columns
+     * are the same name in both Pipelines.  And using an Object simply calls toString() on it and uses that as the column
+     * name shared by both Pipelines.
+     *
      * @param other The right side Pipeline to use for the join
      * @param columns The columns to join on
      * @param left perform a left join (ie true) or a right join (false)
