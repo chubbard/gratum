@@ -322,6 +322,30 @@ public class CSVFileTest extends TestCase {
             }
         });
     }
+
+    public void testUnescapedCsvTailingSeparator() throws IOException {
+        CSVFile csv = new CSVFile( new InputStreamReader(getClass().getResourceAsStream("/empty_last_column_test.csv")), "," );
+        csv.setEscaped(false);
+        csv.parse(new CSVReader() {
+            int line = 1;
+            @Override
+            public void processHeaders(List<String> header) throws Exception {
+                assertEquals(5, header.size());
+            }
+
+            @Override
+            public boolean processRow(List<String> header, List<String> row) throws Exception {
+                assertEquals( "line " + line, header.size(), row.size() );
+                line++;
+                return false;
+            }
+
+            @Override
+            public void afterProcessing() {
+            }
+        });
+    }
+
     private File writeTestUnicodeFile() throws IOException {
         Map<String,Object> person1 =new HashMap<>();
         person1.put("Name", "Andri\u00e9");
