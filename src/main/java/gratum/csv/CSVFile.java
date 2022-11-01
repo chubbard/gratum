@@ -113,6 +113,10 @@ public class CSVFile {
                 columnStart = index + separator.length();
             }
         }
+        if( columnStart == lastLine.length() && lastLine.endsWith(separator) ) {
+            // we found a trailing separator issue which means we didn't get a separator
+            row.add("");
+        }
         return row;
     }
 
@@ -142,6 +146,9 @@ public class CSVFile {
         if( columnStart < lastLine.length() ) {
             String content = stripQuotes ? lastLine.substring( columnStart + 1, lastLine.length() - 1 ) : lastLine.substring( columnStart );
             line.add( unescape(content) );
+        } else {
+            // we have a trailing comma at the end without anything after it so add an empty string.
+            line.add( "" );
         }
 
         return line;

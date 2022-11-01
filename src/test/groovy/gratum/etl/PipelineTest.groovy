@@ -683,7 +683,7 @@ class PipelineTest {
                 assert row.containsKey("assignment")
                 switch(row.rank) {
                     case "Captain":
-                        assert row.assignment == null
+                        assert !row.assignment
                         break
                     case "Private":
                         assert row.assignment == "Old River"
@@ -692,7 +692,7 @@ class PipelineTest {
                         assert row.assignment == "Lombok"
                         break
                     case "Private First Class":
-                        assert row.assignment == null
+                        assert !row.assignment
                         break
                 }
                 return row
@@ -761,7 +761,7 @@ class PipelineTest {
         LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
             .addStep("Assert null exists") { Map row ->
                 if( ['Captain', 'Private First Class'].contains( row.rank ) ) {
-                    assert row.assignment == null
+                    assert !row.assignment
                 }
                 return row
             }

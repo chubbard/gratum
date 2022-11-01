@@ -17,12 +17,12 @@ import java.util.regex.Pattern
  */
 class FileSystemSource extends AbstractSource {
 
-    File[] files
+    Iterable<File> files
     Pattern filter = ~/.*/
     int line = 1
     boolean recursive = true
 
-    FileSystemSource(File[] files) {
+    FileSystemSource(Iterable<File> files) {
         super( files.collect {it.name }.join(",") )
         this.files = files
     }
@@ -34,7 +34,17 @@ class FileSystemSource extends AbstractSource {
      * @return this
      */
     static FileSystemSource files( File... directories ) {
-        return new FileSystemSource( directories )
+        return new FileSystemSource( Arrays.asList(directories) )
+    }
+
+    /**
+     * Pass an Iterable of files to this method and this source will visit each
+     * file.
+     * @param directories An Iterable of java.io.File objects to visit
+     * @return this
+     */
+    static FileSystemSource files( Iterable<File> directories ) {
+        return new FileSystemSource(directories)
     }
 
     @Override
