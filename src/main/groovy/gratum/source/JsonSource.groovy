@@ -8,6 +8,7 @@ class JsonSource extends AbstractSource {
     Reader reader
     List<String> jsonPath = []
     def rootJson
+    boolean recordPerLine = false
 
     JsonSource(reader ) {
         this.reader = reader
@@ -30,10 +31,19 @@ class JsonSource extends AbstractSource {
         return new JsonSource( new StringReader(json) )
     }
 
+    public JsonSource recordPerLine( boolean recordPerLine ) {
+        this.recordPerLine = recordPerLine
+        return this
+    }
+
     @Override
     void start(Pipeline pipeline) {
         try {
-            parseJson(reader, pipeline)
+            if( recordPerLine ) {
+                parseRecordPerLine( reader, pipeline )
+            } else {
+                parseJson(reader, pipeline)
+            }
         } catch(e) {
             throw(e)
         } finally {
@@ -61,6 +71,17 @@ class JsonSource extends AbstractSource {
         } else {
             json = json[ path.first() ]
             return recurseJson(json, path.subList(1, path.size()), callback, lines)
+        }
+    }
+
+    void parseRecordPerLine(Reader reader, Pipeline pipeline) {
+        JsonSlurper json = JsonSlurper.newInstance()
+        reader.eachLine { line ->
+            String trimmed = line.trim()
+            if( trimmed ) {
+                rootJson = json.parseText( trimmed )
+                recurseJson( rootJson, jsonPath, pipeline )
+            }
         }
     }
 }

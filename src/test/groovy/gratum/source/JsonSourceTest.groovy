@@ -42,4 +42,24 @@ class JsonSourceTest {
         assert stat.loaded == 3
         assert stat.rejections == 0
     }
+
+    @Test
+    void parseRecordPerJson() {
+        LoadStatistic stat = JsonSource.json("""
+            {"firstName": "Bob", "lastName": "Smith", "age": 41}
+            {"firstName": "Don", "lastName": "Johnson", "age": 64}
+            {"firstName": "Rick", "lastName": "Richards", "age": 72}
+            {"firstName": "Frank", "lastName": "Kilgore", "age": 22}
+        """).recordPerLine(true).into()
+            .addStep("") { Map row ->
+                assert row["_root_json"]
+                assert row["firstName"]
+                assert row["lastName"]
+                assert row["age"]
+                return row
+            }
+            .go()
+        assert stat.loaded == 4
+        assert stat.rejections == 0
+    }
 }
