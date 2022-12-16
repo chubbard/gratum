@@ -10,7 +10,8 @@ class JsonSource extends AbstractSource {
     def rootJson
     boolean recordPerLine = false
 
-    JsonSource(reader ) {
+    JsonSource(String name, Reader reader ) {
+        super(name)
         this.reader = reader
     }
 
@@ -20,15 +21,15 @@ class JsonSource extends AbstractSource {
     }
 
     public static JsonSource json(File file ) {
-        return json( new FileReader( file ) )
+        return json( new FileReader( file ), file.name )
     }
 
-    public static JsonSource json(Reader reader ) {
-        return new JsonSource( reader )
+    public static JsonSource json(Reader reader, String name = "Reader") {
+        return new JsonSource( name, reader )
     }
 
-    public static JsonSource json(String json ) {
-        return new JsonSource( new StringReader(json) )
+    public static JsonSource json(String json, String name = "String") {
+        return new JsonSource( name, new StringReader(json) )
     }
 
     public JsonSource recordPerLine( boolean recordPerLine ) {
