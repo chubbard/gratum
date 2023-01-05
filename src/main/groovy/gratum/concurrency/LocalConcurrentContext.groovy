@@ -116,8 +116,6 @@ public class LocalConcurrentContext implements ConcurrentContext {
                             }
                             .go()
                     return stat
-                } catch( Exception ex ) {
-                    ex.printStackTrace()
                 } finally {
                     latch.countDown()
                 }
