@@ -41,4 +41,14 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
         return _people.collect() { (Map<String,Object>)it.clone() }
     }
 
+    public static InputStream getResource(String resource) {
+        return getClass().getResourceAsStream("/" + resource )
+    }
+
+    public static void withResource(String resource, Closure<Void> callback) {
+        this.getResourceAsStream("/" + resource )?.withStream { InputStream stream ->
+            callback.call( stream )
+        }
+    }
+
 }
