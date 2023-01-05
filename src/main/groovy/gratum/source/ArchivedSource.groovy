@@ -2,6 +2,7 @@ package gratum.source
 
 import gratum.etl.Pipeline
 import gratum.util.UncloseableInputStream
+import groovy.transform.CompileStatic
 import org.apache.commons.compress.archivers.ArchiveEntry
 import org.apache.commons.compress.archivers.ArchiveInputStream
 import org.apache.commons.compress.archivers.ArchiveStreamFactory
@@ -48,6 +49,7 @@ import org.apache.commons.compress.archivers.ArchiveStreamFactory
  *     .go()
  * </code>
  */
+@CompileStatic
 class ArchivedSource extends AbstractSource {
 
     File file

@@ -2,7 +2,9 @@ package gratum.source
 
 import gratum.etl.Pipeline
 import groovy.json.JsonSlurper
+import groovy.transform.CompileStatic
 
+@CompileStatic
 class JsonSource extends AbstractSource {
 
     Reader reader
@@ -60,15 +62,16 @@ class JsonSource extends AbstractSource {
 
     private int recurseJson(def json, List<String> path, Pipeline callback, int lines = 0) {
         if( json instanceof Collection ) {
-            for(int i = 0; i < json.size(); i++){
-                if(lines++ == recurseJson(json[i], path.size() > 0 ? path.subList(1, path.size()) : path, callback, lines)){
+            Collection col = json as Collection
+            for(int i = 0; i < col.size(); i++){
+                if(lines++ == recurseJson(col[i], path.size() > 0 ? path.subList(1, path.size()) : path, callback, lines)){
                     return lines
                 }
             }
             return lines
         } else if( path.isEmpty() ) {
             json["_root_json"] = rootJson // insert the rootJson as a special field in case we want to read it
-            return callback.process(json, lines) ? ++lines : lines
+            return callback.process(json as Map<String,Object>, lines) ? ++lines : lines
         } else {
             json = json[ path.first() ]
             return recurseJson(json, path.subList(1, path.size()), callback, lines)

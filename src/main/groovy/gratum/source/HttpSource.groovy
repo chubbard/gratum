@@ -1,5 +1,6 @@
 package gratum.source
 
+import groovy.transform.CompileStatic
 import groovyx.net.http.HttpBuilder
 
 import static groovyx.net.http.HttpBuilder.configure

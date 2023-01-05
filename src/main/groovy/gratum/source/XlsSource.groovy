@@ -1,6 +1,7 @@
 package gratum.source
 
 import gratum.etl.Pipeline
+import groovy.transform.CompileStatic
 import org.apache.poi.hssf.record.crypto.Biff8EncryptionKey
 import org.apache.poi.poifs.filesystem.POIFSFileSystem
 
@@ -8,6 +9,7 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem
  * A {@link gratum.source.AbstractSource} that implements reading excel workbooks in xls
  * format also known as HSSF.
  */
+@CompileStatic
 class XlsSource extends AbstractSource {
 
     POIFSFileSystem pfs

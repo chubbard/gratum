@@ -3,7 +3,9 @@ package gratum.sink
 import gratum.etl.FileOpenable
 import gratum.etl.Pipeline
 import groovy.json.JsonOutput
+import groovy.transform.CompileStatic
 
+@CompileStatic
 class JsonSink implements Sink<Map<String,Object>> {
 
     String name
@@ -54,7 +56,7 @@ class JsonSink implements Sink<Map<String,Object>> {
         if( output ) {
             return [file: output, filename: output.absolutePath, stream: new FileOpenable(output)]
         } else {
-            return [name: name]
+            return [name: name] as Map<String,Object>
         }
     }
 

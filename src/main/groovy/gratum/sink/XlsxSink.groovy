@@ -2,6 +2,7 @@ package gratum.sink
 
 import gratum.etl.FileOpenable
 import gratum.etl.Pipeline
+import groovy.transform.CompileStatic
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.RichTextString
 import org.apache.poi.ss.usermodel.Row
@@ -11,6 +12,7 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+@CompileStatic
 class XlsxSink implements Sink<Map<String,Object>> {
 
     File output

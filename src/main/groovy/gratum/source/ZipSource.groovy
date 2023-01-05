@@ -1,11 +1,13 @@
 package gratum.source
 
 import gratum.etl.Pipeline
+import groovy.transform.CompileStatic
 
 import java.util.function.Consumer
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
+@CompileStatic
 class ZipSource extends AbstractSource {
 
     File file

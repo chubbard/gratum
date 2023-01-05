@@ -45,7 +45,7 @@ import java.util.regex.Pattern
  * pulling out the "people" column which is a Collection of people objects.  Then it injects those members
  * into the down stream steps which uses printRow to print it to the console.  The output would look like
  * the following:
- * 
+ *
  * <pre>
  *    [name:Sergey Prokopyev, craft:ISS]
  *    [name:Alexander Gerst, craft:ISS]
@@ -58,7 +58,7 @@ import java.util.regex.Pattern
  *    took 1 ms
  * </pre>
  */
-//@CompileStatic
+@CompileStatic
 public class Pipeline {
 
     public static final String REJECTED_KEY = "__reject__"
@@ -88,9 +88,7 @@ public class Pipeline {
      * @return The pipeline attached to results of the startClosure.
      */
     public static Pipeline create( String name, @DelegatesTo(Pipeline) Closure startClosure ) {
-        Pipeline pipeline = new Pipeline(name)
-        pipeline.src = new ClosureSource(startClosure)
-        return pipeline
+        ClosureSource.of( startClosure ).name( name ).into()
     }
 
     /**
@@ -363,7 +361,7 @@ public class Pipeline {
             return row
         }
 
-        return this.inject("join(${this.name}, ${columns})") { Map<String,Object> row ->
+        return this.inject("join(${this.name}, ${columns})", { Map<String,Object> row ->
             if( !other.complete ) {
                 other.go()
             }
@@ -395,7 +393,7 @@ public class Pipeline {
             } else {
                 return [ reject( row,"Could not join on ${columns}", RejectionCategory.IGNORE_ROW ) ]
             }
-        }
+        } as Closure<Iterable<Map<String,Object>>>)
     }
 
     /**
@@ -473,21 +471,21 @@ public class Pipeline {
         return this
     }
 
-    private List<String> leftColumn(def columns) {
+    private Iterable<String> leftColumn(def columns) {
         if( columns instanceof Collection ) {
-            return ((Collection<String>)columns).toList()
+            return ((Collection<String>)columns)
         } else if( columns instanceof Map ) {
-            return ((Map)columns).keySet().asList()
+            return ((Map)columns).keySet()
         } else {
             return [columns.toString()]
         }
     }
 
-    private List<String> rightColumn(def columns) {
+    private Iterable<String> rightColumn(def columns) {
         if( columns instanceof Collection ) {
-            return ((Collection<String>)columns).toList()
+            return ((Collection<String>)columns)
         } else if( columns instanceof Map ) {
-            return ((Map)columns).values().asList()
+            return ((Map)columns).values()
         } else {
             return [columns.toString()]
         }
@@ -982,9 +980,8 @@ public class Pipeline {
      * @param The Closure
      * @return this Pipeline
      */
-    public Pipeline apply(Closure<Void> applyToPipeline) {
-        applyToPipeline.call( this )
-        return this
+    public Pipeline apply(Closure<Pipeline> applyToPipeline) {
+        return applyToPipeline.call( this ) ?: this
     }
 
     /**
@@ -1137,7 +1134,7 @@ public class Pipeline {
         return false // don't stop!
     }
 
-    protected void doRejections(Map<String,Object> current, String stepName, int lineNumber) {
+    void doRejections(Map<String,Object> current, String stepName, int lineNumber) {
         if( parent ) {
             parent.doRejections( current, stepName, lineNumber )
         } else {
@@ -1147,7 +1144,7 @@ public class Pipeline {
         }
     }
 
-    private String keyOf( Map row, List<String> columns ) {
+    private String keyOf( Map row, Iterable<String> columns ) {
         return columns.collect { key -> row[key] }.join(":")
     }
 
@@ -1164,6 +1161,10 @@ public class Pipeline {
     public static Map reject(Map row, String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
         row[ REJECTED_KEY ] = reject( reason, category )
         return row
+    }
+
+    void reject(Map row, int lineNumber = -1) {
+        rejections?.process( row, lineNumber )
     }
 
     LoadStatistic toLoadStatistic(long start, long end) {

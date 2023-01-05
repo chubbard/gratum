@@ -1,6 +1,7 @@
 package gratum.source
 
 import gratum.etl.Pipeline
+import groovy.transform.CompileStatic
 import org.apache.poi.openxml4j.opc.OPCPackage
 import org.apache.poi.ss.usermodel.DataFormatter
 import org.apache.poi.ss.util.CellAddress
@@ -20,6 +21,7 @@ import javax.xml.parsers.ParserConfigurationException
  * A {@link gratum.source.Source} that implements reading excel workbooks in xlsx
  * format.
  */
+@CompileStatic
 class XlsxSource extends AbstractSource {
 
     File excelFile

@@ -3,6 +3,7 @@ package gratum.source
 import gratum.etl.FileOpenable
 import gratum.etl.Pipeline
 import groovy.io.FileType
+import groovy.transform.CompileStatic
 
 import java.util.regex.Pattern
 
@@ -15,6 +16,7 @@ import java.util.regex.Pattern
  * can include an optional filter to match files
  * {@link FileSystemSource#filter(java.util.regex.Pattern)}.
  */
+@CompileStatic
 class FileSystemSource extends AbstractSource {
 
     Iterable<File> files

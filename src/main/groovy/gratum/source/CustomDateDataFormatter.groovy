@@ -6,7 +6,6 @@ import org.apache.poi.ss.usermodel.DateUtil
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 
-
 class CustomDateDataFormatter extends DataFormatter {
 
     private String pattern

@@ -1,5 +1,7 @@
 package gratum.etl
 
+import groovy.transform.CompileStatic
+
 /**
  * Represents a file that can be cast to an InputStream or OutputStream giving
  * it the ability to masquerade as an InputStream/OutputStream.  You can only
@@ -19,6 +21,7 @@ package gratum.etl
  * be read as a stream transparently through multiple steps on the Pipline without
  * concern for needing to centrally decorate or chain streams.
  */
+@CompileStatic
 class FileOpenable implements Openable, Closeable {
 
     private final File file

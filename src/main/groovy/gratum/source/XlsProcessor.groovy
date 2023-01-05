@@ -1,6 +1,7 @@
 package gratum.source
 
 import gratum.etl.Pipeline
+import groovy.transform.CompileStatic
 import org.apache.poi.hssf.eventusermodel.EventWorkbookBuilder
 import org.apache.poi.hssf.eventusermodel.FormatTrackingHSSFListener
 import org.apache.poi.hssf.eventusermodel.HSSFEventFactory
@@ -28,6 +29,7 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.poifs.filesystem.POIFSFileSystem
 import org.apache.poi.ss.formula.constant.ErrorConstant
 
+@CompileStatic
 class XlsProcessor implements HSSFListener {
     private Pipeline pipeline
     private int startOnRow = 0
@@ -50,7 +52,7 @@ class XlsProcessor implements HSSFListener {
     boolean outputFormulaValues = true
     private int sheetIndex = -1
 
-    XlsProcessor(Pipeline pipeline, startOnRow = 0, outputFormulaValues = true, String sheet = null) {
+    XlsProcessor(Pipeline pipeline, Integer startOnRow = 0, Boolean outputFormulaValues = true, String sheet = null) {
         this.pipeline = pipeline
         this.startOnRow = startOnRow
         this.outputFormulaValues = outputFormulaValues
@@ -244,7 +246,8 @@ class XlsProcessor implements HSSFListener {
         if( row == startOnRow ) {
             this.header.add( value.toString() )
         } else {
-            this.row[ col < this.header.size() ? header.get(col) : "col_${col}" ] = value
+            String key = col < this.header.size() ? header.get(col) : "col_${col}"
+            this.row[ key ] = value
         }
     }
 }

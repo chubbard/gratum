@@ -3,7 +3,9 @@ package gratum.sink
 import gratum.csv.CSVFile
 import gratum.etl.FileOpenable
 import gratum.etl.Pipeline
+import groovy.transform.CompileStatic
 
+@CompileStatic
 class CsvSink implements Sink<Map<String,Object>> {
 
     CSVFile csvFile

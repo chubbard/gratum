@@ -3,6 +3,7 @@ package gratum.source
 import gratum.etl.Pipeline
 import groovy.sql.GroovyResultSet
 import groovy.sql.Sql
+import groovy.transform.CompileStatic
 
 import java.sql.ResultSetMetaData
 
@@ -17,6 +18,7 @@ import java.sql.ResultSetMetaData
  *      .go()
  * </pre>
  */
+@CompileStatic
 class JdbcSource extends AbstractSource {
 
     Sql db

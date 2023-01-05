@@ -1,5 +1,8 @@
 package gratum.etl
 
+import groovy.transform.CompileStatic
+
+@CompileStatic
 class AfterStep {
 
     long duration = 0L

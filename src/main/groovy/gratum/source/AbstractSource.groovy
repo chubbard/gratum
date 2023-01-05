@@ -1,7 +1,9 @@
 package gratum.source
 
 import gratum.etl.Pipeline
+import groovy.transform.CompileStatic
 
+@CompileStatic
 abstract class AbstractSource implements Source {
 
     String name

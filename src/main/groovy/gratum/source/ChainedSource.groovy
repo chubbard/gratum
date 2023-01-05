@@ -1,7 +1,9 @@
 package gratum.source;
 
-import gratum.etl.Pipeline;
+import gratum.etl.Pipeline
+import groovy.transform.CompileStatic;
 
+@CompileStatic
 public class ChainedSource extends AbstractSource {
 
     private Pipeline parent

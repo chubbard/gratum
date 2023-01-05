@@ -1,6 +1,7 @@
 package gratum.source
 
 import gratum.etl.Pipeline
+import groovy.transform.CompileStatic
 
 /**
  * A source that uses a Collection&lt;Map&gt; as its source for rows.  For example,
@@ -17,6 +18,7 @@ import gratum.etl.Pipeline
  * .go
  * </pre>
  */
+@CompileStatic
 class CollectionSource extends AbstractSource {
 
     Collection<Map> source
