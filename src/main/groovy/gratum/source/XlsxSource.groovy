@@ -97,7 +97,7 @@ class XlsxSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         OPCPackage ocp = null
         try {
             ocp = OPCPackage.open( stream ?: excelFile.newInputStream() )

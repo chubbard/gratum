@@ -3,7 +3,6 @@ package gratum.concurrency
 import gratum.etl.GratumFixture
 import gratum.etl.LoadStatistic
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 
 import static gratum.source.CsvSource.csv
@@ -21,13 +20,13 @@ class LocalConcurrentContextTest {
     void testCompletion() {
         GratumFixture.getResource("titanic.csv").withStream {stream ->
             LoadStatistic stats = csv("titantic", stream, ",")
-                    .apply( context.worker { pipeline ->
+                    .apply( context.spread { pipeline ->
                         pipeline.addStep("Assert we are on another thread") { Map row ->
                             assert Thread.currentThread().name.startsWith("Worker")
                             return row
                         }
                     }
-                    .results { pipeline ->
+                    .collect { pipeline ->
                         pipeline.addStep("Assert we are on the results thread") { Map row ->
                             assert Thread.currentThread().name.startsWith("Results")
                             return row
@@ -45,12 +44,12 @@ class LocalConcurrentContextTest {
     void testRejections() {
         GratumFixture.withResource("titanic.csv") { stream ->
             LoadStatistic stats = csv("titantic", stream, ",")
-                    .apply( context.worker { pipeline ->
+                    .apply( context.spread { pipeline ->
                         pipeline.filter("Only Females") { Map row ->
                             row.Sex == "female"
                         }
                     }
-                    .results { pipeline ->
+                    .collect { pipeline ->
                         pipeline.addStep("Assert we are on the results thread") { Map row ->
                             assert Thread.currentThread().name.startsWith("Results")
                             return row

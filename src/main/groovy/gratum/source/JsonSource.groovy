@@ -40,7 +40,7 @@ class JsonSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         try {
             if( recordPerLine ) {
                 parseRecordPerLine( reader, pipeline )

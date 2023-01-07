@@ -80,7 +80,7 @@ class XlsSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         try {
             XlsProcessor processor = new XlsProcessor( pipeline, startOnRow, outputFormulaValues, sheet )
             processor.parse( pfs )

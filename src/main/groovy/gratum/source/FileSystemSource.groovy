@@ -50,7 +50,7 @@ class FileSystemSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         for( File f : files ) {
             process( f, pipeline )
         }

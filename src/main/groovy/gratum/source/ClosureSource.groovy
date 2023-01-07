@@ -17,7 +17,7 @@ class ClosureSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         logic.call(pipeline)
     }
 }

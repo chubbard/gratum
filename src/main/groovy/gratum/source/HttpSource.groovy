@@ -99,7 +99,7 @@ class HttpSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         if (!httpBuilder) {
             httpBuilder = configure() {
                 request.uri = url

@@ -32,4 +32,15 @@ abstract class AbstractSource implements Source {
         this.name = name
         return (T)this
     }
+
+    @Override
+    void start(Pipeline pipeline) {
+        try {
+            doStart( pipeline )
+        } finally {
+            pipeline.finished()
+        }
+    }
+
+    abstract void doStart(Pipeline pipeline)
 }

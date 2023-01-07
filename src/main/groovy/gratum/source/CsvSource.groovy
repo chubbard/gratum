@@ -113,7 +113,7 @@ public class CsvSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         int line = 1
         CSVReader csvReader = new CSVReader() {
             @Override

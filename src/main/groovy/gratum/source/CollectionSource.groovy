@@ -29,7 +29,7 @@ class CollectionSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         int line = 1;
         for( Map r : source ) {
             pipeline.process( r, line++ )

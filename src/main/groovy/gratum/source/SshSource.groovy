@@ -146,7 +146,7 @@ class SshSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         Session jschSession = jsch.getSession(username, host, port)
         if( password ) jschSession.setPassword( password )
         jschSession.setConfig("PreferredAuthentications", "publickey,password")

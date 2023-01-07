@@ -3,7 +3,7 @@ package gratum.concurrency
 import gratum.etl.Pipeline
 
 interface ConcurrentContext {
-    LocalConcurrentContext worker( Closure<Pipeline> workerClosure );
-    LocalConcurrentContext results( Closure<Pipeline> resultsClosure );
+    LocalConcurrentContext spread(Closure<Pipeline> workerClosure );
+    LocalConcurrentContext collect(Closure<Pipeline> resultsClosure );
     Closure<Pipeline> connect();
 }

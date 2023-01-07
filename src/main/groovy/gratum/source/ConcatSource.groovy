@@ -25,7 +25,7 @@ class ConcatSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         sources.each { Source src ->
             src.start( pipeline )
         }

@@ -179,9 +179,7 @@ public class Pipeline {
             branch.delegate = rejections
             branch( rejections )
             after {
-                rejections.doneChain.each { AfterStep step ->
-                    step.execute()
-                }
+                rejections.finished()
                 return
             }
         }
@@ -526,7 +524,7 @@ public class Pipeline {
         Pipeline other = new Pipeline( name, this )
         other.src = new AbstractSource() {
             @Override
-            void start(Pipeline pipeline) {
+            void doStart(Pipeline pipeline) {
                 parent.start() // first start our parent pipeline
                 pipeline.process( cache, 1 )
             }
@@ -1094,14 +1092,9 @@ public class Pipeline {
     public void start() {
         try {
             src?.start(this)
-
-            doneChain.each { AfterStep current ->
-                current.execute()
-            }
         } catch( HaltPipelineException ex ) {
             // ignore as we were asked to halt.
         }
-        complete = true
     }
 
     /**
@@ -1199,5 +1192,17 @@ public class Pipeline {
     Pipeline source(Source source) {
         this.src = source
         return this
+    }
+
+    public void finished() {
+        try {
+            doneChain.each { AfterStep current ->
+                current.execute()
+            }
+        } catch( HaltPipelineException ex ) {
+            // ignore as we were asked to halt.
+        } finally {
+            complete = true
+        }
     }
 }

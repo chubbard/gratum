@@ -33,13 +33,13 @@ public class LocalConcurrentContext implements ConcurrentContext {
         latch = new CountDownLatch(workers+1)
     }
 
-    public LocalConcurrentContext worker( @DelegatesTo(LocalConcurrentContext) Closure<Pipeline> workerClosure ) {
+    public LocalConcurrentContext spread(@DelegatesTo(LocalConcurrentContext) Closure<Pipeline> workerClosure ) {
         this.workerClosure = workerClosure
         this.workerClosure.delegate = this
         return this
     }
 
-    public LocalConcurrentContext results( @DelegatesTo(LocalConcurrentContext) Closure<Pipeline> resultsClosure ) {
+    public LocalConcurrentContext collect(@DelegatesTo(LocalConcurrentContext) Closure<Pipeline> resultsClosure ) {
         this.resultProcessorClosure = resultsClosure
         this.resultProcessorClosure.delegate = this
         return this

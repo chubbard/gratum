@@ -48,7 +48,7 @@ class JdbcSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         List<String> columns = []
         int line = 1
         db.eachRow( query, { ResultSetMetaData md ->

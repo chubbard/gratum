@@ -78,7 +78,7 @@ class ArchivedSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         int line = 1
         this.file.withInputStream { InputStream stream ->
             ArchiveInputStream archive = getArchiveInputStream(stream)

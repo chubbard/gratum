@@ -26,7 +26,7 @@ class ZipSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         int line = 1
         ZipFile zip = new ZipFile( file )
         zip.stream().forEach( new Consumer<ZipEntry>() {

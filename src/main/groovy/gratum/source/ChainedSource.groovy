@@ -16,7 +16,7 @@ public class ChainedSource extends AbstractSource {
     }
 
     @Override
-    void start(Pipeline pipeline) {
+    void doStart(Pipeline pipeline) {
         this.delegate = pipeline
         parent.start()
     }
