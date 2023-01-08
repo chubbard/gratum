@@ -2,6 +2,7 @@ package gratum.concurrency
 
 import gratum.etl.GratumFixture
 import gratum.etl.LoadStatistic
+import gratum.etl.Pipeline
 import org.junit.Before
 import org.junit.Test
 
@@ -49,7 +50,7 @@ class LocalConcurrentContextTest {
                             row.Sex == "female"
                         }
                     }
-                    .collect { pipeline ->
+                    .collect { Pipeline pipeline ->
                         pipeline.addStep("Assert we are on the results thread") { Map row ->
                             assert Thread.currentThread().name.startsWith("Results")
                             return row

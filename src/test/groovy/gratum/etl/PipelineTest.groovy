@@ -993,4 +993,47 @@ class PipelineTest {
         assert stat.loaded == 3
         assert stat.rejections == 0
     }
+
+    @Test
+    public void testEmptyToNull() {
+        LoadStatistic stat = from(
+                [
+                        red: "",
+                        green: "1.0",
+                        blue: ""
+                ],
+                [
+                        red: "",
+                        green: "0.5",
+                        blue: "0.5"
+                ],
+                [
+                        red: "1.0",
+                        green: "",
+                        blue: "0.5"
+                ],
+                [
+                        red: "0.5",
+                        green: "0.5",
+                        blue: ""
+                ],
+                [
+                        red: "",
+                        green: 0,
+                        blue: "1.0"
+                ]
+        )
+        .addStep("Assert all strings") { Map row ->
+            assert row.keySet().inject(0) {x, s -> row[s] instanceof String && row[s].isEmpty() ? x + 1 : x } >= 1
+            return row
+        }
+        .emptyToNull()
+        .filter("Remove anything without a null") { Map row ->
+            row.keySet().inject (0) { x, s -> row[s] == null ? x + 1 : x } >= 1
+        }
+        .go()
+
+        assert stat.loaded == 5
+        assert stat.rejections == 0
+    }
 }

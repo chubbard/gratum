@@ -1,4 +1,5 @@
 
+
 # Gratum ETL
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -17,14 +18,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.4'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.5'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>1.1.4</version>
+        <version>1.1.5</version>
       </dependency>
       
 ## Oh Shell Yeah!
