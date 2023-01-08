@@ -983,6 +983,22 @@ public class Pipeline {
     }
 
     /**
+     * Sets all empty strings contained in each row and sets them to null.
+     *
+     * @return Pipeline where all empty Strings are set to null.
+     */
+    public Pipeline emptyToNull() {
+        return addStep("emptyToNull()") { Map<String,Object> row ->
+            row.each { String key, Object value ->
+                if( value instanceof String && value.isEmpty() ) {
+                    row[key] = null
+                }
+            }
+            return row
+        }
+    }
+
+    /**
      * Replaces all occurrences of the regular expression with given withClause.  The
      * withClause can use $1, $2, $3, etc to refer to groups within the regular expression
      * just like in replaceAll method.
