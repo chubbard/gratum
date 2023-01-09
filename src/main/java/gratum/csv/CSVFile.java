@@ -12,8 +12,6 @@ public class CSVFile implements Closeable {
     private Reader reader;
     private String separator;
     private PrintWriter writer;
-    private String lastLine;
-
     private int rows = 0;
     private List<String> columnHeaders;
     private boolean escaped = true;
@@ -53,113 +51,34 @@ public class CSVFile implements Closeable {
     }
 
     protected int parse(Reader reader, CSVReader callback) throws IOException {
-        LineNumberReader lineNumberReader = new LineNumberReader(reader);
-        int lines = 1;
-        if( columnHeaders == null ) {
+        try( CSVPullReader csvPullReader = new CSVPullReader( reader, separator ) ) {
             try {
-                columnHeaders = readNext(lineNumberReader);
-                callback.processHeaders( columnHeaders );
-                lines++;
-            } catch( Exception ex ) {
-                throw new IOException( getName() + ": Could not process header " + lines + ": " + lastLine, ex );
-            }
-        }
-
-        try {
-            List<String> row;
-            while ((row = readNext(lineNumberReader)) != null) {
-                boolean stop = callback.processRow(columnHeaders, row);
-                if (stop) {
-                    return lines;
+                List<String> row;
+                while ((row = csvPullReader.nextRow()) != null) {
+                    if( columnHeaders == null ) {
+                        columnHeaders = csvPullReader.getColumnHeaders();
+                        callback.processHeaders(columnHeaders);
+                    }
+                    boolean stop = callback.processRow(columnHeaders, row);
+                    if (stop) {
+                        return csvPullReader.getLines();
+                    }
                 }
-                lines++;
+                return csvPullReader.getLines();
+            } catch (HaltPipelineException ex) {
+                throw ex;
+            } catch (RuntimeException ex) {
+                throw new RuntimeException(getName() + ": Could not parse line " + csvPullReader.getLines() + ": " + csvPullReader.getLines(), ex);
+            } catch (Exception ex) {
+                throw new IOException(getName() + ": Could not process line " + csvPullReader.getLines() + ": " + csvPullReader.getLastLine(), ex);
+            } finally {
+                callback.afterProcessing();
             }
-            return lines;
-        } catch( HaltPipelineException ex ) {
-            throw ex;
-        } catch( RuntimeException ex ) {
-            throw new RuntimeException( getName() + ": Could not parse line " + lines + ": " +  lastLine, ex );
-        } catch( Exception ex ) {
-            throw new IOException( getName() + ": Could not process line " + lines + ": " + lastLine, ex );
-        } finally {
-            lineNumberReader.close();
-            callback.afterProcessing();
         }
     }
 
     private String getName() {
         return file != null ? file.getName() : "<stream>";
-    }
-
-    private List<String> readNext( LineNumberReader reader ) throws IOException {
-        do {
-            lastLine = reader.readLine();
-            if( lastLine == null ) return null;
-        } while( lastLine.length() == 0 );
-
-        return escaped ? parseColumnsWithEscaping() : parseColumnsWithoutEscaping();
-    }
-
-    private List<String> parseColumnsWithoutEscaping() {
-        List<String> row = new ArrayList<>( columnHeaders != null ? columnHeaders.size() : 10 );
-        int columnStart = 0;
-        while( columnStart < lastLine.length() ) {
-            int index = lastLine.indexOf( separator, columnStart );
-            if( index < 0 ) {
-                row.add( columnStart == 0 ? lastLine : lastLine.substring( columnStart ) );
-                columnStart = lastLine.length();
-            } else {
-                row.add( lastLine.substring(columnStart, index ) );
-                columnStart = index + separator.length();
-            }
-        }
-        if( columnStart == lastLine.length() && lastLine.endsWith(separator) ) {
-            // we found a trailing separator issue which means we didn't get a separator
-            row.add("");
-        }
-        return row;
-    }
-
-    private List<String> parseColumnsWithEscaping() {
-        List<String> line = new ArrayList<>( columnHeaders != null ? columnHeaders.size() : 10 );
-        int columnStart = 0;
-        char sep = separator.charAt(0);
-        boolean skipSeparator = false;
-        boolean stripQuotes = false;
-        for( int i = 0; i < lastLine.length(); i++ ) {
-            char currentChar = lastLine.charAt(i);
-            if( currentChar == '"' ) {
-                if( skipSeparator && isEscaped(i) ) {
-                    i++;
-                } else {
-                    skipSeparator = !skipSeparator;
-                    stripQuotes = stripQuotes || i == columnStart;
-                }
-            } else if( !skipSeparator && sep == currentChar ) {
-                String content = stripQuotes ? lastLine.substring( columnStart + 1, i - 1 ) : lastLine.substring( columnStart, i );
-                line.add( unescape(content) );
-                columnStart = i + 1;
-                stripQuotes = false;
-            }
-        }
-
-        if( columnStart < lastLine.length() ) {
-            String content = stripQuotes ? lastLine.substring( columnStart + 1, lastLine.length() - 1 ) : lastLine.substring( columnStart );
-            line.add( unescape(content) );
-        } else {
-            // we have a trailing comma at the end without anything after it so add an empty string.
-            line.add( "" );
-        }
-
-        return line;
-    }
-
-    private boolean isEscaped(int i) {
-        return i + 1 < lastLine.length() && lastLine.charAt(i+1) == '"';
-    }
-
-    private String unescape( String input ) {
-        return input.replace("\\n", "\n").replace("\"\"", "\"");
     }
 
     public void write( Map row, String[] columnHeaders ) throws IOException {
@@ -286,5 +205,10 @@ public class CSVFile implements Closeable {
 
     public void setWriteBom(boolean writeBom) {
         this.writeBom = writeBom;
+    }
+
+    public CSVPullReader open() throws IOException {
+        //noinspection resource
+        return new CSVPullReader( file, separator ).escaped( escaped );
     }
 }
