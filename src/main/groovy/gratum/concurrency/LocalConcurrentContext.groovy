@@ -7,6 +7,8 @@ import gratum.etl.RejectionCategory
 import gratum.source.ChainedSource
 import gratum.source.ClosureSource
 import groovy.transform.CompileStatic
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.CountDownLatch
@@ -33,13 +35,13 @@ public class LocalConcurrentContext implements ConcurrentContext {
         latch = new CountDownLatch(workers+1)
     }
 
-    public LocalConcurrentContext spread(@DelegatesTo(LocalConcurrentContext) Closure<Pipeline> workerClosure ) {
+    public LocalConcurrentContext spread(@DelegatesTo(LocalConcurrentContext) @ClosureParams( value = SimpleType, options = ["gratum.etl.Pipeline"]) Closure<Pipeline> workerClosure ) {
         this.workerClosure = workerClosure
         this.workerClosure.delegate = this
         return this
     }
 
-    public LocalConcurrentContext collect(@DelegatesTo(LocalConcurrentContext) Closure<Pipeline> resultsClosure ) {
+    public LocalConcurrentContext collect(@DelegatesTo(LocalConcurrentContext) @ClosureParams( value = SimpleType, options = ["gratum.etl.Pipeline"]) Closure<Pipeline> resultsClosure ) {
         this.resultProcessorClosure = resultsClosure
         this.resultProcessorClosure.delegate = this
         return this
