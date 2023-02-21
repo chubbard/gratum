@@ -21,9 +21,9 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class CollectionSource extends AbstractSource {
 
-    Collection<Map> source
+    Iterable<Map> source
 
-    CollectionSource(Collection<Map> source) {
+    CollectionSource(Iterable<Map> source) {
         super( "Collection" )
         this.source = source
     }
@@ -40,7 +40,7 @@ class CollectionSource extends AbstractSource {
         return new CollectionSource( src.toList() )
     }
 
-    public static CollectionSource of( Collection<Map> src ) {
+    public static CollectionSource of( Iterable<Map> src ) {
         return new CollectionSource( src )
     }
 
@@ -50,7 +50,7 @@ class CollectionSource extends AbstractSource {
         return pipeline
     }
 
-    public static Pipeline from(Collection<Map> src ) {
+    public static Pipeline from(Iterable<Map> src ) {
         return new Pipeline("Collection(${src.size()})").source( new CollectionSource( src ) )
     }
 }
