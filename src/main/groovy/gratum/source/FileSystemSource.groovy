@@ -81,7 +81,7 @@ class FileSystemSource extends AbstractSource {
 
     void process(File file, Pipeline pipeline) {
         if( file.isFile() ) {
-            if( file.name =~ filter ) {
+            if( file.name ==~ filter ) {
                 pipeline.process([file: file, stream: new FileOpenable(file)], line++)
             }
         } else {
