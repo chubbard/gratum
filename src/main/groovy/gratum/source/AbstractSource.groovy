@@ -43,4 +43,8 @@ abstract class AbstractSource implements Source {
     }
 
     abstract void doStart(Pipeline pipeline)
+
+    void setName(String name) {
+        this.name = name
+    }
 }
