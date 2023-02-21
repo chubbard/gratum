@@ -96,6 +96,14 @@ class XlsxSource extends AbstractSource {
         return this
     }
 
+    void setSheet(String sheet) {
+        this.sheet = sheet
+    }
+
+    void setDateFormat(String dateFormat) {
+        this.dateFormat = dateFormat
+    }
+
     @Override
     void doStart(Pipeline pipeline) {
         OPCPackage ocp = null

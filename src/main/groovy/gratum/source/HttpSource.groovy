@@ -2,6 +2,7 @@ package gratum.source
 
 import groovy.transform.CompileStatic
 import groovyx.net.http.HttpBuilder
+import groovyx.net.http.HttpObjectConfig
 
 import static groovyx.net.http.HttpBuilder.configure
 
@@ -52,11 +53,11 @@ class HttpSource extends AbstractSource {
         this.httpBuilder = builder
     }
 
-    public static HttpSource http( Closure configuration ) {
+    public static HttpSource http( @DelegatesTo(HttpObjectConfig.class) Closure configuration ) {
         return new HttpSource( configure(configuration) )
     }
 
-    public static HttpSource https( Closure configuration ) {
+    public static HttpSource https( @DelegatesTo(HttpObjectConfig.class) Closure configuration ) {
         return new HttpSource( configure(configuration) )
     }
 

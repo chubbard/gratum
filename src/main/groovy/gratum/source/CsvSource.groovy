@@ -97,6 +97,18 @@ public class CsvSource extends AbstractSource {
         return this
     }
 
+    public void setSeparator(String separator ) {
+        csvFile.setSeparator( separator )
+    }
+
+    public void setHeaders(List<String> headers) {
+        csvFile.setColumnHeaders( headers )
+    }
+
+    public void setEscaped(boolean escaped) {
+        csvFile.setEscaped(escaped)
+    }
+
     /**
      * Turn on/off CSV escaping rules.  Some files do not properly escape columns so turning
      * off those rules can help in parsing such files.  This means columns surrounded in double

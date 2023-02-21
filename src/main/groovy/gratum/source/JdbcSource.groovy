@@ -14,7 +14,7 @@ import java.sql.ResultSetMetaData
  * <pre>
  *     database( sql )
  *      .query("select * from People where age >= ${age}")
- *      .into("Age")
+ *      .into()
  *      .go()
  * </pre>
  */
