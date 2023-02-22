@@ -182,7 +182,7 @@ public class Pipeline {
      * @return this Pipeline
      */
     public Pipeline onRejection( @DelegatesTo(Pipeline)
-                                 @ClosureParams( value = FromString.class, options = ["gratum.etl.Pipeline"])
+//                                 @ClosureParams( value = FromString.class, options = ["gratum.etl.Pipeline"])
                                  Closure<Void> branch ) {
         if( parent ) {
             parent.onRejection( branch )
@@ -588,7 +588,7 @@ public class Pipeline {
         addStep("sort(${columns})") { Map<String,Object> row ->
             //int index = Collections.binarySearch( ordered, row, comparator )
             //ordered.add( Math.abs(index + 1), row )
-            Map cachedMap = row.collectEntries { e ->
+            Map<String,Object> cachedMap = row.collectEntries { e ->
                 if( e.value instanceof String ) {
                     String value = (String)e.value
                     if( !stringCache.containsKey( value ) ) stringCache.put(value,value)
@@ -596,7 +596,7 @@ public class Pipeline {
                 } else {
                     return [ e.key, e.value ]
                 }
-            }
+            } as Map<String,Object>
             ordered << cachedMap
             return cachedMap
         }

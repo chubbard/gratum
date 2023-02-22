@@ -14,8 +14,8 @@ class ClosureSource extends AbstractSource {
         this.logic = closure
     }
 
-    public static ClosureSource of(@DelegatesTo(Pipeline.class)
-                                   @ClosureParams( value = FromString.class, options = ["gratum.etl.Pipeline"])
+    public static ClosureSource of(@DelegatesTo(Pipeline)
+//                                   @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                                    Closure<Void> closure) {
         return new ClosureSource( closure )
     }
