@@ -43,7 +43,7 @@ class JsonSource extends AbstractSource {
 
     public JsonSource includeRoot( boolean includeRootJson, String fieldName = "_root_json" ) {
         this.includeRoot = includeRootJson
-        this.includeRoot = fieldName
+        this.rootJsonField = fieldName
         return this;
     }
 
