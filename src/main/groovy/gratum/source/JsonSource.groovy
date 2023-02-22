@@ -11,6 +11,8 @@ class JsonSource extends AbstractSource {
     List<String> jsonPath = []
     def rootJson
     boolean recordPerLine = false
+    boolean includeRoot = false
+    String rootJsonField
 
     JsonSource(String name, Reader reader ) {
         super(name)
@@ -37,6 +39,12 @@ class JsonSource extends AbstractSource {
     public JsonSource recordPerLine( boolean recordPerLine ) {
         this.recordPerLine = recordPerLine
         return this
+    }
+
+    public JsonSource includeRoot( boolean includeRootJson, String fieldName = "_root_json" ) {
+        this.includeRoot = includeRootJson
+        this.rootJsonField = fieldName
+        return this;
     }
 
     @Override
@@ -70,7 +78,7 @@ class JsonSource extends AbstractSource {
             }
             return lines
         } else if( path.isEmpty() ) {
-            json["_root_json"] = rootJson // insert the rootJson as a special field in case we want to read it
+            if( includeRoot ) json[rootJsonField] = rootJson // insert the rootJson as a special field in case we want to read it
             return callback.process(json as Map<String,Object>, lines) ? ++lines : lines
         } else {
             json = json[ path.first() ]
