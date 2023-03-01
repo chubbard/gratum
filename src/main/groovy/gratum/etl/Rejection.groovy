@@ -11,6 +11,7 @@ class Rejection {
     RejectionCategory category
     String reason
     String step
+    Throwable cause = null
 
     Rejection(String reason, RejectionCategory category = RejectionCategory.REJECTION, String step = null) {
         this.category = category

@@ -194,6 +194,14 @@ public class Pipeline {
                 current.rejectionCategory = rejection.category
                 current.rejectionReason = rejection.reason
                 current.rejectionStep = rejection.step
+                if( rejection.cause ) {
+                    StringWriter stack = new StringWriter()
+                    PrintWriter writer = new PrintWriter(stack)
+                    rejection.cause.printStackTrace(writer)
+                    current.rejectionStackTrace = stack.toString()
+                } else {
+                    current.rejectionStackTrace = null
+                }
                 return current
             }
             branch.delegate = rejections
