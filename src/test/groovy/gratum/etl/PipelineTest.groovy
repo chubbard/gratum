@@ -1,5 +1,6 @@
 package gratum.etl
 
+import gratum.source.ClosureSource
 import gratum.source.CollectionSource
 import gratum.source.CsvSource
 import org.junit.Test
@@ -1035,5 +1036,42 @@ class PipelineTest {
 
         assert stat.loaded == 5
         assert stat.rejections == 0
+    }
+
+    @Test
+    public void testClosureSourceExchange() {
+        File tmp = File.createTempDir()
+        PipelineTest.getResourceAsStream("/people.csv").withStream { stream ->
+            new File( tmp, "people.csv").withOutputStream { os ->
+                os << stream
+            }
+        }
+        File buildDir = new File( tmp, "build" )
+        buildDir.mkdirs()
+
+        List<File> files = [
+                new File( tmp, "people.csv")
+        ]
+        new ClosureSource( { Pipeline pipeline ->
+            files.each { File f ->
+                pipeline.process( [file: f])
+            }
+        }).into()
+        .exchange { Map row ->
+            File input = row.file as File
+            Map<String,String> mappings = [ name: "George Burdell" ]
+            return csv(input, ",")
+                    .apply { Pipeline pipeline ->
+                        mappings?.each { pipeline.setField(it.key,it.value) }
+                        return pipeline
+                    }
+                    .save( new File( buildDir, input.name ).absolutePath, ",")
+        }
+        .go()
+
+        File tmpPeople = new File( buildDir, "people.csv" )
+
+        assert tmpPeople.exists()
+        assert tmpPeople.length() > 0
     }
 }
