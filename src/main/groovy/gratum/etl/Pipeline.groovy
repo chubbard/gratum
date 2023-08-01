@@ -331,7 +331,7 @@ public class Pipeline {
         }
 
         after {
-            tail.start()
+            tail.finished()
         }
     }
 
@@ -360,7 +360,7 @@ public class Pipeline {
         }
 
         after {
-            tail.start()
+            tail.finished()
         }
     }
 

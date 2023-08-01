@@ -348,7 +348,7 @@ class PipelineTest {
 
     @Test
     void testBranch() {
-        boolean branchEntered = false
+        boolean branchEntered = false, branchAfter = false
         csv("src/test/resources/titanic.csv")
             .branch { Pipeline pipeline ->
                 return pipeline.filter([Sex: "female"])
@@ -362,8 +362,12 @@ class PipelineTest {
                         branchEntered = true
                         return row
                     }
+                    .after {
+                        branchAfter = true
+                        return
+                    }
             }
-            .addStep("Verify branch field is NOT on the outter Pipeline") { Map row ->
+            .addStep("Verify branch field is NOT on the outer Pipeline") { Map row ->
                 assert row.branch == null
                 return row
             }
@@ -374,6 +378,7 @@ class PipelineTest {
             }
             .go()
         assert branchEntered
+        assert branchAfter
     }
 
     @Test
