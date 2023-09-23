@@ -31,7 +31,7 @@ class CsvSink implements Sink<Map<String,Object>> {
     }
 
     @Override
-    Map<String, Object> getResult() {
+    Map<String, ?> getResult() {
         return [ file: csvFile.file, filename: csvFile.file.absolutePath, stream: new FileOpenable(csvFile.file) ]
     }
 

@@ -13,6 +13,7 @@ import gratum.source.Source
 import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.FromString
+import groovy.transform.stc.SimpleType
 import org.apache.commons.collections4.map.LRUMap
 
 import java.text.ParseException
@@ -92,7 +93,7 @@ public class Pipeline {
      */
     public static Pipeline create( String name,
                                    @DelegatesTo(Pipeline)
-                                   @ClosureParams( value = FromString.class, options = ["gratum.etl.Pipeline"])
+                                   @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                                    Closure startClosure ) {
         ClosureSource.of( startClosure ).name( name ).into()
     }
@@ -107,21 +108,6 @@ public class Pipeline {
     }
 
     /**
-     * Apply a closure to the Pipeline allowing it to configure the Pipeline by passing this Pipeline as an argument
-     * to the closure.  The Pipeline returned by the closure will be returned by this method for chaining.
-     *
-     * @param template A Closure that will be passed this Pipeline and returns a Pipeline.
-     * @return The Pipeline returned by the given Closure.
-     */
-    public Pipeline configure( @DelegatesTo( Pipeline )
-                               @ClosureParams( value = FromString.class, options = ["gratum.etl.Pipeline"])
-                               Closure<Pipeline> template ) {
-        template.delegate = this
-        return template.call( this )
-    }
-
-
-    /**
      * Prepend a step to the pipeline.
      * @param name The Step name
      * @param step The code used to process each row on the Pipeline.
@@ -129,7 +115,7 @@ public class Pipeline {
      */
     public Pipeline prependStep( String name = null,
                                  @DelegatesTo(Pipeline)
-                                 @ClosureParams( value = FromString.class, options = ["java.util.Map<String,Object>"])
+                                 @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                                  Closure<Map> step ) {
         step.delegate = this
         processChain.add(0, new Step( name, step ) )
@@ -148,8 +134,8 @@ public class Pipeline {
      */
     public Pipeline addStep( String name = null,
                              @DelegatesTo(Pipeline)
-                             @ClosureParams( value = FromString.class, options = ["java.util.Map<String,Object>"])
-                             Closure<Map> step ) {
+                             @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
+                             Closure<Map<String,Object>> step ) {
         step.delegate = this
         processChain << new Step( name, step )
         return this
@@ -157,7 +143,7 @@ public class Pipeline {
 
     public Pipeline addStep(GString name,
                             @DelegatesTo(Pipeline)
-                            @ClosureParams( value = FromString.class, options = ["java.util.Map<String,Object>"])
+                            @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                             Closure<Map<String,Object>> step) {
         this.addStep( name.toString(), step )
     }
@@ -170,6 +156,7 @@ public class Pipeline {
      * @return this Pipeline.
      */
     public Pipeline after( @DelegatesTo(Pipeline) Closure<Void> step ) {
+        step.delegate = this
         doneChain << new AfterStep(step)
         return this
     }
@@ -178,22 +165,22 @@ public class Pipeline {
      * Takes a closure that is passed the rejection Pipeline.  The closure can register steps on the rejection
      * pipeline, and any rejections from the parent pipeline will be passed through the given rejection pipeline.
      *
-     * @param branch Closure that's passed the rejection the pipeline
+     * @param rejectionBranch Closure that's passed the rejection the pipeline
      * @return this Pipeline
      */
     public Pipeline onRejection( @DelegatesTo(Pipeline)
-//                                 @ClosureParams( value = FromString.class, options = ["gratum.etl.Pipeline"])
-                                 Closure<Void> branch ) {
+                                 @ClosureParams( value = SimpleType, options = ["gratum.etl.Pipeline"])
+                                 Closure<Pipeline> rejectionBranch ) {
         if( parent ) {
-            parent.onRejection( branch )
+            parent.onRejection( rejectionBranch )
         } else {
             if( !rejections ) rejections = new Pipeline("Rejections(${name})")
             rejections.addStep("Remap rejections to columns") { Map row ->
                 Map current = (Map)row.clone()
                 Rejection rejection = (Rejection)current.remove(REJECTED_KEY)
-                current.rejectionCategory = rejection.category
-                current.rejectionReason = rejection.reason
-                current.rejectionStep = rejection.step
+                current["rejectionCategory"] = rejection.category
+                current["rejectionReason"] = rejection.reason
+                current["rejectionStep"] = rejection.step
                 if( rejection.cause ) {
                     StringWriter stack = new StringWriter()
                     PrintWriter writer = new PrintWriter(stack)
@@ -204,11 +191,10 @@ public class Pipeline {
                 }
                 return current
             }
-            branch.delegate = rejections
-            branch( rejections )
+            rejectionBranch.delegate = rejections
+            rejectionBranch( rejections )
             after {
                 rejections.finished()
-                return
             }
         }
         return this
@@ -244,12 +230,12 @@ public class Pipeline {
      */
     public Pipeline filter(String name = "filter()",
                            @DelegatesTo(Pipeline)
-                           @ClosureParams( value = FromString.class, options = ["java.util.Map<String,Object>"])
+                           @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                            Closure callback) {
         callback.delegate = this
-        addStep( name ) { Map<String,Object> row ->
+        addStep( name ) { row ->
             if( !callback(row) ) {
-                return reject(row,"Row did not match the filter closure.", RejectionCategory.IGNORE_ROW )
+                return reject(row,"${name}: Row did not match the filter closure.", RejectionCategory.IGNORE_ROW )
             }
             return row
         }
@@ -293,7 +279,7 @@ public class Pipeline {
             if( condition.matches(row) ) {
                 return row
             } else {
-                return reject( row,"Row did not match the filter ${columns}", RejectionCategory.IGNORE_ROW )
+                return reject( row,"filter ${condition}: Row did not match the filter ${columns}", RejectionCategory.IGNORE_ROW )
             }
         }
         return this
@@ -305,8 +291,8 @@ public class Pipeline {
      * @return Pipeline where all columns of each row has white space removed.
      */
     public Pipeline trim() {
-        addStep("trim()") { Map<String,Object> row ->
-            row.each { String key, Object value -> row[key] = (value as String)?.trim() }
+        addStep("trim()") { row ->
+            row.each { String key, Object value -> row[key] = row[key] instanceof String ? ((String)value).trim() : value }
             return row
         }
     }
@@ -319,7 +305,7 @@ public class Pipeline {
      * @return this Pipeline
      */
     public Pipeline branch( String branchName = "branch",
-                            @ClosureParams( value = FromString.class, options = ["gratum.etl.Pipeline"])
+                            @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                             Closure<Pipeline> split) {
         final Pipeline branch = new Pipeline( "${name}/${branchName}", this )
 
@@ -344,9 +330,9 @@ public class Pipeline {
      * @param split The closure that is passed the branch Pipeline.
      * @return this Pipeline
      */
-    public Pipeline branch(Map<String,Object> condition,
+    public Pipeline branch(Map<String,?> condition,
                            @DelegatesTo(Pipeline.class)
-                           @ClosureParams( value = FromString.class, options = ["gratum.etl.Pipeline"])
+                           @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                            Closure<Pipeline> split) {
         Pipeline branch = new Pipeline( "${name}/branch(${condition})", this )
         Pipeline tail = split(branch)
@@ -386,7 +372,7 @@ public class Pipeline {
      * @param left perform a left join (ie true) or a right join (false)
      * @return A Pipeline where the rows contain all columns from the this Pipeline and right Pipeline joined on the given columns.
      */
-    public Pipeline join( Pipeline other, def columns, boolean left = false ) {
+    public Pipeline join( Pipeline other, Object columns, boolean left = false ) {
         Map<String,List<Map<String,Object>>> cache =[:]
         other.addStep("join(${other.name}, ${columns}).cache") { Map row ->
             String key = keyOf(row, rightColumn(columns) )
@@ -412,7 +398,7 @@ public class Pipeline {
                     // make sure we add columns even if they are null so sources write out columns we expect.
                     if( !cache.isEmpty() ) {
                         String c = cache.keySet().first()
-                        cache[c].first().each { String i, Object v ->
+                        cache[c].first().each { i, v ->
                             if( !row.containsKey(i) ) row[i] = null
                         }
                     }
@@ -439,11 +425,11 @@ public class Pipeline {
      * @return A Pipeline where the row's empty column values are filled in by the previous row.
      */
     public Pipeline fillDownBy( @DelegatesTo( Pipeline.class )
-                                @ClosureParams( value = FromString.class, options = ["java.util.Map<String,Object>", "java.util.Map<String,Object>"])
+                                @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>", "java.util.Map<String,?>"])
                                 Closure<Boolean> decider ) {
         Map<String,Object> previousRow = null
         decider.delegate = this
-        addStep("fillDownBy()") { Map<String,Object> row ->
+        addStep("fillDownBy()") { row ->
             if( previousRow && decider( row, previousRow ) ) {
                 row.each { String col, Object value ->
                     // todo refactor valid_to out for excluded
@@ -508,21 +494,21 @@ public class Pipeline {
         return this
     }
 
-    private Iterable<String> leftColumn(def columns) {
+    private Iterable<String> leftColumn(Object columns) {
         if( columns instanceof Collection ) {
             return ((Collection<String>)columns)
         } else if( columns instanceof Map ) {
-            return ((Map)columns).keySet()
+            return ((Map<String,String>)columns).keySet()
         } else {
             return [columns.toString()]
         }
     }
 
-    private Iterable<String> rightColumn(def columns) {
+    private Iterable<String> rightColumn(Object columns) {
         if( columns instanceof Collection ) {
             return ((Collection<String>)columns)
         } else if( columns instanceof Map ) {
-            return ((Map)columns).values()
+            return ((Map<String,String>)columns).values()
         } else {
             return [columns.toString()]
         }
@@ -593,10 +579,10 @@ public class Pipeline {
 
         LRUMap stringCache = new LRUMap<String,String>(1000)
         List<Map> ordered = []
-        addStep("sort(${columns})") { Map<String,Object> row ->
+        addStep("sort(${columns})") { Map<String,?> row ->
             //int index = Collections.binarySearch( ordered, row, comparator )
             //ordered.add( Math.abs(index + 1), row )
-            Map<String,Object> cachedMap = row.collectEntries { e ->
+            Map<String,?> cachedMap = row.collectEntries { e ->
                 if( e.value instanceof String ) {
                     String value = (String)e.value
                     if( !stringCache.containsKey( value ) ) stringCache.put(value,value)
@@ -604,7 +590,7 @@ public class Pipeline {
                 } else {
                     return [ e.key, e.value ]
                 }
-            } as Map<String,Object>
+            } as Map<String,?>
             ordered << cachedMap
             return cachedMap
         }
@@ -707,7 +693,7 @@ public class Pipeline {
      */
     Pipeline asDate(String column, String... formats = ["yyyy-MM-dd"]) {
         List<SimpleDateFormat> dateFormats = formats.collect { new SimpleDateFormat(it) }
-        addStep("asDate(${column}, ${formats})") { Map<String,Object> row ->
+        addStep("asDate(${column}, ${formats})") { row ->
             if(row[column] instanceof Date ) return row
             String val = row[column] as String
             if (val) {
@@ -819,7 +805,7 @@ public class Pipeline {
      */
     public Pipeline addField(String fieldName,
                              @DelegatesTo(Pipeline)
-                             @ClosureParams( value = FromString.class, options = ["java.util.Map<String,Object>"])
+                             @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                              Closure fieldValue) {
         fieldValue.delegate = this
         addStep("addField(${fieldName})") { Map row ->
@@ -845,10 +831,10 @@ public class Pipeline {
      */
     public Pipeline removeField(String fieldName,
                                 @DelegatesTo(Pipeline)
-                                @ClosureParams( value = FromString.class, options = ["java.util.Map<String,Object>"])
+                                @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                                 Closure removeLogic = null) {
         removeLogic?.delegate = this
-        addStep( "removeField(${fieldName})") { Map row ->
+        addStep( "removeField(${fieldName})") { row ->
             if( removeLogic == null || removeLogic(row) ) {
                 row.remove(fieldName)
             }
@@ -903,7 +889,7 @@ public class Pipeline {
      */
     public Pipeline inject(GString name,
                            @DelegatesTo(Pipeline)
-                           @ClosureParams( value = FromString.class, options = ["java.util.Map<String,Object>"])
+                           @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                            Closure<Iterable<Map<String,Object>>> closure ) {
         return this.inject( name.toString(), closure )
     }
@@ -918,9 +904,9 @@ public class Pipeline {
      */
     public Pipeline inject(String name,
                            @DelegatesTo(Pipeline)
-                           @ClosureParams( value = FromString.class, options = ["java.util.Map<String,Object>"])
+                           @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                            Closure<Iterable<Map<String,Object>>> closure) {
-        Pipeline next = new Pipeline(name, this)
+        Pipeline next = new Pipeline(this.name, this)
         next.src = new ChainedSource( this )
         closure.delegate = this
         addStep(name) { Map row ->
@@ -931,7 +917,7 @@ public class Pipeline {
                 return row
             } else {
                 Iterable<Map<String,Object>> cc = result
-                for( Map<String,Object> r : result ) {
+                for( Map<String,?> r : result ) {
                     if( !r[REJECTED_KEY] ) {
                         next.process( r, -1 )
                     }
@@ -953,14 +939,14 @@ public class Pipeline {
      * @return A Pipeline whose records consist of the records from all Pipelines returned from the closure
      */
     public Pipeline exchange(@DelegatesTo(Pipeline.class)
-                             @ClosureParams( value = FromString.class, options = ["java.util.Map<String,Object>"])
+                             @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                              Closure<Pipeline> closure) {
         Pipeline next = new Pipeline( name, this )
         next.src = new ChainedSource(this)
         closure.delegate = this
-        addStep("exchange(${next.name})") { Map row ->
+        addStep("exchange(${next.name})") { row ->
             Pipeline pipeline = closure( row )
-            pipeline.addStep("Exchange Bridge(${pipeline.name})") { Map current ->
+            pipeline.addStep("Exchange Bridge(${pipeline.name})") { current ->
                 next.process( current )
                 return current
             }
@@ -976,7 +962,7 @@ public class Pipeline {
      * @return The Pipeline that will received all members of the Collection returned from the closure.
      */
     public Pipeline inject( @DelegatesTo(Pipeline)
-                            @ClosureParams( value = FromString.class, options = ["java.util.Map<String,Object>"])
+                            @ClosureParams( value = FromString, options = ["java.util.Map<String,?>"])
                             Closure closure) {
         this.inject("inject()", closure )
     }
@@ -988,7 +974,7 @@ public class Pipeline {
      * @return A Pipeline where the destination columns are initialized to the values in the Map when the destination
      * column is empty.
      */
-    public Pipeline defaultValues( Map<String,Object> defaults ) {
+    public Pipeline defaultValues( Map<String,?> defaults ) {
         this.addStep("defaultValues for ${defaults.keySet()}") { Map row ->
             defaults.each { String column, Object value ->
                 if( !row[column] ) row[column] = value
@@ -1045,7 +1031,7 @@ public class Pipeline {
      * @return this Pipeline
      */
     public Pipeline apply(@DelegatesTo(Pipeline)
-                          @ClosureParams( value = FromString.class, options = ["gratum.etl.Pipeline"])
+                          @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                           Closure<Pipeline> applyToPipeline) {
         applyToPipeline.delegate = this
         return applyToPipeline.call( this ) ?: this
@@ -1057,7 +1043,7 @@ public class Pipeline {
      * @return Pipeline where all empty Strings are set to null.
      */
     public Pipeline emptyToNull() {
-        return addStep("emptyToNull()") { Map<String,Object> row ->
+        return addStep("emptyToNull()") { Map<String,?> row ->
             row.each { String key, Object value ->
                 if( value instanceof String && value.isEmpty() ) {
                     row[key] = null
@@ -1116,7 +1102,7 @@ public class Pipeline {
      * @param configure The Closure that is passed the PgpContext used to configure how the stream will be encrypted.
      */
     public Pipeline encryptPgp(String streamProperty,
-                               @ClosureParams( value = FromString.class, options = ["gratum.pgp.PgpContext"])
+                               @ClosureParams( value = FromString, options = ["gratum.pgp.PgpContext"])
                                Closure configure ) {
         PgpContext pgp = new PgpContext()
         configure.call( pgp )
@@ -1152,7 +1138,7 @@ public class Pipeline {
      * @return a Pipeline where the streamProperty contains decrypted stream.
      */
     public Pipeline decryptPgp(String streamProperty,
-                               @ClosureParams( value = FromString.class, options = ["gratum.pgp.PgpContext"])
+                               @ClosureParams( value = FromString, options = ["gratum.pgp.PgpContext"])
                                Closure configure ) {
         PgpContext pgp = new PgpContext()
         configure.call( pgp )
@@ -1206,7 +1192,7 @@ public class Pipeline {
      * @param row The row to be processed by the Pipeline's steps.
      * @param lineNumber The lineNumber from the {@link gratum.source.Source} to use when tracking this row through the Pipeline
      */
-    public boolean process(Map row, int lineNumber = -1) {
+    public boolean process(Map<String,Object> row, int lineNumber = -1) {
         Map<String,Object> next = row
         for (Step step : processChain) {
             next = step.execute( this, next, lineNumber )
@@ -1216,7 +1202,7 @@ public class Pipeline {
         return false // don't stop!
     }
 
-    void doRejections(Map<String,Object> current, String stepName, int lineNumber) {
+    void doRejections(Map<String,?> current, String stepName, int lineNumber) {
         if( parent ) {
             parent.doRejections( current, stepName, lineNumber )
         } else {
@@ -1226,7 +1212,7 @@ public class Pipeline {
         }
     }
 
-    private String keyOf( Map row, Iterable<String> columns ) {
+    private String keyOf( Map<String,Object> row, Iterable<String> columns ) {
         return columns.collect { key -> row[key] }.join(":")
     }
 
@@ -1240,12 +1226,12 @@ public class Pipeline {
         return new Rejection( reason, category )
     }
 
-    public static Map reject(Map row, String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
+    public static Map reject(Map<String,Object> row, String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
         row[ REJECTED_KEY ] = reject( reason, category )
         return row
     }
 
-    void reject(Map row, int lineNumber = -1) {
+    public void reject(Map<String,Object> row, int lineNumber = -1) {
         rejections?.process( row, lineNumber )
     }
 

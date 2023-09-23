@@ -8,7 +8,7 @@ import gratum.source.ChainedSource
 import gratum.source.ClosureSource
 import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.SimpleType
+import groovy.transform.stc.FromString
 
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.CountDownLatch
@@ -35,13 +35,17 @@ public class LocalConcurrentContext implements ConcurrentContext {
         latch = new CountDownLatch(workers+1)
     }
 
-    public LocalConcurrentContext spread(@DelegatesTo(LocalConcurrentContext) @ClosureParams( value = SimpleType, options = ["gratum.etl.Pipeline"]) Closure<Pipeline> workerClosure ) {
+    public LocalConcurrentContext spread(@DelegatesTo(LocalConcurrentContext)
+                                         @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
+                                         Closure<Pipeline> workerClosure ) {
         this.workerClosure = workerClosure
         this.workerClosure.delegate = this
         return this
     }
 
-    public LocalConcurrentContext collect(@DelegatesTo(LocalConcurrentContext) @ClosureParams( value = SimpleType, options = ["gratum.etl.Pipeline"]) Closure<Pipeline> resultsClosure ) {
+    public LocalConcurrentContext collect(@DelegatesTo(LocalConcurrentContext)
+                                          @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
+                                          Closure<Pipeline> resultsClosure ) {
         this.resultProcessorClosure = resultsClosure
         this.resultProcessorClosure.delegate = this
         return this
@@ -51,7 +55,7 @@ public class LocalConcurrentContext implements ConcurrentContext {
         return { Pipeline pipeline ->
             createWorkers()
             createResultProcessor()
-            pipeline.addStep("Queue to Workers") { Map<String,Object> row ->
+            pipeline.addStep("Queue to Workers") { row ->
                 eventQueue.put( row )
                 return row
             }
@@ -87,31 +91,34 @@ public class LocalConcurrentContext implements ConcurrentContext {
         for( int i = 0; i < workerSize; i++ ) {
             workers << new PipelineWorker("Worker-${i+1}", {
                 try {
-                    Pipeline pipeline = ClosureSource.of({ Pipeline pipeline ->
+                    Pipeline pipeline = ClosureSource.of({ pipeline ->
                         boolean done = false
                         while (!done && !Thread.interrupted()) {
                             Map<String, Object> row = eventQueue.poll()
-                            if (row?._done_) {
+                            if (row && row["_done_"]) {
                                 eventQueue.put(row)
                                 done = true
                             } else if (row) {
-                                pipeline.process(row)
+                                pipeline.process(row,-1)
                             }
                         }
-                    }).name("Worker").into()
-                            .onRejection { Pipeline rej ->
-                                rej.addStep { Map<String, Object> row ->
-                                    // so when we play this down the rejections pipeline it'll expect a REJECT_KEY to be there so we recreate it
-                                    // because at this point the REJECTED_KEY property has been removed so we re-add it.  Not great.
-                                    Rejection reject = new Rejection(row.rejectionReason as String, row.rejectionCategory as RejectionCategory, row.rejectionStep as String)
-                                    row[Pipeline.REJECTED_KEY] = reject
-                                    resultQueue.put(row)
-                                    return row
-                                }
-                                return
-                            }
+                        return
+                    }).name("Worker")
+                    .into()
+                    .onRejection { rej ->
+                        rej.addStep("Worker -> Producer rejections") { Map<String,Object> row ->
+                            // so when we play this down the rejections pipeline it'll expect a REJECT_KEY to be there so we recreate it
+                            // because at this point the REJECTED_KEY property has been removed so we re-add it.  Not great.
+                            Rejection reject = new Rejection(row["rejectionReason"] as String,
+                                    row["rejectionCategory"] as RejectionCategory,
+                                    row["rejectionStep"] as String)
+                            row[Pipeline.REJECTED_KEY] = reject
+                            resultQueue.put(row)
+                            return row
+                        }
+                    }
 
-                    LoadStatistic stat = ((Pipeline) workerClosure(pipeline))
+                    LoadStatistic stat = workerClosure.call(pipeline)
                             .addStep("Queue to Results") { Map row ->
                                 resultQueue.put(row)
                                 return row
@@ -137,7 +144,7 @@ public class LocalConcurrentContext implements ConcurrentContext {
                             if (row[Pipeline.REJECTED_KEY]) {
                                 pipeline.reject(row, -1)
                             } else {
-                                pipeline.process(row)
+                                pipeline.process(row,-1)
                             }
                         } else if (latch.count == 1) {
                             done = true

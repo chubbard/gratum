@@ -52,11 +52,11 @@ class JsonSink implements Sink<Map<String,Object>> {
     }
 
     @Override
-    Map<String, Object> getResult() {
+    Map<String, ?> getResult() {
         if( output ) {
             return [file: output, filename: output.absolutePath, stream: new FileOpenable(output)]
         } else {
-            return [name: name] as Map<String,Object>
+            return [name: name] as Map<String,?>
         }
     }
 

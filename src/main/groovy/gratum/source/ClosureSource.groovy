@@ -3,19 +3,19 @@ package gratum.source
 import gratum.etl.Pipeline
 import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.FromString
+import groovy.transform.stc.SimpleType
 
 @CompileStatic
 class ClosureSource extends AbstractSource {
 
-    Closure logic
+    Closure<Void> logic
 
-    ClosureSource(Closure closure) {
+    ClosureSource(Closure<Void> closure) {
         this.logic = closure
     }
 
     public static ClosureSource of(@DelegatesTo(Pipeline)
-//                                   @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
+                                   @ClosureParams( value = SimpleType, options = ["gratum.etl.Pipeline"])
                                    Closure<Void> closure) {
         return new ClosureSource( closure )
     }

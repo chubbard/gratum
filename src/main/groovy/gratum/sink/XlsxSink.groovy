@@ -34,7 +34,7 @@ class XlsxSink implements Sink<Map<String,Object>> {
     @Override
     void attach(Pipeline pipeline) {
         int r = 0
-        pipeline.addStep("xlsxOut(${this.name}}") { Map<String,Object> row ->
+        pipeline.addStep("xlsxOut(${this.name}}") { row ->
             if( !columns ) {
                 columns = row.keySet()
             }
@@ -67,7 +67,7 @@ class XlsxSink implements Sink<Map<String,Object>> {
     }
 
     @Override
-    Map<String, Object> getResult() {
+    Map<String, ?> getResult() {
         return [ file: output.name, filename: output.absolutePath, stream: new FileOpenable(output) ]
     }
 
