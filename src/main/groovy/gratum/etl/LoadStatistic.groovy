@@ -127,7 +127,7 @@ class LoadStatistic {
             }
         }
         pw.println("\n----")
-        pw.printf( "==> %s %nloaded %,d %nrejected %,d %ntook %,d ms%n", this.name, this.loaded, this.rejections,this.elapsed )
+        pw.printf( "==> %s %nloaded %,d %nrejected %,d %ntook %s%n", this.name, this.loaded, this.rejections,this.duration )
         return out.toString()
     }
 
