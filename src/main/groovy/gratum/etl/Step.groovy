@@ -13,20 +13,20 @@ class Step {
     private int loaded = 0
     private Map<RejectionCategory,Integer> rejections = [:]
     private long duration = 0
+    private Pipeline pipeline
 
-    Step(String name, Closure<Map<String,Object>> step) {
+    Step(Pipeline pipeline, String name, Closure<Map<String,Object>> step) {
         this.name = name
         this.step = step
+        this.pipeline = pipeline
     }
 
-    public Map<String,Object> execute(Pipeline pipeline, Map<String,Object> row, int lineNumber) {
+    public Map<String,Object> execute(Map<String,Object> row, int lineNumber) {
         long start = System.currentTimeMillis()
         try {
             Map<String, Object> next = step.call(row)
             if (next == null || next[Pipeline.REJECTED_KEY]) {
-                Rejection rejection = next[Pipeline.REJECTED_KEY] as Rejection
-                incrementRejections( rejection.category )
-                pipeline.doRejections(row, name, lineNumber)
+                reject(next, lineNumber)
             } else {
                 loaded++
             }
@@ -34,14 +34,14 @@ class Step {
         } catch(HaltPipelineException ex) {
             throw ex
         } catch(Exception ex) {
-            Map<String,Object> next = handleExceptionToRejection(ex, lineNumber, row, pipeline)
+            Map<String,Object> next = handleExceptionToRejection(ex, lineNumber, row)
             if( loaded == 0 && rejections[RejectionCategory.SCRIPT_ERROR]  > MAX_ERROR_THRESHOLD ) {
                 throw new PipelineAbortException("${pipeline.name}:${name}:${lineNumber}: Halting pipeline due too many script errors encountered: ${ex}.", ex)
             } else {
                 return next
             }
         } catch(Throwable t ) {
-            handleExceptionToRejection(t, lineNumber, row, pipeline)
+            handleExceptionToRejection(t, lineNumber, row)
             throw new PipelineAbortException("${pipeline.name}:${name}:${lineNumber}: Halting pipeline due to a terminating exception encountered: ${t}.", t)
         } finally {
             long elapsed = System.currentTimeMillis() - start
@@ -49,7 +49,13 @@ class Step {
         }
     }
 
-    private Map<String,Object> handleExceptionToRejection(Throwable ex, int lineNumber, Map<String, Object> row, Pipeline pipeline) {
+    private void reject(Map<String, Object> next, int lineNumber) {
+        Rejection rejection = next[Pipeline.REJECTED_KEY] as Rejection
+        incrementRejections(rejection.category)
+        pipeline.doRejections(next, name, lineNumber)
+    }
+
+    private Map<String,Object> handleExceptionToRejection(Throwable ex, int lineNumber, Map<String, Object> row) {
         incrementRejections(RejectionCategory.SCRIPT_ERROR)
         Rejection rejection = new Rejection("Encountered ${ex.message ?: ex} on ${pipeline.name} in step ${name} at ${lineNumber}", RejectionCategory.SCRIPT_ERROR, name)
         rejection.cause = ex

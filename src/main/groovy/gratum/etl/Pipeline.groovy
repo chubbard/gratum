@@ -118,7 +118,7 @@ public class Pipeline {
                                  @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                                  Closure<Map> step ) {
         step.delegate = this
-        processChain.add(0, new Step( name, step ) )
+        processChain.add(0, new Step( this, name, step ) )
         return this
     }
 
@@ -137,7 +137,7 @@ public class Pipeline {
                              @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                              Closure<Map<String,Object>> step ) {
         step.delegate = this
-        processChain << new Step( name, step )
+        processChain << new Step( this, name, step )
         return this
     }
 
@@ -331,7 +331,7 @@ public class Pipeline {
      * @return this Pipeline
      */
     public Pipeline branch(Map<String,?> condition,
-                           @DelegatesTo(Pipeline.class)
+                           @DelegatesTo(Pipeline)
                            @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                            Closure<Pipeline> split) {
         Pipeline branch = new Pipeline( "${name}/branch(${condition})", this )
@@ -424,7 +424,7 @@ public class Pipeline {
      * @param decider a Closure which decides if the values from a prior row will be used to fill in missing values in the current row.
      * @return A Pipeline where the row's empty column values are filled in by the previous row.
      */
-    public Pipeline fillDownBy( @DelegatesTo( Pipeline.class )
+    public Pipeline fillDownBy( @DelegatesTo( Pipeline )
                                 @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>", "java.util.Map<String,?>"])
                                 Closure<Boolean> decider ) {
         Map<String,Object> previousRow = null
@@ -938,7 +938,7 @@ public class Pipeline {
      *
      * @return A Pipeline whose records consist of the records from all Pipelines returned from the closure
      */
-    public Pipeline exchange(@DelegatesTo(Pipeline.class)
+    public Pipeline exchange(@DelegatesTo(Pipeline)
                              @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                              Closure<Pipeline> closure) {
         Pipeline next = new Pipeline( name, this )
@@ -1195,7 +1195,7 @@ public class Pipeline {
     public boolean process(Map<String,Object> row, int lineNumber = -1) {
         Map<String,Object> next = row
         for (Step step : processChain) {
-            next = step.execute( this, next, lineNumber )
+            next = step.execute( next, lineNumber )
             if( next == null || next[REJECTED_KEY] ) return false
         }
         if( loaded > DO_NOT_TRACK ) loaded++
