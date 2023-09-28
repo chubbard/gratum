@@ -912,11 +912,8 @@ public class Pipeline {
         addStep(name) { Map row ->
             Iterable<Map<String,Object>> result = closure.call( row )
             if( result == null ) {
-                row = reject( row, "Unknown Reason", RejectionCategory.REJECTION )
-                next.doRejections(row, name, -1)
-                return row
+                return reject( row, "Unknown Reason: null returned", RejectionCategory.REJECTION )
             } else {
-                Iterable<Map<String,Object>> cc = result
                 for( Map<String,?> r : result ) {
                     if( !r[REJECTED_KEY] ) {
                         next.process( r, -1 )
