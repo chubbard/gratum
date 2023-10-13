@@ -959,7 +959,7 @@ public class Pipeline {
      * @return The Pipeline that will received all members of the Collection returned from the closure.
      */
     public Pipeline inject( @DelegatesTo(Pipeline)
-                            @ClosureParams( value = FromString, options = ["java.util.Map<String,?>"])
+                            @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                             Closure closure) {
         this.inject("inject()", closure )
     }

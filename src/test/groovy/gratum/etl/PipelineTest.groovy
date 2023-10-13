@@ -92,7 +92,6 @@ class PipelineTest {
                         assert !filter.contains(row.Pclass) || row.Sex != "male"
                         return row
                     }
-                    return
                 }
                 .go()
 
@@ -111,7 +110,6 @@ class PipelineTest {
                     assert row.Pclass != "3" || row.Sex != "male"
                     return row
                 }
-                return
             }
             .go()
 
@@ -147,7 +145,6 @@ class PipelineTest {
                     assert row.Pclass != "3" && row.Sex != "Male"
                     return row
                 }
-                return
             }
             .go()
 
@@ -419,7 +416,6 @@ class PipelineTest {
                     rejections++
                     return row
                 }
-                return
             }
             .go()
 
@@ -494,11 +490,11 @@ class PipelineTest {
         int actualCount = 0
         int expectedCount = 0
         LoadStatistic stats = http("http://api.open-notify.org/astros.json").get()
-            .inject { Map json ->
+            .inject { json ->
                 expectedCount = json.number
                 message = json.message
                 json.people
-            }.addStep("assert astros in space") { Map row ->
+            }.addStep("assert astros in space") { row ->
                 actualCount++
                 // assert that we received the data we expected, but we can't really test anything because this will change over time
                 assertNotNull( row.name )
