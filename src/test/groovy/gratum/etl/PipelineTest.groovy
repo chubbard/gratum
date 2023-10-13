@@ -46,7 +46,6 @@ class PipelineTest {
                     assertFalse( row.Sex == "male")
                     return row
                 }
-                return
             }
             .go()
 
@@ -69,7 +68,6 @@ class PipelineTest {
                     assertFalse( "Assert Age = ${row.Age} >= 30.0", row.Age && (row.Age as double) < 30.0 )
                     return row
                 }
-                return
             }
             .go()
 
@@ -132,7 +130,6 @@ class PipelineTest {
                     assert row.Pclass == "3"
                     return row
                 }
-                return
             }
             .go()
 
@@ -202,9 +199,9 @@ class PipelineTest {
             .go()
 
         // verify that step timings for steps before the groupBy() are included in the returned statistics
-        assert statistic.stepTimings.containsKey("asInt(Age)")
-        assert statistic.stepTimings.containsKey("filter()")
-        assert statistic.stepTimings.containsKey("groupBy(Sex,Pclass)")
+        assert statistic.contains( "asInt(Age)")
+        assert statistic.contains("filter()")
+        assert statistic.contains("groupBy(Sex,Pclass)")
     }
 
     @Test
@@ -220,13 +217,13 @@ class PipelineTest {
         assert statistic.loaded == 1
         assert statistic.rejections == 418
 
-        assertTrue( "Assert that the timings include the filter(Sex->K)) step", statistic.stepTimings.containsKey("filter Sex -> K") )
+        assertTrue( "Assert that the timings include the filter(Sex->K)) step", statistic.contains("filter Sex -> K") )
         // I'm not entirely sure why this assert was added.  It seems logical to include
         // it as it's a step on the Pipeline but it was done for specific reasons, but
         // those reasons are lost to history.  I'm leaving it in case I remember why this was
         // important or not.
 //        assertFalse( "Assert that timings does NOT include groupBy because all rows are filtered out.", statistic.stepTimings.containsKey("groupBy(Sex)") )
-        assert statistic.stepTimings.containsKey("groupBy(Sex)")
+        assert statistic.contains("groupBy(Sex)")
     }
 
     @Test
@@ -890,7 +887,6 @@ class PipelineTest {
                             assert row.gender == "female"
                             return row
                         }
-                        return
                     }
                     .go()
 
@@ -960,8 +956,8 @@ class PipelineTest {
             Thread.sleep(10) // ensure we don't go too fast :-)
         }.go()
 
-        assert stat.stepTimings.containsKey("${stat.name}.after".toString())
-        assert stat.stepTimings["${stat.name}.after".toString()] > 0
+        assert stat.doneStatistics.find {it.name == "${stat.name}.0.after".toString() }
+        assert stat.doneStatistics.find {it.name == "${stat.name}.0.after".toString() }.duration > 0
     }
 
     @Test
@@ -1061,6 +1057,7 @@ class PipelineTest {
             files.each { File f ->
                 pipeline.process( [file: f])
             }
+            return
         }).into()
         .exchange { Map row ->
             File input = row.file as File

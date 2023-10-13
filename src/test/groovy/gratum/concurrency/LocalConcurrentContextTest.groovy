@@ -61,10 +61,10 @@ class LocalConcurrentContextTest {
 
             assert stats.loaded == 152      // female
             assert stats.rejections == 266  // male
-            assert stats.stepTimings.containsKey("Queue to Workers")
-            assert stats.stepTimings.containsKey("Queue to Results")
-            assert stats.stepTimings.containsKey("Assert we are on the results thread")
-            assert stats.stepTimings.containsKey("Only Females")
+            assert stats.contains("Queue to Workers")
+            assert stats.contains("Queue to Results")
+            assert stats.contains("Assert we are on the results thread")
+            assert stats.contains("Only Females")
         }
     }
 

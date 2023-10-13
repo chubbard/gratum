@@ -11,8 +11,8 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class LoadStatistic {
     String name
-    Map<RejectionCategory, Map<String,Integer>> rejectionsByCategory = [:]
-    Map<String,Long> stepTimings = [:]
+    List<StepStatistic> stepStatistics = []
+    List<StepStatistic> doneStatistics = []
     Integer loaded = 0
     Long start = 0
     Long end = 0
@@ -52,67 +52,56 @@ class LoadStatistic {
     }
 
     public Integer getRejections() {
-        return rejectionsByCategory.inject(0) { Integer sum, RejectionCategory cat, Map<String,Integer> stepCounts ->
-            sum + (Integer)stepCounts.values().sum()
+        if( this.stepStatistics.rejections.isEmpty() ) return 0
+        this.stepStatistics.rejections.inject(0) { sum, rej ->
+            sum + (Integer)rej.values().sum(0)
         }
-    }
-
-    public void reject(Rejection rejection) {
-        addRejection( rejection?.category ?: RejectionCategory.REJECTION, rejection.step)
-    }
-
-    public void addRejection( RejectionCategory category, String stepName, Integer count = 1 ) {
-        if( !rejectionsByCategory[category] ) {
-            rejectionsByCategory[category] = [(stepName): 0]
-        } else if( !rejectionsByCategory[category][stepName] ) {
-            rejectionsByCategory[category][stepName] = 0
-        }
-        Integer total = rejectionsByCategory[category][stepName] + count
-        rejectionsByCategory[category][stepName] = total
     }
 
     public Map<RejectionCategory, Map<String,Integer>> getRejectionsByCategory() {
-        return rejectionsByCategory
+        Map<RejectionCategory,Map<String,Integer>> results = [:]
+        this.stepStatistics.inject(results) { combined, stepStatistic ->
+            stepStatistic.rejections.each { cat, count ->
+                if( !combined[cat] ) {
+                    combined[cat] = [:] as Map<String,Integer>
+                }
+                combined[cat][stepStatistic.name] = count
+            }
+            combined
+        }
     }
 
     public Integer getRejections(RejectionCategory category) {
-        return (Integer)rejectionsByCategory.get(category).values().sum(0)
+        (Integer)this.stepStatistics.findResults { step -> step.rejections[category] }.sum()
     }
 
     public Integer getRejections(RejectionCategory cat, String step) {
-        return rejectionsByCategory?.get(cat)?.get(step)
+        StepStatistic stat = this.stepStatistics.find { state -> state.name == step }
+        return stat?.rejections[cat] ?: 0
     }
 
     public Map<String,Integer> getRejectionsFor( RejectionCategory category ) {
-        return rejectionsByCategory[category];
-    }
-
-    public <R> R timed( String stepName, Closure<R> c ) {
-        if( !stepTimings.containsKey(stepName) ) stepTimings.put( stepName, 0L )
-        long start = System.currentTimeMillis()
-        R ret = c.call()
-        long duration = System.currentTimeMillis() - start
-        stepTimings[stepName] = stepTimings[stepName] + duration
-        return ret
+        return rejectionsByCategory[category]
     }
 
     public double avg( String step ) {
-        double avg = stepTimings[step] / (loaded + rejections)
-        return avg
+        return stepStatistics.find { s -> s.name == step }?.avgDuration
     }
 
     public String toString() {
         return toString(false)
     }
     
-    public String toString(boolean timings) {
+    public String toString(boolean stepDetails) {
         StringWriter out = new StringWriter()
         PrintWriter pw = new PrintWriter(out)
-        if( timings ) {
+        if( stepDetails ) {
             pw.println("\n----")
-            pw.println("Step Timings")
-            this.stepTimings.each { String step, Long totalTime ->
-                pw.printf("%s: %,.2f ms%n", step, this.avg(step) )
+            pw.println("Step Stats")
+            pw.printf("| %-20s | %-10s | %-10s | %-17s | %-20s |%n", "Step Name", "Loaded", "Rejected", "Avg Duration (ms)", "Total Duration (ms)")
+            pw.printf("-" * (20 + 10 + 10 + 17 + 20 + 16) + "%n")
+            stepStatistics.each { stepStat ->
+                pw.printf("| %-20s | %10,d | %10,d | %17,.2f | %20,d |%n", stepStat.name, stepStat.loaded, stepStat.rejections, stepStat.avgDuration, stepStat.duration )
             }
         }
 
@@ -131,32 +120,23 @@ class LoadStatistic {
         return out.toString()
     }
 
-    void addTiming(String step, long duration) {
-        stepTimings[step] = duration
-    }
-
-    void merge( LoadStatistic src, boolean shouldMergeTimings = true ) {
+    void merge( LoadStatistic src ) {
         this.loaded += src.loaded
-        mergeRejections( src )
-        if( shouldMergeTimings ) mergeTimings( src )
-    }
-
-    void mergeRejections(LoadStatistic src) {
-        src.rejectionsByCategory.each { RejectionCategory cat, Map<String,Integer> steps ->
-            if( !rejectionsByCategory[ cat ] ) {
-                rejectionsByCategory.put(cat, [:])
-            }
-            steps.each { String step, Integer count ->
-                if( !rejectionsByCategory[ cat ].containsKey( step ) ) rejectionsByCategory[cat][step] = 0
-                rejectionsByCategory[cat][step] = rejectionsByCategory[cat][step] + count
+        src.stepStatistics.each { srcStat ->
+            StepStatistic stepStat = stepStatistics.find { it.name == srcStat.name }
+            if( stepStat ) {
+                stepStat.incrementLoaded(srcStat.loaded)
+                srcStat.rejections.each { category, count ->
+                    stepStat.incrementRejections(category, count)
+                }
+                stepStat.incrementDuration( srcStat.duration )
+            } else {
+                stepStatistics << srcStat
             }
         }
     }
 
-    void mergeTimings(LoadStatistic src) {
-        src.stepTimings.each { String step, Long time ->
-            if( !stepTimings[ step ] ) stepTimings.put( step, 0L )
-            stepTimings[ step ] = stepTimings[ step ] + src.stepTimings [ step ]
-        }
+    boolean contains(String name) {
+        stepStatistics.find { it.name == name } != null
     }
 }

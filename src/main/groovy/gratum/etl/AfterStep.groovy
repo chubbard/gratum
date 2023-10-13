@@ -5,10 +5,11 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class AfterStep {
 
-    long duration = 0L
+    StepStatistic statistic
     Closure<Void> callback
 
-    AfterStep(Closure<Void> callback) {
+    AfterStep(String name, Closure<Void> callback) {
+        this.statistic = new StepStatistic(name)
         this.callback = callback
     }
 
@@ -16,6 +17,6 @@ class AfterStep {
         long start = System.currentTimeMillis()
         callback.call()
         long end = System.currentTimeMillis()
-        duration = (end-start)
+        statistic.incrementDuration(end-start)
     }
 }

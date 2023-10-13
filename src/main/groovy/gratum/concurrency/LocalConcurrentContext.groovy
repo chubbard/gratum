@@ -72,9 +72,6 @@ public class LocalConcurrentContext implements ConcurrentContext {
                         acc.merge( worker.stat.get() )
                         return acc
                     }
-                    workerStats.stepTimings = workerStats.stepTimings.collectEntries { step, time ->
-                        return [ step, (time / workerStats.stepTimings.size()).toLong() ]
-                    } as Map<String,Long>
 
                     stat.merge( workerStats )
                     stat.merge( resultProcessor.stat.get() )

@@ -157,7 +157,7 @@ public class Pipeline {
      */
     public Pipeline after( @DelegatesTo(Pipeline) Closure<Void> step ) {
         step.delegate = this
-        doneChain << new AfterStep(step)
+        doneChain << new AfterStep("${name}.${doneChain.size()}.after", step)
         return this
     }
 
@@ -1234,22 +1234,14 @@ public class Pipeline {
 
     LoadStatistic toLoadStatistic(long start, long end) {
         LoadStatistic stat
-        if( parent ) {
+        if (parent) {
             stat = parent.toLoadStatistic(start, end)
         } else {
             stat = new LoadStatistic(name: name, start: start, end: end)
         }
-
-        for( Step s : processChain ) {
-            s.rejections.each { RejectionCategory cat, Integer count ->
-                stat.addRejection( cat, s.name, count )
-            }
-
-            stat.addTiming(s.name, s.duration )
-        }
-
-        if( doneChain ) {
-            stat.addTiming("${name}.after", (Long)doneChain.sum() {it.duration } )
+        stat.stepStatistics += processChain*.statistics
+        if (doneChain) {
+            stat.doneStatistics += doneChain*.statistic
         }
 
         if( loaded > DO_NOT_TRACK ) stat.loaded = loaded

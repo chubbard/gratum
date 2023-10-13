@@ -35,8 +35,8 @@ class LoadStatisticTest {
         assert stat2.getRejectionsFor(RejectionCategory.IGNORE_ROW)["filter color -> [yellow, grey]"] == 2
         assert stat2.getRejectionsFor(RejectionCategory.IGNORE_ROW)["filter color -> grey"] == 1
 
-        assert stat1.stepTimings.size() == 1
-        assert stat2.stepTimings.size() == 2
+        assert stat1.stepStatistics.size() == 1
+        assert stat2.stepStatistics.size() == 2
 
         stat1.merge( stat2 )
 
@@ -48,32 +48,6 @@ class LoadStatisticTest {
         assert stat1.getRejectionsFor(RejectionCategory.IGNORE_ROW)["filter color -> [yellow, grey]"] == 2
         assert stat1.getRejectionsFor(RejectionCategory.IGNORE_ROW)["filter color -> grey"] == 1
 
-        assert stat1.stepTimings.size() == 3
-    }
-
-    @Test
-    public void testMergeWithoutStepTimings() {
-        LoadStatistic stat1 = CollectionSource.from([
-                [color: 'red'],
-                [color: 'green'],
-                [color: 'blue']
-        ]).filter([color: ['green', 'blue']])
-                .go()
-
-        LoadStatistic stat2= CollectionSource.from([
-                [color: 'yellow'],
-                [color: 'brown'],
-                [color: 'black'],
-                [color: 'grey']
-        ]).filter([color: ['yellow', 'grey']])
-                .filter([color: 'grey'])
-                .go()
-
-        assert stat1.stepTimings.size() == 1
-        assert stat2.stepTimings.size() == 2
-
-        stat1.merge( stat2, false )
-
-        assert stat1.stepTimings.size() == 1
+        assert stat1.stepStatistics.size() == 3
     }
 }
