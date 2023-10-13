@@ -21,6 +21,10 @@ class StepStatistic {
         return loaded
     }
 
+    int getTotalRejections() {
+        return (Integer)rejections.values().sum(0)
+    }
+
     Map<RejectionCategory, Integer> getRejections() {
         return rejections
     }

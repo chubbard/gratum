@@ -101,7 +101,7 @@ class LoadStatistic {
             pw.printf("| %-20s | %-10s | %-10s | %-17s | %-20s |%n", "Step Name", "Loaded", "Rejected", "Avg Duration (ms)", "Total Duration (ms)")
             pw.printf("-" * (20 + 10 + 10 + 17 + 20 + 16) + "%n")
             stepStatistics.each { stepStat ->
-                pw.printf("| %-20s | %10,d | %10,d | %17,.2f | %20,d |%n", stepStat.name, stepStat.loaded, stepStat.rejections, stepStat.avgDuration, stepStat.duration )
+                pw.printf("| %-20s | %,10d | %,10d | %,17.2f | %,20d |%n", stepStat.name, stepStat.loaded, stepStat.totalRejections, stepStat.avgDuration, stepStat.duration )
             }
         }
 
