@@ -139,4 +139,11 @@ class LoadStatistic {
     boolean contains(String name) {
         stepStatistics.find { it.name == name } != null
     }
+
+    @Deprecated
+    Map<String,Long> getStepTimings() {
+        stepStatistics.collectEntries() {step ->
+            [step.name, step.avgDuration]
+        }
+    }
 }
