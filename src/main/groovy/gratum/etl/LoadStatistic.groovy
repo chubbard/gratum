@@ -143,7 +143,7 @@ class LoadStatistic {
     @Deprecated
     Map<String,Long> getStepTimings() {
         stepStatistics.collectEntries() {step ->
-            [step.name, step.avgDuration]
+            [step.name, step.duration]
         }
     }
 }

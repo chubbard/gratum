@@ -361,7 +361,7 @@ The rest of the columns are the original columns from the row object.
 
 ### Let's go Already!
 
-In all of the examples our Pipeline chains have ended with a method `go`.  The `go` method is important
+In all the examples our Pipeline chains have ended with a method `go`.  The `go` method is important
 as it starts the processing of the `Source`.  The `go` method executes the processing of the chain, but
 it also returns an instance of `LoadStaistic` which gives us statistics about the processing of the 
 `Source`.  For example, it contains total number of rows that loaded, rows that were rejected, total
@@ -391,10 +391,63 @@ This yields the following:
     rejected 3 
     took 29 ms
 
-The upper section is the rejections by category.  As discussed above rejections have categories so we group
+The upper section is the rejections by category.  As discussed above rejections have categories, so we group
 all rejections by their common categories and list the counts there.  The next section shows total rows
 that loaded, the total rejections, and the total time it took to process the source.  Above those stats is the 
 name of the pipeline.
+
+## Concurrency
+
+Pipelines are single threaded using the calling thread of `go()` to execute the Pipeline.  Version 1.2.x
+introduced `LocalConcurrencContext` which allows you to spread out a Pipeline's elements across a pool of
+workers to process data.  Here is a quick example of how to do that:
+
+```
+int workers = 4
+int queueSize = 50
+LocalConcurrentContext context = new LocalConcurrentContext(workers, queueSize)
+LoadStatistic stats = csv("titantic.csv", ",")
+        .apply( 
+            context.spread { pipeline ->
+                pipeline.addStep("Assert we are on another thread") { Map row ->
+                    assert Thread.currentThread().name.startsWith("Worker")
+                    return row
+                }
+            }
+            .collect { pipeline ->
+                pipeline.addStep("Assert we are on the results thread") { Map row ->
+                    assert Thread.currentThread().name.startsWith("Results")
+                    return row
+                }
+            }
+            .connect()
+        )
+        .go()
+println( stats )
+```
+So this instantiates a `LocalConcurrentContext` which will allow us to define the Pipeline for workers
+and the Pipeline that will collect the results from those workers.  The `LocalConcurrentContext` constructor
+takes the number of workers you want to create and the size of the queue to use.  The defaults are 8 workers and 200
+size queue.  So in the above code you can see we're overriding that to define just 4 workers and a queue of size 50.
+The queue is a blocking queue so once the queue fills up the producer thread (ie the calling thread of `go()`) will block
+until the workers drain the queue, and it will resume feeding elements into the queue.  In this case the producer logic
+is above the call to `apply` which in this case it's just reading a simple `csv`, but it could be more complicated.
+
+The call to `apply` allows us to pass a Closure that configures this Pipeline.  `apply()` can be used as a method for
+building reusable section of steps to be placed on the `Pipeline`.  In this case `LocalConcurrentContext` is doing just that
+except we're going to configure it before we do so.
+
+`LocalConcurrentContext` provides to configure methods `spread` and `collect`.  These methods are how you set up the worker's
+Pipeline and the collection `Pipeline` which recollects the results from the workers.  This is very similar to fork join or 
+MapReduce where `spread` is used to define the worker's Pipeline (ie Map), and `collect` is to define the result's processor
+(ie Reduce).
+
+In the example above each method adds a single step to their respective `Pipline`s that added just a simple assert method
+to verify they are being called on the thread they expect.  So `spread` looks to see that it's called on a thread with
+`"Worker"` in the name.  And `collect` is being called with a thread with `"Results"` in the name.  Note that the `collect`
+`Pipeline` is using a different thread than the calling thread!
+
+### Spread
 
 ## Operations
 
