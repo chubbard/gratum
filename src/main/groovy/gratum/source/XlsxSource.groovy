@@ -158,7 +158,9 @@ class XlsxSource extends AbstractSource {
                 headers = []
                 headerRow = rowNum
             } else {
-                current = [:]
+                // make sure we start with all headers included because if the first row doesn't have any values
+                // in the last columns won't make it into the row.  It will produce ragged results
+                current = headers.collectEntries() { e -> [e,null] }
             }
             currentRow = rowNum
         }
