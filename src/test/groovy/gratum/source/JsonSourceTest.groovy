@@ -31,7 +31,7 @@ class JsonSourceTest {
                 { "name": "Desk", "price": 90.00, "color": ["oak", "pine", "white", "brushed nickel"]  },
                 { "name": "Chair", "price": 125.00, "color": ["gray", "black"] }
             ] 
-        }""").path(["items"]).into()
+        }""").includeRoot(true).path(["items"]).into()
             .addStep("Assert colors") { Map row ->
                 assert row["_root_json"]
                 assert row.color?.size() > 0
@@ -50,7 +50,7 @@ class JsonSourceTest {
             {"firstName": "Don", "lastName": "Johnson", "age": 64}
             {"firstName": "Rick", "lastName": "Richards", "age": 72}
             {"firstName": "Frank", "lastName": "Kilgore", "age": 22}
-        """).recordPerLine(true).into()
+        """).includeRoot(true).recordPerLine(true).into()
             .addStep("") { Map row ->
                 assert row["_root_json"]
                 assert row["firstName"]
