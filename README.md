@@ -511,6 +511,8 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 [replaceValues](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#replaceValues(java.lang.String,%20Map%3CString,%20String%3E))
 
+[window](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#window(java.lang.String,%20groovy.lang.Closure%3CList%3E))
+
 ### Branching
 
 [branch](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#branch(Closure%3CVoid%3E))
@@ -557,6 +559,8 @@ Operations are great, but you need data for those operations to work on.  Source
 passed into the Pipeline.  These are the Sources you can use to provide data.
 
 [csv](https://chubbard.github.io/gratum/groovydoc/gratum/source/CsvSource.html)
+
+[json](https://chubbard.github.io/gratum/groovydoc/gratum/source/JsonSource.html)
 
 [file](https://chubbard.github.io/gratum/groovydoc/gratum/source/FileSystemSource.html)
 
