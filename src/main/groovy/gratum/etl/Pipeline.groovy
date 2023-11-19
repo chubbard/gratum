@@ -558,6 +558,60 @@ public class Pipeline {
     }
 
     /**
+     * The window method caches successive rows which have an equal value for the given column then invokes the given
+     * closure with a List of rows that provides a similar result as the {@link #groupBy(java.lang.String[])} except it
+     * doesn't wait for the Pipeline to complete processes the full stream.  Instead it batches up
+     * rows for a equal values of a column, then invokes the given callback when it encounters a different
+     * value.  This method also implies that your stream is sorted or that equal values are grouped successively.
+     * Random smattering of equivalent values would result in the callback not receiving all the values within
+     * a single invocation of the callback.
+     *
+     * The requires significantly lower memory than {@link #groupBy(java.lang.String[])} because it only has to
+     * cache values as long as they are the same for successive rows.  It also allows you to process a stack of
+     * rows at once which some algorithms require.  But, the upstream processing will continue to run before the
+     * downstream operators have a chance to run which can affect certain configurations of the Pipeline and violate
+     * assumptions about rows proceeding from top to bottom before going to the next row.
+     *
+     * The flattenClosure parameter takes in a List of row objects, and returns a List of row objects.  The returned
+     * value will be played down the downstream Pipeline as individual rows.  Hence the Closure can modify the rows
+     * returned or filter out unwanted rows at the discretion of the implementer.
+     *
+     * @param field the column or field in the row to watch for a change in value.
+     * @param flattenClosure the closure invoked passing the List of rows it saw with the same value at the given field.
+     * @return The downstream pipeline
+     */
+    Pipeline window(String field,
+                    @DelegatesTo(Pipeline)
+                    @ClosureParams( value = FromString.class, options = ["java.util.List<Map<String,Object>>"])
+                    Closure<List<Map<String,Object>>> flattenClosure) {
+        Map<Object,List<Map<String,Object>>> window = [:]
+        Pipeline downstream = new Pipeline( name, this ).source( new ChainedSource(this) )
+        int line = 0
+        flattenClosure.delegate = this
+        addStep("Window(${field})") { row ->
+            if( window[row[field]] ) {
+                window[row[field]].add( row )
+            } else {
+                if( !window.isEmpty() ) {
+                    List<Map<String,Object>> rows = flattenClosure( window.entrySet().first().value )
+                    rows.each { r -> downstream.process( r, ++line ) }
+                    window.clear()
+                }
+                window[row[field] as String] = [ row ]
+            }
+            return row
+        }
+        .after {
+            if( !window.isEmpty() ) {
+                List<Map<String,Object>> rows = flattenClosure( window.entrySet().first().value )
+                rows.each { r -> downstream.process( r, ++line ) }
+            }
+            downstream.finished()
+        }
+        return downstream
+    }
+
+    /**
      * Return a Pipeline where the rows are ordered by the given columns.  The value of
      * each column is compared using the <=> operator.
      * @param columns to sort by
