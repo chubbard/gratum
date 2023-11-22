@@ -1,0 +1,25 @@
+name: Gratum Build
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - master
+
+  pull_request:
+
+permission:
+  contents: read
+  pull-request: read
+
+jobs:
+  gratum-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+      - name: Run build with Gradle Wrapper
+        run: ./gradlew clean build
