@@ -88,15 +88,18 @@ But, to make it easier to get started you'll want to add the following to your
 
 That should produce the following:
 
-    ----
-    Rejections by category
-    IGNORE_ROW: 3
-    
-    ----
-    ==> Collection(6)
-    loaded 3
-    rejected 3
-    took 3 ms
+```
+----
+Rejections by category
+IGNORE_ROW: 3
+    filter gender -> Female: 3
+
+----
+==> Collection(6)
+loaded 3
+rejected 3
+took 0s 4ms
+```
 
 #### Filtering by multiple columns
 
@@ -113,15 +116,18 @@ That should produce the following:
 
 That should produce the following:
 
-    ----
-    Rejections by category
-    IGNORE_ROW: 5
-    
-    ----
-    ==> Collection(6)
-    loaded 1
-    rejected 5
-    took 3 ms
+```
+----
+Rejections by category
+IGNORE_ROW: 3
+    filter gender -> Female,city -> Oxford: 5
+
+----
+==> Collection(6)
+loaded 1
+rejected 5
+took 0s 1ms
+```
 
 #### Filtering using a Collection
 
@@ -138,16 +144,18 @@ That should produce the following:
 
 That should produce the following:
 
-    ----
-    Rejections by category
-    IGNORE_ROW: 3
-    
-    ----
-    ==> Collection(6)
-    loaded 3
-    rejected 3
-    took 3 ms
+```
+----
+Rejections by category
+IGNORE_ROW: 3
+	filter name -> [Chuck, Jane, Rob]: 3
 
+----
+==> Collection(6) 
+loaded 3 
+rejected 3 
+took 0s 0ms
+```
 #### Filter using a Regular Expression
 
     from([
@@ -163,16 +171,18 @@ That should produce the following:
 
 That should produce the following:
 
-    ----
-    Rejections by category
-    IGNORE_ROW: 4
-    
-    ----
-    ==> Collection(6)
-    loaded 2
-    rejected 4
-    took 3 ms
-    
+```
+----
+Rejections by category
+IGNORE_ROW: 4
+	filter name -> Ch.*: 4
+
+----
+==> Collection(6) 
+loaded 2 
+rejected 4 
+took 0s 1ms
+```    
 #### Filter using a closure
 
     csv('bank_balance.csv').into().asDouble('amount').filter { Map row -> row.amount > 500 }.go
@@ -198,16 +208,18 @@ You can mix closures with the map version of the `filter` method.  Here is an ex
 
 That should produce the following:
 
-    ----
-    Rejections by category
-    IGNORE_ROW: 4
-    
-    ----
-    ==> Collection(6)
-    loaded 2
-    rejected 4
-    took 3 ms
- 
+```
+----
+Rejections by category
+IGNORE_ROW: 4
+	filter gender -> Male,age -> {}: 4
+
+----
+==> Collection(6) 
+loaded 2 
+rejected 4 
+took 0s 0ms
+```
 
 #### Sort by column
 
@@ -381,20 +393,94 @@ amount of time used while processing the `Source`, step timings, or rejections b
 
 This yields the following:
 
-    ----
-    Rejections by category
-    IGNORE_ROW: 3
-    
-    ----
-    ==> Collection(6) 
-    loaded 3 
-    rejected 3 
-    took 29 ms
+```
+----
+Rejections by category
+IGNORE_ROW: 3
+	filter gender -> Male: 3
+
+----
+==> Collection(6) 
+loaded 3 
+rejected 3 
+took 0s 0ms
+```
 
 The upper section is the rejections by category.  As discussed above rejections have categories, so we group
 all rejections by their common categories and list the counts there.  The next section shows total rows
 that loaded, the total rejections, and the total time it took to process the source.  Above those stats is the 
 name of the pipeline.
+
+## Pipeline troubleshooting
+
+So sometimes it helps to know where rejections occurred or performance issues might arise in your Pipeline.  The default
+
+    from([
+            [ name: 'Chuck', gender: 'Male'],
+            [ name: 'Jane', gender: 'Female'],
+            [ name: 'Rob', gender: 'Male'],
+            [ name: 'Charlie', gender: 'Female'],
+            [ name: 'Sue', gender: 'Male'],
+            [ name: 'Jenny', gender: 'Female']
+        ]).
+        filter([gender: 'Female']).
+        go()
+
+That should produce the following which is the default information provided:
+
+```
+----
+Rejections by category
+IGNORE_ROW: 3
+    filter gender -> Female: 3
+
+----
+==> Collection(6)
+loaded 3
+rejected 3
+took 0s 4ms
+```
+But, if we wanted a breakdown of all steps involved and timing information we can do the following to include more details
+when printing out the `LoadStatistic` object.
+```
+    LoadStatistic stat = from([
+            [ name: 'Chuck', gender: 'Male'],
+            [ name: 'Jane', gender: 'Female'],
+            [ name: 'Rob', gender: 'Male'],
+            [ name: 'Charlie', gender: 'Female'],
+            [ name: 'Sue', gender: 'Male'],
+            [ name: 'Jenny', gender: 'Female']
+        ]).
+        filter([gender: 'Female']).
+        go()
+    println( stat.toString(true) )
+```
+Will produce a full break down of the steps on the Pipeline.
+```
+----
+Step Stats
+| Step Name                      | Loaded     | Rejected   | Avg Duration (ms) | Total Duration (ms)  |
+-------------------------------------------------------------------------------------------------------
+| filter gender -> Female        |          3 |          3 |              0.17 |                    1 |
+
+----
+Rejections by category
+IGNORE_ROW: 3
+	filter gender -> Female: 3
+
+----
+==> Collection(6) 
+loaded 3 
+rejected 3 
+took 0s 1ms
+```
+
+In this example, we can see that the only step on this Pipeline is the filter step we added.  And that step filtered out
+3 rows, and passed (ie loaded) 3 rows.  We also see the average duration in milliseconds and the total duration in 
+milliseconds.  The average duration is the total duration divided by the total number of rows that passed through this 
+step.  This gives you an average time each pass through the step.  It makes it easier to compare each step for performance
+cost since not all steps will see the same number of rows given that rejections could reduce the downstream rows being
+processed.
 
 ## Concurrency
 
