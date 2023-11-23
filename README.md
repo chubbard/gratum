@@ -546,6 +546,12 @@ The `collect` method is used to define the Pipeline used for the Results thread.
 successful results from the worker threads are passed through the result Pipeline.  If a worker thread rejects any row
 those are passed through the rejection Pipeline on the Results thread.
 
+### Connect
+
+The `connect` method attaches the `LocalConcurrentContext` to the existing Pipeline. This method is
+**required** to be called so that rows from the Pipeline are routed through the `LocalConcurrentContext` for processing.
+Without this call nothing will be sent to the worker threads and result thread.
+
 ## Operations
 
 It's much easier to use the existing operation methods that are included in the Pipeline.  For example,
