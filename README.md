@@ -449,6 +449,17 @@ to verify they are being called on the thread they expect.  So `spread` looks to
 
 ### Spread
 
+The `spread` method is used to define the Pipeline used for the worker threads.  The closure passed to the spread method 
+will be called for each worker thread.  Therefore, each thread will have it's down Pipeline instance.  It's safe to
+utilize local variables within the spread closure, but it's not safe to use variables from outside the closure method
+without using threading protections (synchronization, semaphores, thread locals, etc).
+
+### Collect
+
+The `collect` method is used to define the Pipeline used for the Results thread.  There is only 1 result thread.  All
+successful results from the worker threads are passed through the result Pipeline.  If a worker thread rejects any row
+those are passed through the rejection Pipeline on the Results thread.
+
 ## Operations
 
 It's much easier to use the existing operation methods that are included in the Pipeline.  For example,
@@ -540,6 +551,10 @@ that does this for you called `filter`.  There are plenty of existing methods to
 [configure](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#configure(Closure%3CPipeline%3E))
 
 [apply](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#apply(Closure%3CVoid%3E))
+
+### Concurrency
+
+[LocalConcurrentContext](https://chubbard.github.io/gratum/groovydoc/gratum/concurrency/LocalConcurrentContext.html)
 
 ### Output
 
