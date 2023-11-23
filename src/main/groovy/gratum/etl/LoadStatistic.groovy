@@ -98,10 +98,10 @@ class LoadStatistic {
         if( stepDetails ) {
             pw.println("\n----")
             pw.println("Step Stats")
-            pw.printf("| %-20s | %-10s | %-10s | %-17s | %-20s |%n", "Step Name", "Loaded", "Rejected", "Avg Duration (ms)", "Total Duration (ms)")
-            pw.printf("-" * (20 + 10 + 10 + 17 + 20 + 16) + "%n")
+            pw.printf("| %-30s | %-10s | %-10s | %-17s | %-20s |%n", "Step Name", "Loaded", "Rejected", "Avg Duration (ms)", "Total Duration (ms)")
+            pw.printf("-" * (30 + 10 + 10 + 17 + 20 + 16) + "%n")
             stepStatistics.each { stepStat ->
-                pw.printf("| %-20s | %,10d | %,10d | %,17.2f | %,20d |%n", stepStat.name, stepStat.loaded, stepStat.totalRejections, stepStat.avgDuration, stepStat.duration )
+                pw.printf("| %-30s | %,10d | %,10d | %,17.2f | %,20d |%n", stepStat.name.substring(0,Math.min( stepStat.name.length(), 30)), stepStat.loaded, stepStat.totalRejections, stepStat.avgDuration, stepStat.duration )
             }
         }
 
