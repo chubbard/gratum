@@ -363,13 +363,15 @@ pipeline, and we can add steps and call operations on it just like any normal pi
 that Pipeline are all the rejected rows from the parent Pipeline.  In this example, we used the `save` 
 method to write out a pipe-delimited text file (ie a CSV).
 
-What's different about the rows that travel through the rejection pipeline is that they have 3 addition columns:
+What's different about the rows that travel through the rejection pipeline is that they have 4 addition columns:
 
 1. **rejectionCategory**
 2. **rejectionReason**
 3. **rejectionStep**
+4. **rejectionStackTrace**
 
-The rest of the columns are the original columns from the row object.
+The rest of the columns are the original columns from the row object.  The **rejectionStackTrace** is only present
+if an exception was thrown within a step.  Typically, the **rejectionCategory** would be `SCRIPT_ERROR` in that case. 
 
 ### Let's go Already!
 
