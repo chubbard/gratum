@@ -1,0 +1,8 @@
+
+dependencies {
+    implementation project(':core')
+}
+
+jar {
+    baseName "gratum-jdbc"
+}

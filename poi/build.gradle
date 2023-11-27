@@ -1,0 +1,14 @@
+
+dependencies {
+//    implementation 'org.apache.poi:poi:5.2.2'
+//    implementation 'org.apache.poi:poi-ooxml:5.2.2'
+//    implementation 'org.apache.poi:poi-ooxml-lite:5.2.2'
+    implementation 'org.apache.poi:poi:4.1.2'
+    implementation 'org.apache.poi:poi-ooxml:4.1.2'
+    implementation 'org.apache.poi:ooxml-schemas:1.4'
+    implementation project(':core')
+}
+
+jar {
+    baseName "gratum-poi"
+}

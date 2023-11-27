@@ -1,2 +1,9 @@
 rootProject.name = 'gratum'
 
+include "core"
+include "http"
+include "ssh"
+include "poi"
+include "bouncycastle"
+include "archived"
+include "jdbc"

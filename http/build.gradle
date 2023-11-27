@@ -1,0 +1,9 @@
+
+dependencies {
+    implementation 'io.github.http-builder-ng:http-builder-ng-core:1.0.3'
+    implementation project(':core')
+}
+
+jar {
+    baseName "gratum-http"
+}

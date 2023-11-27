@@ -1,0 +1,10 @@
+
+dependencies {
+    implementation group: 'commons-io', name: 'commons-io', version: '2.8.0'
+    implementation group: "com.jcraft", name: "jsch", version: "0.1.55"
+    implementation project(':core')
+}
+
+jar {
+    baseName "gratum-ssh"
+}

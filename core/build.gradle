@@ -1,0 +1,30 @@
+//plugins {
+//    id 'groovy'
+//    id 'maven-publish'
+//    id 'signing'
+////    id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
+//}
+
+description = """
+A simplified standalone ETL engine for groovy.  Gratum is groovy + datum.
+"""
+
+dependencies {
+    implementation 'org.apache.commons:commons-collections4:4.4'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.8.0'
+}
+
+jar {
+    baseName "gratum-core"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = []
+        }
+        groovy {
+            srcDirs += ["src/main/java"]
+        }
+    }
+}
