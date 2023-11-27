@@ -1,10 +1,12 @@
+package gratum.pgp
+
 import gratum.etl.Pipeline
 import gratum.pgp.PgpContext
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.FromString
 import gratum.etl.*
 
-class Pgp {
+public class Pgp {
 
     /**
      * Encrypts using PGP a stream on the pipeline and rewrite that stream back to the pipeline.  It looks for

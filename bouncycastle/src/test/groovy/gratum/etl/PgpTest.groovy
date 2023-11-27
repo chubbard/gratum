@@ -1,8 +1,6 @@
 package gratum.etl
 
-import gratum.pgp.PgpContext
-import gratum.pgp.PgpKeyBuilder
-import gratum.pgp.Pgp
+import gratum.pgp.*
 import org.bouncycastle.bcpg.ArmoredOutputStream
 import org.bouncycastle.openpgp.PGPCompressedData
 import org.bouncycastle.openpgp.PGPSecretKeyRing
@@ -17,6 +15,27 @@ import static gratum.source.CollectionSource.from
 class PgpTest {
 
     File secretKeyRingFile
+
+    public static final List<Map> people = [
+                [id: 1, name: 'Bill Rhodes', age: 53, gender: 'male', comment: """
+I had the single cheese burger.  It was juicy and well seasoned.  The fries 
+were on the soggy side and I had to wait for a while to get my milkshake.
+"""],
+                [id: 2, name: 'Cheryl Lipscome', age: 43, gender: 'female', comment: """
+I had the chicken salad.  It was delicious.  I would like more raisins next time.
+"""],
+                [id: 3, name: 'Diana Rogers', age: 34, gender: 'female', comment: """
+I had to wait a very long time for my cheeseburger, and when it came it didn't have
+cheese.  I had to send it back, but they got it right the second time.  The burger
+was good, and the fries were crispy and warm.
+"""],
+                [id: 4, name: 'Jack Lowland', age: 25, gender: 'male', comment: """
+I loved my burger and milkshake.
+"""],
+                [id: 5, name: 'Ginger Rogers', age: 83, gender: 'female', comment: """
+I had the chili dog and the onion rings, but I wish you had tater tots.
+"""]
+        ]
 
     @Before
     void setUp() {
@@ -41,7 +60,7 @@ class PgpTest {
     public void testPgpEncryption() {
         File tmp = File.createTempFile("pgp-encryption-test", ".gpg")
         try {
-            LoadStatistic stat = from(GratumFixture.people)
+            LoadStatistic stat = from(PgpTest.people)
                     .save(tmp.getAbsolutePath())
                     .apply( Pgp.encryptPgp("stream") { PgpContext pgp ->
                         pgp.addSecretKeys( secretKeyRingFile ).identities(["Sue <sue@boy.com>"]).overwrite(true)
@@ -66,7 +85,7 @@ class PgpTest {
     void testPgpDecryption() {
         File tmp = File.createTempFile("pgp-decryption", ".csv")
         try {
-            LoadStatistic stat = from(GratumFixture.people)
+            LoadStatistic stat = from(PgpTest.people)
                     .save(tmp.getAbsolutePath())
                     .apply( Pgp.encryptPgp("stream") { PgpContext pgp ->
                         pgp.addSecretKeys( secretKeyRingFile )
@@ -92,7 +111,7 @@ class PgpTest {
     void performanceTest() {
         File perfFile = new File("${System.getProperty("user.home")}/Documents/customer/pfchangs/src/2012/PFC1000_XLodEEDed_20210207_1512.txt")
         LoadStatistic stat = from([file: perfFile, filename: perfFile.name, stream: new FileOpenable(perfFile)])
-                .apply( Pgp.encryptPgp("stream") { PgpContext context ->
+                .apply( Pgp.encryptPgp("stream") { context ->
                     context.addSecretKeys( secretKeyRingFile )
                             .identities(["Sue <sue@boy.com>"])
                             .compressData(PGPCompressedData.UNCOMPRESSED)
