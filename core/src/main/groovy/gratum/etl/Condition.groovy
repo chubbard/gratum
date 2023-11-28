@@ -47,8 +47,8 @@ class Condition {
         return { Map row -> comp.contains(row[col]) }
     }
 
-    Closure<Boolean> createClosureCallback(String col, Closure closure) {
-        return { Map row -> (Boolean)closure(row[col]) }
+    Closure<Boolean> createClosureCallback(String col, Closure<Boolean> closure) {
+        return { Map row -> closure(row[col]) }
     }
 
     Closure<Boolean> createEqualsCallback(String col, Object comp) {
