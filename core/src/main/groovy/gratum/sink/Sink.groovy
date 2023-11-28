@@ -2,7 +2,7 @@ package gratum.sink
 
 import gratum.etl.Pipeline
 
-interface Sink<T> extends Closeable {
+interface Sink<T> extends Closeable, AutoCloseable {
 
     String getName()
 
