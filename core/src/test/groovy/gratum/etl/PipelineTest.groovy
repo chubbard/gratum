@@ -921,10 +921,12 @@ class PipelineTest {
     @Test
     void testDoneCallbacksInTimings() {
         boolean invoked = false
-        LoadStatistic stat = from(GratumFixture.hobbies).sort("hobby").after {
+        LoadStatistic stat = from(GratumFixture.hobbies).filter(hobby: ~/T.*/).after {
             invoked = true
-            Thread.sleep(100) // ensure we don't go too fast :-)
+            Thread.sleep(10) // ensure we don't go too fast :-)
         }.go()
+
+        println( stat.toString(true) )
 
         assert stat.doneStatistics.find {it.name == "${stat.name}.0.after".toString() }
         assert invoked : "after callback was NOT called!"
