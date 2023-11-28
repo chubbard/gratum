@@ -48,7 +48,7 @@ class StepStatistic {
     }
 
     double getAvgDuration() {
-        Integer denominator = (loaded + ((Integer)rejections.values().sum()) )
+        Integer denominator = (loaded + ((Integer)rejections.values().sum(0)) )
         denominator > 0 ? duration / denominator.doubleValue() : 0.0d
     }
 }
