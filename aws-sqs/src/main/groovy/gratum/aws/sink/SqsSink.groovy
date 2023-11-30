@@ -49,7 +49,7 @@ class SqsSink implements Sink {
                 }
                 if( batchRequest.getEntries().size() < batchSize ) {
                     batchRequest.getEntries().add( new SendMessageBatchRequestEntry(
-                            UUID.newInstance().toString(),
+                            UUID.randomUUID().toString(),
                             json
                     ))
                 } else {

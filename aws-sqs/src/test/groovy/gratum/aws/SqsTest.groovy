@@ -90,7 +90,8 @@ class SqsTest {
     public void testBatchedSqs() {
         Future<LoadStatistic> sink = service.submit({
             List messages = (1.50).collect { id -> [ id: id, name: "Name-${id}"] }
-            CollectionSource.from(messages).save(SqsSink.queue(queueResult.queueUrl).batchSize(10))
+            CollectionSource.from(messages)
+                    .save(SqsSink.queue(queueResult.queueUrl).batchSize(10))
                     .addStep("Test that we send 50 rows") { row ->
                         assert row["queue"] == queueResult.queueUrl
                         assert row["count"] == 50
