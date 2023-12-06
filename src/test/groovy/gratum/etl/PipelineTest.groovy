@@ -993,8 +993,8 @@ class PipelineTest {
             Thread.sleep(10) // ensure we don't go too fast :-)
         }.go()
 
-        assert stat.doneStatistics.find {it.name == "${stat.name}.0.after".toString() }
-        assert stat.doneStatistics.find {it.name == "${stat.name}.0.after".toString() }.duration > 0
+        assert stat.doneStatistics.find {it.name == "${stat.name}.0.after".toString() && it.duration > 0 }
+        assert stat.doneStatistics.find {it.name == "${stat.name}.0.after".toString() && it.duration > 0 }.duration > 0
     }
 
     @Test
