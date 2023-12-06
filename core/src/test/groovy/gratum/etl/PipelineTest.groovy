@@ -1,5 +1,6 @@
 package gratum.etl
 
+import gratum.sink.Sink
 import gratum.source.ClosureSource
 import gratum.source.CollectionSource
 import gratum.source.CsvSource
@@ -400,6 +401,46 @@ class PipelineTest {
                 }
             }
             .go()
+    }
+
+    @Test
+    void testComplexBranch() {
+        List<Map<String,Object>> rows = []
+        boolean closedCalled = false
+        csv("src/test/resources/titanic.csv")
+            .branch("Testing complex branching") { pipeline ->
+                pipeline.inject { row ->
+                    return [ row ]
+                }
+                .save(new Sink() {
+                    @Override
+                    String getName() {
+                        return "collection"
+                    }
+
+                    @Override
+                    void attach(Pipeline p) {
+                        p.addStep("Collect") { row ->
+                            rows << row
+                            return row
+                        }
+                    }
+
+                    @Override
+                    Map<String, Object> getResult() {
+                        return [ rows: rows ]
+                    }
+
+                    @Override
+                    void close() throws IOException {
+                        closedCalled = true
+                    }
+                })
+            }
+            .go()
+
+        assert rows.size() > 0
+        assert closedCalled
     }
 
     @Test
@@ -926,11 +967,10 @@ class PipelineTest {
             Thread.sleep(10) // ensure we don't go too fast :-)
         }.go()
 
-        println( stat.toString(true) )
-
-        assert stat.doneStatistics.find {it.name == "${stat.name}.0.after".toString() }
         assert invoked : "after callback was NOT called!"
-        assert stat.doneStatistics.find {it.name == "${stat.name}.0.after".toString() }.duration > 0
+        assert stat.doneStatistics.find {it.name == "${stat.name}.0.after".toString() && it.duration > 0 }
+        assert stat.doneStatistics.find {it.name == "${stat.name}.0.after".toString() && it.duration > 0 }.duration > 0
+//        println( stat.toString(true) )
     }
 
     @Test

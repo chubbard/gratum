@@ -306,7 +306,7 @@ public class Pipeline {
     public Pipeline branch( String branchName = "branch",
                             @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                             Closure<Pipeline> split) {
-        final Pipeline branch = new Pipeline( "${name}/${branchName}", this )
+        final Pipeline branch = new Pipeline( "${name}/${branchName}" )
 
         Pipeline tail = split( branch )
 
@@ -316,6 +316,7 @@ public class Pipeline {
         }
 
         after {
+            tail.parent?.finished()
             tail.finished()
         }
     }
@@ -333,7 +334,7 @@ public class Pipeline {
                            @DelegatesTo(Pipeline)
                            @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                            Closure<Pipeline> split) {
-        Pipeline branch = new Pipeline( "${name}/branch(${condition})", this )
+        Pipeline branch = new Pipeline( "${name}/branch(${condition})" )
         Pipeline tail = split(branch)
         split.delegate = branch
         Condition selection = new Condition( condition )
@@ -345,6 +346,7 @@ public class Pipeline {
         }
 
         after {
+            tail.parent?.finished()
             tail.finished()
         }
     }
@@ -544,12 +546,11 @@ public class Pipeline {
             return row
         }
 
-        Pipeline parent = this
         Pipeline other = new Pipeline( name, this )
         other.src = new AbstractSource() {
             @Override
             void doStart(Pipeline pipeline) {
-                parent.start() // first start our parent pipeline
+                pipeline.parent.start() // first start our parent pipeline
                 pipeline.process( cache, 1 )
             }
         }
