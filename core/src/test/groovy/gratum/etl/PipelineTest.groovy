@@ -1,5 +1,6 @@
 package gratum.etl
 
+import gratum.sink.CollectionSink
 import gratum.sink.Sink
 import gratum.source.ClosureSource
 import gratum.source.CollectionSource
@@ -1088,5 +1089,57 @@ class PipelineTest {
 
         assert tmpPeople.exists()
         assert tmpPeople.length() > 0
+    }
+
+    @Test
+    void testFormat() {
+        CollectionSource.from([
+                [
+                        name: "Buck",
+                        daysActive: 1024,
+                        date: new Date(2016-1900,3,21)
+                ],
+                [
+                        name: "Rogers",
+                        daysActive: 10504,
+                        date: new Date(2011-1900, 6, 21)
+                ]
+        ])
+        .format("%1\$tY-%1\$tm-%1\$td", "date")
+        .format("%,d", "age")
+        .addStep("assert format worked") { row ->
+            assert row["date"] instanceof String
+            assert row["age"] instanceof String
+            row
+        }
+        .save(new CollectionSink("result",[]))
+        .addStep("test formatting") { row ->
+            assert row["result"]
+            row
+        }
+        .go()
+
+    }
+
+    @Test
+    void testDateFormat() {
+        CollectionSource.from([
+                [
+                        date: new Date( 2020-1900, 5, 25 )
+                ],
+                [
+                        date: new Date(1969-1900, 7, 16)
+                ],
+                [
+                        date: new Date(1492-1900, 4, 28)
+                ]
+        ])
+        .dateFormat("yyyy-MM-dd", "date")
+        .addStep("Verify date is a String") { row ->
+            assert row["date"] instanceof String
+            assert row["date"] ==~ /\d{4}-\d{2}-\d{2}/
+            row
+        }
+        .go()
     }
 }

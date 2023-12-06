@@ -15,6 +15,7 @@ import groovy.transform.stc.FromString
 import groovy.transform.stc.SimpleType
 import org.apache.commons.collections4.map.LRUMap
 
+import java.text.DateFormat
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.regex.Pattern
@@ -1138,6 +1139,39 @@ public class Pipeline {
             String v = row[column]
             if( values.containsKey(v) ) {
                 row[column] = values[ v ] ?: row[column]
+            }
+            return row
+        }
+    }
+
+    /**
+     * Converts all given column's scalar data type to a string using the format specifier using the
+     * syntax from String.format.
+     *
+     * @param format The format specifier used to format each column individually.
+     * @param columns The array of multiple columns to format one by one into the same index.
+     * @return this Pipeline
+     */
+    Pipeline format(String format, String... columns) {
+        addStep("format(${columns})") { row ->
+            columns.each {col ->
+                row[col] = String.format(format, row[col])
+            }
+            row
+        }
+    }
+
+    /**
+     * Formats multiple columns with Date objects into Strings following the provided date format.
+     * @param format The format specifier following SimpleDateFormat's syntax
+     * @param columns An array of multiple columns, each column will be formatted per the format spec.
+     * @return
+     */
+    Pipeline dateFormat(String format, String... columns) {
+        final DateFormat dateFormat = new SimpleDateFormat(format)
+        addStep("dateFormat(${format}, ${columns})") { row ->
+            columns.each { col ->
+                row[col] = dateFormat.format(row[col])
             }
             return row
         }
