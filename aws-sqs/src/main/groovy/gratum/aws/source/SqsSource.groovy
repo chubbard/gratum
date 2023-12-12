@@ -40,6 +40,5 @@ class SqsSource extends AbstractSource {
                 client.deleteMessage( queueUrl, message.receiptHandle)
             }
         }
-        pipeline.finished()
     }
 }
