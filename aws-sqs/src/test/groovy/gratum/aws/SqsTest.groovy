@@ -87,7 +87,6 @@ class SqsTest {
     }
 
     @Test
-    @Ignore
     public void testBatchedSqs() {
         Future<LoadStatistic> sink = service.submit({
             List messages = (1..50).collect { id -> [ id: id, name: "Name-${id}"] }
