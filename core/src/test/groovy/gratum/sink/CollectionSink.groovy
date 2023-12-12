@@ -1,6 +1,8 @@
 package gratum.sink
 
 import gratum.etl.Pipeline
+import gratum.source.CollectionSource
+import gratum.source.Source
 import groovy.transform.CompileStatic
 
 @CompileStatic
@@ -28,10 +30,10 @@ class CollectionSink implements Sink {
     }
 
     @Override
-    Map<String, Object> getResult() {
-        return [
+    Source getResult() {
+        return CollectionSource.of([
                 (destColumn): dest
-        ] as Map<String,Object>
+        ])
     }
 
     @Override

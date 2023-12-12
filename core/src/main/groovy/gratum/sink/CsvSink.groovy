@@ -3,6 +3,8 @@ package gratum.sink
 import gratum.csv.CSVFile
 import gratum.etl.FileOpenable
 import gratum.etl.Pipeline
+import gratum.source.CollectionSource
+import gratum.source.Source
 import groovy.transform.CompileStatic
 
 @CompileStatic
@@ -31,8 +33,8 @@ class CsvSink implements Sink<Map<String,Object>> {
     }
 
     @Override
-    Map<String, ?> getResult() {
-        return [ file: csvFile.file, filename: csvFile.file.absolutePath, stream: new FileOpenable(csvFile.file) ]
+    Source getResult() {
+        CollectionSource.of([ file: csvFile.file, filename: csvFile.file.absolutePath, stream: new FileOpenable(csvFile.file) ])
     }
 
     @Override

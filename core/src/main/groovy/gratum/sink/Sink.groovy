@@ -1,6 +1,7 @@
 package gratum.sink
 
 import gratum.etl.Pipeline
+import gratum.source.Source
 
 interface Sink<T> extends Closeable, AutoCloseable {
 
@@ -8,6 +9,6 @@ interface Sink<T> extends Closeable, AutoCloseable {
 
     void attach(Pipeline pipeline )
 
-    Map<String,Object> getResult()
+    Source getResult()
 
 }

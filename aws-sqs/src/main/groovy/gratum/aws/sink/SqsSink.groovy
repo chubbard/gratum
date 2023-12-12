@@ -9,6 +9,8 @@ import com.amazonaws.services.sqs.model.SendMessageRequest
 import com.amazonaws.services.sqs.model.SendMessageResult
 import gratum.etl.Pipeline
 import gratum.sink.*
+import gratum.source.CollectionSource
+import gratum.source.Source
 import groovy.json.JsonOutput
 
 class SqsSink implements Sink {
@@ -65,8 +67,8 @@ class SqsSink implements Sink {
     }
 
     @Override
-    Map<String, Object> getResult() {
-        return [queue: queueUrl, count: count ]
+    Source getResult() {
+        return CollectionSource.of( [queue: queueUrl, count: count ] )
     }
 
     @Override

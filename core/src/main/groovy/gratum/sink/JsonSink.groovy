@@ -2,6 +2,8 @@ package gratum.sink
 
 import gratum.etl.FileOpenable
 import gratum.etl.Pipeline
+import gratum.source.CollectionSource
+import gratum.source.Source
 import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
 
@@ -52,11 +54,11 @@ class JsonSink implements Sink<Map<String,Object>> {
     }
 
     @Override
-    Map<String, ?> getResult() {
+    Source getResult() {
         if( output ) {
-            return [file: output, filename: output.absolutePath, stream: new FileOpenable(output)]
+            return CollectionSource.of( [file: output, filename: output.absolutePath, stream: new FileOpenable(output)] )
         } else {
-            return [name: name] as Map<String,?>
+            return CollectionSource.of( [name: name] )
         }
     }
 

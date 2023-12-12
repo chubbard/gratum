@@ -5,6 +5,7 @@ import gratum.sink.Sink
 import gratum.source.ClosureSource
 import gratum.source.CollectionSource
 import gratum.source.CsvSource
+import gratum.source.Source
 import org.junit.Test
 
 import static junit.framework.TestCase.*
@@ -428,8 +429,8 @@ class PipelineTest {
                     }
 
                     @Override
-                    Map<String, Object> getResult() {
-                        return [ rows: rows ]
+                    Source getResult() {
+                        CollectionSource.of( [ rows: rows ] )
                     }
 
                     @Override
@@ -678,7 +679,24 @@ class PipelineTest {
 
     @Test
     void testClip() {
-        LoadStatistic stat = from(GratumFixture.people).clip("name", "gender").addStep("Test resulting rows") { Map row ->
+        LoadStatistic stat = from(GratumFixture.people)
+                .clip("name", "gender")
+                .addStep("Test resulting rows") { Map row ->
+            assert row.size() == 2
+            assertTrue( row.containsKey("name") )
+            assertTrue( row.containsKey("gender") )
+            return row
+        }.go()
+
+        assert stat.loaded == 5
+        assert stat.rejections == 0
+    }
+
+    @Test
+    void testClipWithCollection() {
+        LoadStatistic stat = from(GratumFixture.people)
+                .clip(["name", "gender"])
+                .addStep("Test resulting rows") { Map row ->
             assert row.size() == 2
             assertTrue( row.containsKey("name") )
             assertTrue( row.containsKey("gender") )

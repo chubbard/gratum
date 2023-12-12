@@ -2,6 +2,8 @@ package gratum.sink
 
 import gratum.etl.FileOpenable
 import gratum.etl.Pipeline
+import gratum.source.CollectionSource
+import gratum.source.Source
 import groovy.transform.CompileStatic
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.RichTextString
@@ -67,8 +69,8 @@ class XlsxSink implements Sink<Map<String,Object>> {
     }
 
     @Override
-    Map<String, ?> getResult() {
-        return [ file: output.name, filename: output.absolutePath, stream: new FileOpenable(output) ]
+    Source getResult() {
+        return CollectionSource.of( [file: output.name, filename: output.absolutePath, stream: new FileOpenable(output) ] )
     }
 
     @Override

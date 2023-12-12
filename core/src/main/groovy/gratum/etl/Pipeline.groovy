@@ -795,7 +795,8 @@ public class Pipeline {
         next.src = new ChainedSource( this )
         after {
             sink.close()
-            next.process(sink.result)
+            Source src = sink.result
+            src.start( next )
             return
         }
         return next
@@ -901,14 +902,33 @@ public class Pipeline {
 
     /**
      * Remove all columns from each row so that only the fields given will be returned.
+     * @param columns The columns names to retain from each row
+     * @return The pipeline where only the given columns are returned
+     */
+    public Pipeline clip(Collection<String> columns) {
+        Set<String> cols = columns instanceof Set ? columns : columns as HashSet
+        addStep("clip(${columns.join(',')})") { row ->
+            Map<String,Object> result = [:] as Map<String,Object>
+            for( String key : row.keySet() ) {
+                if( cols.contains(key) ) {
+                    result[key] = row[key]
+                }
+            }
+            result
+        }
+    }
+
+    /**
+     * Remove all columns from each row so that only the fields given will be returned.
      * @param columns THe columns names to retain from each row
      * @return The pipeline where only the given columns are returned
      */
     public Pipeline clip(String... columns) {
+        Set<String> cols = columns as HashSet
         addStep( "clip(${columns.join(",")}") { Map row ->
             Map<String,Object> result = [:] as Map<String,Object>
             for( String key : row.keySet() ) {
-                if( columns.contains(key) ) {
+                if( cols.contains(key) ) {
                     result[key] = row[key]
                 }
             }
