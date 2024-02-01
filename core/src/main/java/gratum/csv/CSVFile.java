@@ -1,5 +1,6 @@
 package gratum.csv;
 
+import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
 
 import java.io.*;
@@ -44,7 +45,12 @@ public class CSVFile implements Closeable {
 
     public int parse( CSVReader callback ) throws IOException {
         if( file != null ) {
-            BOMInputStream bom = new BOMInputStream(new FileInputStream(file));
+            BOMInputStream bom = new BOMInputStream(new FileInputStream(file),
+                    ByteOrderMark.UTF_8,
+                    ByteOrderMark.UTF_16LE,
+                    ByteOrderMark.UTF_16BE,
+                    ByteOrderMark.UTF_32LE,
+                    ByteOrderMark.UTF_32BE);
             Reader reader = bom.hasBOM() ? new InputStreamReader(bom, bom.getBOMCharsetName()) : new InputStreamReader(bom, StandardCharsets.UTF_8);
             return parse(reader, callback);
         } else {
