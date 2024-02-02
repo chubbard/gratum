@@ -2,6 +2,6 @@ package gratum.etl
 
 interface Openable {
 
-    public Object asType(Class clazz);
+    public <T> T asType(Class<T> clazz);
 
 }
