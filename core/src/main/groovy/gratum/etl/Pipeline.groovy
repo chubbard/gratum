@@ -447,7 +447,8 @@ public class Pipeline {
     }
 
     /**
-     * Rename a row's columns in the given map to the value of the corresponding key.
+     * Rename a row's columns in the given map to the value of the corresponding key.  If the column
+     * specified as the key of the map does not exist; nothing is done.
      *
      * @param fieldNames The Map of src column to renamed names.
      * @return A Pipeline where all of the columns in the keys of the Map are renamed to the Map's corresponding values.
@@ -455,8 +456,10 @@ public class Pipeline {
     public Pipeline renameFields( Map fieldNames ) {
         addStep("renameFields(${fieldNames}") { Map row ->
             for( String src : fieldNames.keySet() ) {
-                String dest = fieldNames.get( src )
-                row[dest] = row.remove( src )
+                if( row.containsKey(src) ) {
+                    String dest = fieldNames.get( src )
+                    row[dest] = row.remove( src )
+                }
             }
             return row
         }
@@ -626,7 +629,7 @@ public class Pipeline {
             int compare(Map o1, Map o2) {
                 for( String key : columns ) {
                     int value = (Comparable)o1[key] <=> (Comparable)o2[key]
-                    if( value != 0 ) return value;
+                    if( value != 0 ) return value
                 }
                 return 0
             }
@@ -673,7 +676,7 @@ public class Pipeline {
                 if (value) row[column] = Double.parseDouble(value)
                 return row
             } catch( NumberFormatException ex) {
-                return reject( row,"Could not parse ${value} as a Double", RejectionCategory.INVALID_FORMAT)
+                return reject( row,"Could not parse ${value} as a Double", RejectionCategory.INVALID_FORMAT, ex)
             }
         }
     }
@@ -690,7 +693,7 @@ public class Pipeline {
                 if( value ) row[column] = Integer.parseInt(value)
                 return row
             } catch( NumberFormatException ex ) {
-                return reject( row,"Could not parse ${value} to an integer.", RejectionCategory.INVALID_FORMAT)
+                return reject( row,"Could not parse ${value} to an integer.", RejectionCategory.INVALID_FORMAT, ex)
             }
         }
     }
@@ -1256,14 +1259,17 @@ public class Pipeline {
      * Helper method to create a {@link Rejection} object.
      * @param reason A text explanation for what caused the rejection
      * @param category The rejection category to group this specific rejection
+     * @param ex The cause of the rejection when an exception is thrown
      * @return
      */
-    public static Rejection reject( String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
-        return new Rejection( reason, category )
+    public static Rejection reject( String reason, RejectionCategory category = RejectionCategory.REJECTION, Throwable ex = null ) {
+        Rejection rej =  new Rejection( reason, category )
+        if( ex ) rej.cause = ex
+        return rej
     }
 
-    public static Map reject(Map<String,Object> row, String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
-        row[ REJECTED_KEY ] = reject( reason, category )
+    public static Map reject(Map<String,Object> row, String reason, RejectionCategory category = RejectionCategory.REJECTION, Throwable ex = null ) {
+        row[ REJECTED_KEY ] = reject( reason, category, ex )
         return row
     }
 
