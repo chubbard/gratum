@@ -11,6 +11,8 @@ import gratum.source.ClosureSource
 import gratum.source.Source
 
 import groovy.transform.CompileStatic
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.FromString
 
 import java.text.ParseException
 import java.text.SimpleDateFormat
