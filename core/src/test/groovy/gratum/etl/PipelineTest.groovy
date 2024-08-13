@@ -1160,4 +1160,35 @@ class PipelineTest {
         }
         .go()
     }
+
+    @Test
+    void testCache() {
+        def (Map<String,List<Map<String,Object>>> cache, LoadStatistic stat) = CollectionSource.from([
+                [
+                        employeeId: '12345',
+                        jobId: '9484'
+                ],
+                [
+                        employeeId: '27564',
+                        jobId: '9484'
+                ],
+                [
+                        employeeId: '38867',
+                        jobId: '4494'
+                ],
+                [
+                        employeeId: '48367',
+                        jobId: '4448'
+                ],
+                [
+                        employeeId: '58367',
+                        jobId: '4449'
+                ]
+        ]).cache("employeeId")
+
+        assert stat
+        assert cache.size() == 5
+        assert cache["12345"].size() == 1
+        assert cache["27564"].size() == 1
+    }
 }

@@ -1225,6 +1225,20 @@ public class Pipeline {
         return toLoadStatistic(s, e)
     }
 
+    public <K> Tuple2<Map<K,List<Map<String,Object>>>,LoadStatistic> cache(String column) {
+        Map<K,List<Map<String,Object>>> cache = [:]
+        addStep("Caching(${column}") { row ->
+            K key = (K)row[column]
+            if( !cache[key] ) {
+                cache[key] = []
+            }
+            cache[key].add( row )
+            return row
+        }
+        LoadStatistic statistic = go()
+        return new Tuple2(cache, statistic)
+    }
+
     /**
      * This method is used to send rows to the Pipeline for processing.  Each row passed will start at the first step of
      * the Pipeline and proceed through each step.
