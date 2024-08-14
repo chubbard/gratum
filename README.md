@@ -18,14 +18,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.5'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.7'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>1.1.5</version>
+        <version>1.1.7</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -361,7 +361,7 @@ The rest of the columns are the original columns from the row object.
 
 ### Let's go Already!
 
-In all of the examples our Pipeline chains have ended with a method `go`.  The `go` method is important
+In all the examples our Pipeline chains have ended with a method `go`.  The `go` method is important
 as it starts the processing of the `Source`.  The `go` method executes the processing of the chain, but
 it also returns an instance of `LoadStaistic` which gives us statistics about the processing of the 
 `Source`.  For example, it contains total number of rows that loaded, rows that were rejected, total
