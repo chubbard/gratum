@@ -292,7 +292,7 @@ public class Pipeline {
     public Pipeline branch( String branchName = "branch",
                             @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                             Closure<Pipeline> split) {
-        final Pipeline branch = new Pipeline( "${name}/${branchName}", this )
+        final Pipeline branch = new Pipeline( "${name}/${branchName}" )
 
         Pipeline tail = split( branch )
 
@@ -320,7 +320,7 @@ public class Pipeline {
                            @DelegatesTo(Pipeline)
                            @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                            Closure<Pipeline> split) {
-        Pipeline branch = new Pipeline( "${name}/branch(${condition})", this )
+        Pipeline branch = new Pipeline( "${name}/branch(${condition})" )
         Pipeline tail = split(branch)
 
         Condition selection = new Condition( condition )
