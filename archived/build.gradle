@@ -5,6 +5,81 @@ dependencies {
     implementation project(':core')
 }
 
+description = """
+Support for using different archive format files (bzip, 7z, tar, jar, cpio, arj) in Gratum ETL library.
+"""
+
 jar {
     baseName "gratum-archived"
+}
+
+publishing {
+    publications {
+        gratumArchived(MavenPublication) {
+            from components.java
+            artifact sourceJar
+            artifact groovydocJar
+            artifact javadocJar
+
+            pom {
+                name = "gratum-${project.name}"
+                description = project.description
+                url = 'https://github.com/chubbard/gratum'
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "chubbard"
+                        name = "Charlie Hubbard"
+                        email = "gratum@fuseanalytics.com"
+                    }
+                }
+                scm {
+                    connection = "scm:https://github.com/chubbard/gratum.git"
+                    developerConnection = "scm:https://github.com/chubbard/gratum.git"
+                    url = "https://github.com/chubbard/gratum.git"
+                }
+            }
+
+            pom.withXml {
+                def pomFile = file("${project.buildDir}/generated-pom.xml")
+                writeTo(pomFile)
+                def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+                artifact(pomAscFile) {
+                    classifier = null
+                    extension = 'pom.asc'
+                }
+            }
+
+            // create the signed artifacts
+            project.tasks.signArchives.signatureFiles.each {
+                artifact(it) {
+                    println(it.file.name)
+                    def matcher = it.file =~ /-(sources|javadoc|groovydoc)\.jar\.asc$/
+                    if (matcher.find()) {
+                        classifier = matcher.group(1)
+                    } else {
+                        classifier = null
+                    }
+                    extension = 'jar.asc'
+                }
+            }
+        }
+    }
+    model {
+        tasks.generatePomFileForGratumArchivedPublication {
+            destination = file("$buildDir/generated-pom.xml")
+        }
+
+        tasks.publishGratumArchivedPublicationToMavenLocal {
+            dependsOn project.tasks.signArchives
+        }
+        tasks.publishGratumArchivedPublicationToMavenRepository {
+            dependsOn project.tasks.signArchives
+        }
+    }
 }

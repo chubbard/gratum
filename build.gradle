@@ -34,18 +34,27 @@ allprojects {
         testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.9.1'
 
     }
+
+    jar {
+        baseName = "gratum-${project.name}"
+        description = project.description
+    }
+
     task sourceJar(type: Jar) {
         classifier 'sources'
+        baseName = "gratum-${project.name}"
         from sourceSets.main.allSource
     }
 
     task javadocJar(type: Jar, dependsOn: javadoc) {
         classifier 'javadoc'
+        archivesBaseName = "gratum-${project.name}"
         from javadoc.destinationDir
     }
 
     task groovydocJar(type: Jar, dependsOn: groovydoc ) {
         classifier 'groovydoc'
+        archivesBaseName = "gratum-${project.name}"
         from groovydoc.destinationDir
     }
 
@@ -63,62 +72,6 @@ allprojects {
     }
 
     publishing {
-        publications {
-            gratum(MavenPublication) {
-                from components.java
-                artifact sourceJar
-                artifact groovydocJar
-                artifact javadocJar
-
-                pom {
-                    name = project.name
-                    description = project.description
-                    url = 'https://github.com/chubbard/gratum'
-                    licenses {
-                        license {
-                            name = "The Apache License, Version 2.0"
-                            url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
-                        }
-                    }
-                    developers {
-                        developer {
-                            id = "chubbard"
-                            name = "Charlie Hubbard"
-                            email = "gratum@fuseanalytics.com"
-                        }
-                    }
-                    scm {
-                        connection = "scm:https://github.com/chubbard/gratum.git"
-                        developerConnection = "scm:https://github.com/chubbard/gratum.git"
-                        url = "https://github.com/chubbard/gratum.git"
-                    }
-                }
-
-                pom.withXml {
-                    def pomFile = file("${project.buildDir}/generated-pom.xml")
-                    writeTo(pomFile)
-                    def pomAscFile = signing.sign(pomFile).signatureFiles[0]
-                    artifact(pomAscFile) {
-                        classifier = null
-                        extension = 'pom.asc'
-                    }
-                }
-
-                // create the signed artifacts
-                project.tasks.signArchives.signatureFiles.each {
-                    artifact(it) {
-                        println( it.file.name )
-                        def matcher = it.file =~ /-(sources|javadoc|groovydoc)\.jar\.asc$/
-                        if (matcher.find()) {
-                            classifier = matcher.group(1)
-                        } else {
-                            classifier = null
-                        }
-                        extension = 'jar.asc'
-                    }
-                }
-            }
-        }
 
         repositories {
             maven {
@@ -132,18 +85,19 @@ allprojects {
         }
     }
 
-    model {
-        tasks.generatePomFileForGratumPublication {
-            destination = file("$buildDir/generated-pom.xml")
-        }
-
-        tasks.publishGratumPublicationToMavenLocal {
-            dependsOn project.tasks.signArchives
-        }
-        tasks.publishGratumPublicationToMavenRepository {
-            dependsOn project.tasks.signArchives
-        }
-    }
+//    model {
+//        println("${project.name}")
+//        tasks.generatePomFileForGratumPublication {
+//            destination = file("$buildDir/generated-pom.xml")
+//        }
+//
+//        tasks.publishGratumPublicationToMavenLocal {
+//            dependsOn project.tasks.signArchives
+//        }
+//        tasks.publishGratumPublicationToMavenRepository {
+//            dependsOn project.tasks.signArchives
+//        }
+//    }
 }
 
 tasks.named('wrapper') {

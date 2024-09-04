@@ -8,6 +8,10 @@ dependencies {
     implementation project(':core')
 }
 
+description = """
+Adds support for PGP descryption/encryption to Gratum.
+"""
+
 sourceSets {
     main {
         java {
@@ -19,6 +23,74 @@ sourceSets {
     }
 }
 
-jar {
-    baseName "gratum-bouncycastle"
+publishing {
+    publications {
+        gratumBouncycastle(MavenPublication) {
+            from components.java
+            artifact sourceJar
+            artifact groovydocJar
+            artifact javadocJar
+
+            pom {
+                name = "gratum-${project.name}"
+                description = project.description
+                url = 'https://github.com/chubbard/gratum'
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "chubbard"
+                        name = "Charlie Hubbard"
+                        email = "gratum@fuseanalytics.com"
+                    }
+                }
+                scm {
+                    connection = "scm:https://github.com/chubbard/gratum.git"
+                    developerConnection = "scm:https://github.com/chubbard/gratum.git"
+                    url = "https://github.com/chubbard/gratum.git"
+                }
+            }
+
+            pom.withXml {
+                def pomFile = file("${project.buildDir}/generated-pom.xml")
+                writeTo(pomFile)
+                def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+                artifact(pomAscFile) {
+                    classifier = null
+                    extension = 'pom.asc'
+                }
+            }
+
+            // create the signed artifacts
+            project.tasks.signArchives.signatureFiles.each {
+                artifact(it) {
+                    println(it.file.name)
+                    def matcher = it.file =~ /-(sources|javadoc|groovydoc)\.jar\.asc$/
+                    if (matcher.find()) {
+                        classifier = matcher.group(1)
+                    } else {
+                        classifier = null
+                    }
+                    extension = 'jar.asc'
+                }
+            }
+        }
+    }
+
+    model {
+        tasks."generatePomFileForGratumBouncycastlePublication" {
+            destination = file("$buildDir/generated-pom.xml")
+        }
+
+        tasks."publishGratumBouncycastlePublicationToMavenLocal" {
+            dependsOn project.tasks.signArchives
+        }
+        tasks."publishGratumBouncycastlePublicationToMavenRepository" {
+            dependsOn project.tasks.signArchives
+        }
+    }
 }
