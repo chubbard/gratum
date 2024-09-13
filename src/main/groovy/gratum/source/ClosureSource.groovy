@@ -2,6 +2,8 @@ package gratum.source
 
 import gratum.etl.Pipeline
 import groovy.transform.CompileStatic
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.FromString
 
 @CompileStatic
 class ClosureSource extends AbstractSource {
@@ -12,7 +14,7 @@ class ClosureSource extends AbstractSource {
         this.logic = closure
     }
 
-    public static ClosureSource of(Closure<Void> closure) {
+    public static ClosureSource of(@ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"]) Closure<Void> closure) {
         return new ClosureSource( closure )
     }
 

@@ -1,7 +1,6 @@
 package gratum.etl
 
 import gratum.sink.Sink
-import gratum.source.ClosureSource
 import gratum.source.CollectionSource
 import gratum.source.CsvSource
 import org.junit.Test
@@ -90,8 +89,8 @@ class PipelineTest {
 
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
                 .filter([Pclass: filter, Sex: "male"])
-                .onRejection { Pipeline rej ->
-                    rej.addStep("verify not sex != male && pClass != 3") { Map row ->
+                .onRejection { rej ->
+                    rej.addStep("verify not sex != male && pClass != 3") { row ->
                         assert !filter.contains(row.Pclass) || row.Sex != "male"
                         return row
                     }
@@ -213,7 +212,7 @@ class PipelineTest {
         LoadStatistic statistic = csv("src/test/resources/titanic.csv")
             .filter([Sex: 'K'])
             .groupBy("Sex")
-            .addStep("Assert groupBy(Sex)") { Map row ->
+            .addStep("Assert groupBy(Sex)") { row ->
                 assertTrue( row.isEmpty() )
                 return row
             }
@@ -245,7 +244,7 @@ class PipelineTest {
                 [name: 'Rob', atBats: '100', hits: '75', battingAverage: '0.75'],
                 [name: 'Sean', atBats: '20', hits: 'none', battingAverage: 'none']
         ]))
-        .addStep("Assert we get rows") { Map row ->
+        .addStep("Assert we get rows") { row ->
             called++
             return row
         }
@@ -264,7 +263,7 @@ class PipelineTest {
                 [firstName: '\tRick\t', lastName: 'Spade   ']
         ])
         .trim()
-        .addStep("Assert all values were trimmed") { Map row ->
+        .addStep("Assert all values were trimmed") { row ->
             assert !row.firstName.contains(' ')
             assert !row.firstName.contains('\t')
             assert !row.lastName.contains(' ')
@@ -280,7 +279,7 @@ class PipelineTest {
     void testSetField() {
         LoadStatistic stats = from( GratumFixture.people )
                 .setField("completed", true)
-                .addStep("Assert completed is defined") { Map row ->
+                .addStep("Assert completed is defined") { row ->
                     assert row.completed
                     return row
                 }
@@ -292,13 +291,13 @@ class PipelineTest {
     @Test
     void renameFields() {
         csv("src/test/resources/titanic.csv")
-            .addStep("Test Sex Exists") { Map row ->
+            .addStep("Test Sex Exists") { row ->
                 assertTrue("Assert row.Sex exists", row.containsKey("Sex"))
                 assertTrue("Assert row.Age exists", row.containsKey("Age"))
                 return row
             }
             .renameFields([Sex: "gender", "Age": "age"])
-            .addStep("Test Sex renamed to gender and Age to age") { Map row ->
+            .addStep("Test Sex renamed to gender and Age to age") { row ->
                 assertTrue( row.containsKey("gender") )
                 assertTrue( row.containsKey("age") )
                 return row
@@ -309,10 +308,10 @@ class PipelineTest {
     @Test
     void testAddField() {
         csv("src/test/resources/titanic.csv")
-            .addField("survived") { Map row ->
+            .addField("survived") { row ->
                 return true
             }
-            .addStep("Test Field added") { Map row ->
+            .addStep("Test Field added") { row ->
                 assertTrue( row.containsKey("survived") )
                 return row
             }
@@ -323,7 +322,7 @@ class PipelineTest {
     void testFillDownBy() {
         int count = 0
         csv("src/test/resources/fill_down.csv")
-            .addStep("Assert fields are missing data.") { Map row ->
+            .addStep("Assert fields are missing data.") { row ->
                 if( !row.first_name ) {
                     count++
                     assert !row.first_anem
@@ -335,7 +334,7 @@ class PipelineTest {
             .fillDownBy { Map row, Map previousRow ->
                 return row.id == previousRow.id
             }
-            .addStep("Assert values were filled down") { Map<String,Object> row ->
+            .addStep("Assert values were filled down") { row ->
                 row.each { String key, Object value ->
                     assertNotNull( "Assert ${key} is filled in with a value", value )
                     assertTrue("Assert that ${key} is non-empty", !(value as String).isEmpty() )
@@ -353,7 +352,7 @@ class PipelineTest {
         csv("src/test/resources/titanic.csv")
             .branch { Pipeline pipeline ->
                 return pipeline.filter([Sex: "female"])
-                    .addStep("Verify sex was filtered out") { Map row ->
+                    .addStep("Verify sex was filtered out") { row ->
                         assertTrue( row.Sex == "female" )
                         return row
                     }
@@ -364,12 +363,12 @@ class PipelineTest {
                         return row
                     }
             }
-            .addStep("Verify branch field is NOT on the outter Pipeline") { Map row ->
+            .addStep("Verify branch field is NOT on the outer Pipeline") { row ->
                 assert row.branch == null
                 return row
             }
             .filter([Sex:"male"])
-            .addStep("Verify sex was filtered to male") { Map row ->
+            .addStep("Verify sex was filtered to male") { row ->
                 assertTrue( row.Sex == "male")
                 return row
             }
@@ -381,7 +380,7 @@ class PipelineTest {
     void testBranchWithGroupBy() {
         csv("src/test/resources/titanic.csv")
             .branch { Pipeline p ->
-                return p.groupBy("Sex", "Pclass").addStep { Map row ->
+                return p.groupBy("Sex", "Pclass").addStep { row ->
                     assertNotNull( row["male"] )
                     assertNotNull( row["male"]["3"] )
                     assertNotNull( row["male"]["2"] )
@@ -454,7 +453,7 @@ class PipelineTest {
                 return row
             }
             .onRejection { Pipeline pipeline ->
-                pipeline.addStep("Verify rejection") { Map row ->
+                pipeline.addStep("Verify rejection") { row ->
                     rejections++
                     return row
                 }
@@ -487,7 +486,7 @@ class PipelineTest {
     @Test
     void testSort() {
         String lastHobby
-        from(GratumFixture.hobbies).sort("hobby").addStep("Assert order is increasing") { Map row ->
+        from(GratumFixture.hobbies).sort("hobby").addStep("Assert order is increasing") { row ->
             if( lastHobby ) assertTrue( "Assert ${lastHobby} < ${row.hobby}", lastHobby.compareTo( row.hobby ) <= 0 )
             lastHobby = row.hobby
             return row
@@ -513,7 +512,7 @@ class PipelineTest {
         LoadStatistic stats = from(GratumFixture.hobbies)
                 .addStep("Rejection") { Map row -> row.id > 1 ? row : reject( row,"${row.id} is too small", RejectionCategory.REJECTION) }
                 .onRejection { Pipeline pipeline ->
-                    pipeline.addStep("Save rejections") { Map row ->
+                    pipeline.addStep("Save rejections") { row ->
                         rejections << row
                         return row
                     }
@@ -537,7 +536,7 @@ class PipelineTest {
                 expectedCount = json.number
                 message = json.message
                 json.people
-            }.addStep("assert astros in space") { Map row ->
+            }.addStep("assert astros in space") { row ->
                 actualCount++
                 // assert that we received the data we expected, but we can't really test anything because this will change over time
                 assertNotNull( row.name )
@@ -565,7 +564,7 @@ class PipelineTest {
                 [name: 'Kirby', dateOfBirth: new Date()],
                 [name: 'Huck', dateOfBirth: '08/12/1994']
         ]).asDate('dateOfBirth', 'yyyy-MM-dd', 'MM/dd/yyyy')
-        .addStep("Assert all are Dates") { Map row ->
+        .addStep("Assert all are Dates") { row ->
             if( row['name'] == 'Kirby' ) {
                 kirby = true
             }
@@ -640,7 +639,7 @@ class PipelineTest {
                 [name: 'Lily', member: '1']
         ])
         .asBoolean('member')
-        .addStep("Assert all are boolean true") { Map row ->
+        .addStep("Assert all are boolean true") { row ->
             assert row.member instanceof Boolean
             assert row.member
             return row
@@ -658,7 +657,7 @@ class PipelineTest {
                 [name: 'Lily', member: '0']
         ])
         .asBoolean('member')
-        .addStep("Assert all are boolean true") { Map row ->
+        .addStep("Assert all are boolean true") { row ->
             assertTrue( row.member instanceof Boolean )
             assert row.member != true
             return row
@@ -672,7 +671,7 @@ class PipelineTest {
         LoadStatistic stats = from( GratumFixture.people )
                 .filter([gender: 'male'])
                 .sort('age')
-                .addStep('ageN > age1') {Map row ->
+                .addStep('ageN > age1') {row ->
                     assert row.age >= last
                     last = (Integer)row.age
                     return row
@@ -687,7 +686,7 @@ class PipelineTest {
     @Test
     void testHeaderless() {
         LoadStatistic stats = csv("src/test/resources/headerless.csv", "|", ["Date", "status", "client", "server", "url", "length", "thread", "userAgent", "referer"])
-            .addStep("Assert Columns Exist") { Map row->
+            .addStep("Assert Columns Exist") { row->
                 assertNotNull( row.status )
                 assertNotNull( row.Date )
                 assertNotNull( row.client )
@@ -707,7 +706,7 @@ class PipelineTest {
 
     @Test
     void testClip() {
-        LoadStatistic stat = from(GratumFixture.people).clip("name", "gender").addStep("Test resulting rows") { Map row ->
+        LoadStatistic stat = from(GratumFixture.people).clip("name", "gender").addStep("Test resulting rows") { row ->
             assert row.size() == 2
             assertTrue( row.containsKey("name") )
             assertTrue( row.containsKey("gender") )
@@ -721,7 +720,7 @@ class PipelineTest {
     @Test
     void testRagged() {
         LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
-            .addStep("Assert Row") { Map row ->
+            .addStep("Assert Row") { row ->
                 assert row.containsKey("assignment")
                 switch(row.rank) {
                     case "Captain":
@@ -750,7 +749,7 @@ class PipelineTest {
         try {
             LoadStatistic stat = from(GratumFixture.people)
                     .save(tmp.absolutePath, "|")
-                    .addStep("Verify we have a CSV file on the Pipeline") { Map row ->
+                    .addStep("Verify we have a CSV file on the Pipeline") { row ->
                         assert row.file != null
                         assert row.filename == tmp.absolutePath
                         assert row.stream != null
@@ -762,7 +761,7 @@ class PipelineTest {
             assert stat.rejections == 0
 
             csv(tmp.absolutePath, "|")
-                .addStep("assert 5 columns") { Map row ->
+                .addStep("assert 5 columns") { row ->
                     assert row.size() == 5
                     assert row["comment"].contains("\n")
                     return row
@@ -775,7 +774,7 @@ class PipelineTest {
     @Test
     public void testEscaping() {
         LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
-            .addStep("Test Escaping") { Map row ->
+            .addStep("Test Escaping") { row ->
                 switch(row.rank) {
                     case "Captain":
                         assert row.comment.contains("\n")
@@ -801,7 +800,7 @@ class PipelineTest {
     @Test
     public void testDefaultValues() {
         LoadStatistic stats = csv("src/test/resources/ragged.csv", ",")
-            .addStep("Assert null exists") { Map row ->
+            .addStep("Assert null exists") { row ->
                 if( ['Captain', 'Private First Class'].contains( row.rank ) ) {
                     assert !row.assignment
                 }
@@ -810,7 +809,7 @@ class PipelineTest {
             .defaultValues([
                     assignment: 'None'
             ])
-            .addStep("Assert defaults") { Map row ->
+            .addStep("Assert defaults") { row ->
                 assert row.assignment != null
                 switch( row.rank ) {
                     case 'Captain':
@@ -835,14 +834,14 @@ class PipelineTest {
                 [name: 'State 2', tax: 5.5, defaultTax: 4.5],
                 [name: 'State 3', tax: null, defaultTax: 3.0 ]
         ])
-        .addStep("Assert null exists") { Map row ->
+        .addStep("Assert null exists") { row ->
             if( row.name != 'State 2' ) {
                 assert row.tax == null
             }
             return row
         }
         .defaultsBy([tax: 'defaultTax'])
-        .addStep("Assert non null tax") { Map row ->
+        .addStep("Assert non null tax") { row ->
             assert row.tax != null
             assert row.tax instanceof Number
             switch( row.name ) {
@@ -894,7 +893,7 @@ class PipelineTest {
                 .escaping(false)
                 .into()
                 .trim()
-                .addStep("Test csv without escaping") { Map row ->
+                .addStep("Test csv without escaping") { row ->
                     switch( line ) {
                         case 1:
                             assert row.ConNameFirst == "martini"
@@ -921,7 +920,7 @@ class PipelineTest {
                     .filter(gender: "male")
                     .save("testRejectionsFilterAcrossMultiplePipelines.csv", "|")
                     .onRejection { Pipeline rejections ->
-                        rejections.addStep("Assert We see males") { Map row ->
+                        rejections.addStep("Assert We see males") { row ->
                             rejectionsCalled = true
                             assert row.gender == "female"
                             return row
@@ -972,10 +971,10 @@ class PipelineTest {
                         [ name: 'Volume', value: 11.06]
                     ]
                 ]
-            ]).exchange { Map row ->
+            ]).exchange { row ->
                 return from((Collection<Map>)row.features).setField("product", row.product )
             }
-            .addStep("Check the rows and files") { Map row ->
+            .addStep("Check the rows and files") { row ->
                 assert row.containsKey("product")
                 assert row.containsKey("name")
                 assert row.containsKey("value")
@@ -1010,7 +1009,7 @@ class PipelineTest {
     void testReplaceAll() {
         LoadStatistic stat = from([date: '(Tue) 12/12/1999'], [date: '(Thu) 9/17/2001'], [date:'(Wed) 3/1/2022'])
             .replaceAll("date", ~/\(\w+\)/, "")
-            .addStep("Test for date") { Map row ->
+            .addStep("Test for date") { row ->
                 assert ["(Tue)", "(Wed)", "(Thu)"].findAll() {r -> !row.date.contains(r) }.size() == 3
                 row
             }
@@ -1027,7 +1026,7 @@ class PipelineTest {
                         '2':'red',
                         '3':'green'
                 ])
-                .addStep("Assert") { Map row ->
+                .addStep("Assert") { row ->
                     assert ['blue', 'red', 'green'].contains(row.color_code)
                     return row
                 }

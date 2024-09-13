@@ -137,7 +137,7 @@ public class CsvSource extends AbstractSource {
 
             @Override
             boolean processRow(List<String> header, List<String> row) {
-                Map obj = [:]
+                Map<String,Object> obj = [:]
                 for( int i = 0; i < row.size(); i++ ) {
                     obj[header[i]] = row[i]
                 }

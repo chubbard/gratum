@@ -89,7 +89,10 @@ public class Pipeline {
      * passed to send a row into the pipeline.
      * @return The pipeline attached to results of the startClosure.
      */
-    public static Pipeline create( String name, @DelegatesTo(Pipeline) Closure startClosure ) {
+    public static Pipeline create( String name,
+                                   @DelegatesTo(Pipeline)
+                                   @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
+                                   Closure startClosure ) {
         ClosureSource.of( startClosure ).name( name ).into()
     }
 
@@ -120,7 +123,10 @@ public class Pipeline {
      * @param step The code used to process each row on the Pipeline.
      * @return this Pipeline.
      */
-    public Pipeline prependStep( String name = null, @DelegatesTo(Pipeline) Closure<Map> step ) {
+    public Pipeline prependStep( String name = null,
+                                 @DelegatesTo(Pipeline)
+                                 @ClosureParams(value = FromString, options = ["java.lang.Map<String,String>"])
+                                 Closure<Map<String,Object>> step ) {
         step.delegate = this
         processChain.add(0, new Step( name, step ) )
         return this
@@ -138,7 +144,7 @@ public class Pipeline {
      */
     public Pipeline addStep( String name = null,
                              @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
-                             @DelegatesTo(Pipeline) Closure<Map> step ) {
+                             @DelegatesTo(Pipeline) Closure<Map<String,Object>> step ) {
         step.delegate = this
         processChain << new Step( name, step )
         return this
@@ -169,13 +175,15 @@ public class Pipeline {
      * @param branch Closure that's passed the rejection the pipeline
      * @return this Pipeline
      */
-    public Pipeline onRejection( @DelegatesTo(Pipeline) Closure<Void> branch ) {
+    public Pipeline onRejection( @DelegatesTo(Pipeline)
+                                 @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
+                                 Closure<Void> branch ) {
         if( parent ) {
             parent.onRejection( branch )
         } else {
             if( !rejections ) rejections = new Pipeline("Rejections(${name})")
             rejections.addStep("Remap rejections to columns") { row ->
-                Map current = (Map)row.clone()
+                Map<String,Object> current = (Map<String,Object>)row.clone()
                 Rejection rejection = (Rejection)current.remove(REJECTED_KEY)
                 current.rejectionCategory = rejection.category
                 current.rejectionReason = rejection.reason
@@ -487,21 +495,21 @@ public class Pipeline {
         return this
     }
 
-    private Iterable<String> leftColumn(def columns) {
+    private Iterable<String> leftColumn(Object columns) {
         if( columns instanceof Collection ) {
             return ((Collection<String>)columns)
         } else if( columns instanceof Map ) {
-            return ((Map)columns).keySet()
+            return ((Map<String,String>)columns).keySet()
         } else {
             return [columns.toString()]
         }
     }
 
-    private Iterable<String> rightColumn(def columns) {
+    private Iterable<String> rightColumn(Object columns) {
         if( columns instanceof Collection ) {
             return ((Collection<String>)columns)
         } else if( columns instanceof Map ) {
-            return ((Map)columns).values()
+            return ((Map<String,String>)columns).values()
         } else {
             return [columns.toString()]
         }
@@ -1154,7 +1162,7 @@ public class Pipeline {
      * @param lineNumber The lineNumber from the {@link gratum.source.Source} to use when tracking this row through the Pipeline
      */
     public boolean process(Map row, int lineNumber = -1) {
-        Map<String,Object> next = row
+        Map next = row
         for (Step step : processChain) {
             next = step.execute( this, next, lineNumber )
             if( next == null || next[REJECTED_KEY] ) return false
@@ -1187,12 +1195,12 @@ public class Pipeline {
         return new Rejection( reason, category )
     }
 
-    public static Map reject(Map row, String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
+    public static Map reject(Map<String,Object> row, String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
         row[ REJECTED_KEY ] = reject( reason, category )
         return row
     }
 
-    void reject(Map row, int lineNumber = -1) {
+    void reject(Map<String,Object> row, int lineNumber = -1) {
         rejections?.process( row, lineNumber )
     }
 
