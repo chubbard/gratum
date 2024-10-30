@@ -448,6 +448,10 @@ that does this for you called `filter`.  There are plenty of existing methods to
 
 [sort](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#sort(java.lang.String))
 
+[sort](http://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#sort(Tuple2%3CString,%20SortOrder%3E))
+
+[sort](http://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#sort(java.lang.String,%20Comparator%3CMap%3CString,%20Object%3E%3E))
+
 [trim](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#trim())
 
 [unique](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#unique(java.lang.String))
