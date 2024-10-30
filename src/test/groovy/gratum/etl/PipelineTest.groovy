@@ -496,6 +496,20 @@ class PipelineTest {
     }
 
     @Test
+    void testSortOrder() {
+        String lastHobby
+        from(GratumFixture.hobbies)
+                .sort(new Tuple2("hobby", SortOrder.DESC))
+                .addStep("Assert order is increasing") { row ->
+                    if( lastHobby ) assertTrue( "Assert ${lastHobby} > ${row.hobby}", lastHobby.compareTo( row.hobby ) >= 0 )
+                    lastHobby = row.hobby
+                    return row
+                }.go()
+
+        assertNotNull("Assert that lastHobby is not null meaning we executing some portion of the assertions above.", lastHobby)
+    }
+
+    @Test
     void testUnique() {
         LoadStatistic stats = from(GratumFixture.hobbies).unique("id")
         .go()
