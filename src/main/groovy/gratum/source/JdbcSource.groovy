@@ -56,7 +56,7 @@ class JdbcSource extends AbstractSource {
                 columns << md.getColumnName(i)
             }
         } ) { GroovyResultSet row ->
-            Map result = [:]
+            Map<String,Object> result = [:]
             columns.eachWithIndex { String col, int index ->
                 result[col] = row[index]
             }
