@@ -1275,7 +1275,7 @@ public class Pipeline {
 
     public void finished() {
         try {
-            doneChain.each { AfterStep current ->
+            doneChain.each { current ->
                 current.execute()
             }
         } catch( HaltPipelineException ex ) {
