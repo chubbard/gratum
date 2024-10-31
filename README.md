@@ -18,14 +18,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.8'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.9'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>1.1.8</version>
+        <version>1.1.9</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -447,6 +447,10 @@ that does this for you called `filter`.  There are plenty of existing methods to
 ### Data Manipulation
 
 [sort](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#sort(java.lang.String))
+
+[sort](http://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#sort(Tuple2%3CString,%20SortOrder%3E))
+
+[sort](http://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#sort(java.lang.String,%20Comparator%3CMap%3CString,%20Object%3E%3E))
 
 [trim](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#trim())
 

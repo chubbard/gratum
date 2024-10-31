@@ -496,6 +496,20 @@ class PipelineTest {
     }
 
     @Test
+    void testSortOrder() {
+        String lastHobby
+        from(GratumFixture.hobbies)
+                .sort(new Tuple2("hobby", SortOrder.DESC))
+                .addStep("Assert order is increasing") { row ->
+                    if( lastHobby ) assertTrue( "Assert ${lastHobby} > ${row.hobby}", lastHobby.compareTo( row.hobby ) >= 0 )
+                    lastHobby = row.hobby
+                    return row
+                }.go()
+
+        assertNotNull("Assert that lastHobby is not null meaning we executing some portion of the assertions above.", lastHobby)
+    }
+
+    @Test
     void testUnique() {
         LoadStatistic stats = from(GratumFixture.hobbies).unique("id")
         .go()
@@ -991,12 +1005,15 @@ class PipelineTest {
 
     @Test
     void testDoneCallbacksInTimings() {
+        boolean called = false
         LoadStatistic stat = from(GratumFixture.hobbies).sort("hobby").after {
+            called = true
             Thread.sleep(10) // ensure we don't go too fast :-)
         }.go()
 
-        assert stat.stepTimings.containsKey("${stat.name}.after".toString())
-        assert stat.stepTimings["${stat.name}.after".toString()] > 0
+        assert stat.stepTimings.containsKey("sort([hobby]).after")
+        assert called
+        assert stat.stepTimings["sort([hobby]).after"] > 0
     }
 
     @Test

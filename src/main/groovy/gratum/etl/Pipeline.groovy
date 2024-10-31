@@ -558,27 +558,41 @@ public class Pipeline {
     }
 
     /**
-     * Return a Pipeline where the rows are ordered by the given columns.  The value of
-     * each column is compared using the <=> operator.
-     * @param columns to sort by
-     * @return a Pipeline that where it's rows are ordered according to the given columns.
+     * Return a Pipeline where the rows are ordered by the given columns and sort order.
+     * @param columns a list of Tuple2 where the first item is the column name and the second is the sort order.
+     * @return a Pipeline whose rows are sorted according to the given columns and order.
      */
-    public Pipeline sort(String... columns) {
-        // todo sort externally
-
-        Comparator<Map> comparator = new Comparator<Map>() {
+    public Pipeline sort(Tuple2<String,SortOrder>... columns) {
+        Comparator<Map<String,Object>> comparator = new Comparator<Map<String, Object>>() {
             @Override
-            int compare(Map o1, Map o2) {
-                for( String key : columns ) {
-                    int value = (Comparable)o1[key] <=> (Comparable)o2[key]
+            int compare(Map<String, Object> o1, Map<String, Object> o2) {
+                for( Tuple2<String,SortOrder> key : columns ) {
+                    int value = (Comparable)o1[key.first] <=> (Comparable)o2[key.first]
+                    switch( key.second ){
+                        case SortOrder.ASC:
+                            break
+                        case SortOrder.DESC:
+                            value = Math.negateExact(value)
+                            break
+                    }
                     if( value != 0 ) return value;
                 }
                 return 0
             }
         }
 
+        sort("sort(${columns.collect { t -> "${t.first}/${t.second}" }.join(",")}", comparator )
+    }
+
+    /**
+     * Sort the rows according to the given comparator
+     * @param name - The name identifying the step added to the pipeline for sort.
+     * @param comparator - The comparator used to sort the rows.
+     * @return A Pipeline that orders the rows according to the Comparator
+     */
+    public Pipeline sort(String name, Comparator<Map<String,Object>> comparator) {
         List<Map> ordered = []
-        addStep("sort(${columns})") { row ->
+        addStep(name) { row ->
             //int index = Collections.binarySearch( ordered, row, comparator )
             //ordered.add( Math.abs(index + 1), row )
             ordered << row
@@ -594,6 +608,27 @@ public class Pipeline {
         }
 
         return next
+
+    }
+
+    /**
+     * Return a Pipeline where the rows are ordered by the given columns.  The value of
+     * each column is compared using the <=> operator.
+     * @param columns to sort by
+     * @return a Pipeline that where it's rows are ordered according to the given columns.
+     */
+    public Pipeline sort(String... columns) {
+        Comparator<Map> comparator = new Comparator<Map>() {
+            @Override
+            int compare(Map o1, Map o2) {
+                for( String key : columns ) {
+                    int value = (Comparable)o1[key] <=> (Comparable)o2[key]
+                    if( value != 0 ) return value;
+                }
+                return 0
+            }
+        }
+        sort("sort(${columns})", comparator)
     }
 
     /**
@@ -1240,7 +1275,7 @@ public class Pipeline {
 
     public void finished() {
         try {
-            doneChain.each { AfterStep current ->
+            doneChain.each { current ->
                 current.execute()
             }
         } catch( HaltPipelineException ex ) {
