@@ -9,8 +9,7 @@ targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
 group = 'com.github.chubbard'
-//version = '1.1.7'
-version = '1.1.9'
+version = '1.1.10'
 description = """
 A simplified standalone ETL engine for groovy.  Gratum is groovy + datum.
 """
@@ -33,7 +32,7 @@ dependencies {
 //        exclude group: 'org.codehaus.groovy', module:'groovy-groovydoc'
         exclude group: 'org.codehaus.groovy', module:'groovy-groovysh'
     }
-    implementation 'io.github.http-builder-ng:http-builder-ng-core:1.0.3'
+    implementation 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
 //    implementation 'org.apache.poi:poi:5.2.2'
 //    implementation 'org.apache.poi:poi-ooxml:5.2.2'
 //    implementation 'org.apache.poi:poi-ooxml-lite:5.2.2'
@@ -42,10 +41,10 @@ dependencies {
     implementation 'org.apache.poi:ooxml-schemas:1.4'
     implementation group: "org.apache.commons", name:"commons-compress", version:"1.21"
     implementation group: "com.jcraft", name: "jsch", version: "0.1.55"
-    implementation "org.bouncycastle:bcprov-jdk15on:1.70",
-            "org.bouncycastle:bcprov-ext-jdk15on:1.70",
-            "org.bouncycastle:bcpg-jdk15on:1.70",
-            "org.bouncycastle:bcpkix-jdk15on:1.70"
+    implementation "org.bouncycastle:bcprov-jdk15on:1.79",
+            "org.bouncycastle:bcprov-ext-jdk15on:1.79",
+            "org.bouncycastle:bcpg-jdk15on:1.79",
+            "org.bouncycastle:bcpkix-jdk15on:1.79"
 
 //    testCompile "mysql:mysql-connector-java:5.1.40"
 //    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
