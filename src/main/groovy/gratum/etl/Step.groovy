@@ -51,7 +51,7 @@ class Step {
 
     private Map<String,Object> handleExceptionToRejection(Throwable ex, int lineNumber, Map<String, Object> row, Pipeline pipeline) {
         incrementRejections(RejectionCategory.SCRIPT_ERROR)
-        Rejection rejection = new Rejection("Encountered ${ex.message ?: ex} on ${pipeline.name} in step ${name} at ${lineNumber}", RejectionCategory.SCRIPT_ERROR, name)
+        Rejection rejection = new Rejection("Encountered ${ex.message ?: ex} on ${pipeline.name} in step ${name} at ${lineNumber}", RejectionCategory.SCRIPT_ERROR, name, ex)
         row[Pipeline.REJECTED_KEY] = rejection
         pipeline.doRejections(row, name, lineNumber)
         return row

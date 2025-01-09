@@ -9,7 +9,7 @@ import gratum.csv.HaltPipelineException
 import gratum.source.ChainedSource
 import gratum.source.ClosureSource
 import gratum.source.Source
-
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.FromString
@@ -106,18 +106,6 @@ public class Pipeline {
     }
 
     /**
-     * Apply a closure to the Pipeline allowing it to configure the Pipeline by passing this Pipeline as an argument
-     * to the closure.  The Pipeline returned by the closure will be returned by this method for chaining.
-     *
-     * @param template A Closure that will be passed this Pipeline and returns a Pipeline.
-     * @return The Pipeline returned by the given Closure.
-     */
-    public Pipeline configure( Closure<Pipeline> template ) {
-        return template.call( this )
-    }
-
-
-    /**
      * Prepend a step to the pipeline.
      * @param name The Step name
      * @param step The code used to process each row on the Pipeline.
@@ -172,14 +160,14 @@ public class Pipeline {
      * Takes a closure that is passed the rejection Pipeline.  The closure can register steps on the rejection
      * pipeline, and any rejections from the parent pipeline will be passed through the given rejection pipeline.
      *
-     * @param branch Closure that's passed the rejection the pipeline
+     * @param configure Closure that's passed the rejection the pipeline
      * @return this Pipeline
      */
     public Pipeline onRejection( @DelegatesTo(Pipeline)
                                  @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
-                                 Closure<Void> branch ) {
+                                 Closure<Void> configure ) {
         if( parent ) {
-            parent.onRejection( branch )
+            parent.onRejection( configure )
         } else {
             if( !rejections ) rejections = new Pipeline("Rejections(${name})")
             rejections.addStep("Remap rejections to columns") { row ->
@@ -188,10 +176,14 @@ public class Pipeline {
                 current.rejectionCategory = rejection.category
                 current.rejectionReason = rejection.reason
                 current.rejectionStep = rejection.step
+                current.rejectionException = !rejection.throwable ? "" : new StringWriter().with {
+                    rejection.throwable.printStackTrace(new PrintWriter(it, true) )
+                    it.toString()
+                }
                 return current
             }
-            branch.delegate = rejections
-            branch( rejections )
+            configure.delegate = rejections
+            configure( rejections )
             after {
                 rejections.finished()
                 return
@@ -1184,6 +1176,7 @@ public class Pipeline {
      * @return The LoadStatistic instance from this Pipeline.
      */
     public LoadStatistic go() {
+        addDefaultRejections()
         long s = System.currentTimeMillis()
         start()
         long e = System.currentTimeMillis()
@@ -1282,6 +1275,21 @@ public class Pipeline {
             // ignore as we were asked to halt.
         } finally {
             complete = true
+        }
+    }
+
+    @CompileDynamic // annoying to do this, but this method trigger a bug in groovy compiler so turned off static compilation for this method
+    void addDefaultRejections() {
+        if( !this.rejections ) {
+            this.onRejection { rej ->
+                rej.addStep("Default SCRIPT_ERROR output") { row ->
+                    if( row.rejectionCategory == RejectionCategory.SCRIPT_ERROR ) {
+                        println( "${row.rejectionCategory} ${row.rejectionStep} ${row.rejectionReason}\n${row.rejectionException}" )
+                    }
+                    return row
+                }
+                return
+            }
         }
     }
 }
