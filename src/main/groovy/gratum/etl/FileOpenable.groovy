@@ -48,6 +48,8 @@ class FileOpenable implements Openable, Closeable {
             return outStream
         } else if( clazz == File ) {
             return file
+        } else if( clazz == String ) {
+            return file.getText()
         } else {
             throw new ClassCastException("Cannot convert to " + clazz.getName() )
         }
