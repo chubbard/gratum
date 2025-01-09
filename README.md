@@ -18,14 +18,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.10'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.11'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>1.1.10</version>
+        <version>1.1.11</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -327,9 +327,8 @@ a step.  The step's name is added to the Rejection.
 
 ### Processing Rejections
 
-Depending on your task you may or may not care about rejections, but eventually you may run into a situation
-where you need to understand why something was rejected.  Hooking into the rejection pipeline is possible
-with the `onRejection` method.  Here is an example:
+Depending on your task you may or may not need to process rejections, but when you need to you can override the default
+rejection mechanism to process individual rejections using `onRejection` method.  Here is an example:
 
     from([
             [ name: 'Chuck', gender: 'Male', age: 40],
@@ -345,6 +344,9 @@ with the `onRejection` method.  Here is an example:
         }.
         go()
 
+By default, rejections that result in a SCRIPT_ERROR are written to the console.  By invoking `onRejection` method you
+override that behavior.
+
 In this example of non-Male rows will be rejected by the `filter` method.  Then the `onRejection` registers
 a closure, but instead of the normal Map argument it takes another Pipeline.  That pipeline is the rejections
 pipeline, and we can add steps and call operations on it just like any normal pipeline.  But what travels over
@@ -356,6 +358,7 @@ What's different about the rows that travel through the rejection pipeline is th
 1. **rejectionCategory**
 2. **rejectionReason**
 3. **rejectionStep**
+4. **rejectionException** (if the **rejectionCategory** is a SCRIPT_ERROR)
 
 The rest of the columns are the original columns from the row object.
 
