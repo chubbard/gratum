@@ -28,7 +28,7 @@ public class PgpObjectProcessor {
             boolean processed = false;
             while (!processed && it.hasNext()) {
                 publicKeyEncryptedData = (PGPPublicKeyEncryptedData) it.next();
-                PGPSecretKey pgpSecKey = context.getSecretKey(publicKeyEncryptedData.getKeyID());
+                PGPSecretKey pgpSecKey = context.getSecretKey(publicKeyEncryptedData.getKeyIdentifier().getKeyId());
 
                 if (pgpSecKey != null) {
                     PGPPrivateKey secretKey = pgpSecKey.extractPrivateKey(
@@ -47,10 +47,12 @@ public class PgpObjectProcessor {
                     if (processed) {
                         if (publicKeyEncryptedData.isIntegrityProtected()) {
                             if (!publicKeyEncryptedData.verify()) {
-                                throw new PGPException("Message failed integrity check against key: " + Long.toHexString(publicKeyEncryptedData.getKeyID()));
+                                throw new PGPException("Message failed integrity check against key: " + Long.toHexString(publicKeyEncryptedData.getKeyIdentifier().getKeyId()));
                             }
                         }
                     }
+                } else {
+                    throw new PGPException("Secret key was not found for keyId = " + Long.toHexString(publicKeyEncryptedData.getKeyIdentifier().getKeyId()));
                 }
             }
             return processed;

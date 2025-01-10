@@ -11,10 +11,12 @@ class Rejection {
     RejectionCategory category
     String reason
     String step
+    Throwable throwable
 
-    Rejection(String reason, RejectionCategory category = RejectionCategory.REJECTION, String step = null) {
+    Rejection(String reason, RejectionCategory category = RejectionCategory.REJECTION, String step = null, Throwable t = null) {
         this.category = category
         this.reason = reason
-        this.step = step;
+        this.step = step
+        this.throwable = t
     }
 }
