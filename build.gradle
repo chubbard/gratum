@@ -39,7 +39,7 @@ dependencies {
     implementation 'org.apache.poi:poi:4.1.2'
     implementation 'org.apache.poi:poi-ooxml:4.1.2'
     implementation 'org.apache.poi:ooxml-schemas:1.4'
-    implementation group: "org.apache.commons", name:"commons-compress", version:"1.21"
+    implementation group: "org.apache.commons", name:"commons-compress", version:"1.27.1"
     implementation group: "com.jcraft", name: "jsch", version: "0.1.55"
     implementation "org.bouncycastle:bcprov-jdk18on:1.79",
             "org.bouncycastle:bcpg-jdk18on:1.79",
