@@ -6,7 +6,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.chubbard/gratum/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.chubbard/gratum)
 [![Build Status](https://travis-ci.com/chubbard/gratum.svg?branch=master)](https://travis-ci.com/chubbard/gratum)
 
-A simplified standalone ETL engine for groovy.  Gratum is groovy + datum.
+A lightweight standalone ETL engine for groovy.  Gratum is groovy + datum.
 And gratum just happens to mean thank you or pleasant in Latin.  We built 
 gratum with a couple of beliefs about data transformations.
 
@@ -18,14 +18,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.11'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.12'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>1.1.11</version>
+        <version>1.1.12</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -522,7 +522,9 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 
 [zip](https://chubbard.github.io/gratum/groovydoc/gratum/source/ZipSource.html)
 
-[http/https](https://chubbard.github.io/gratum/groovydoc/gratum/source/HttpSource.html)
+[http/https](https://chubbard.github.io/gratum/groovydoc/gratum/source/OkHttpSource.html)
+
+[http/https](https://chubbard.github.io/gratum/groovydoc/gratum/source/HttpSource.html) - (deprecated)
 
 [jdbc](https://chubbard.github.io/gratum/groovydoc/gratum/source/JdbcSource.html)
 
