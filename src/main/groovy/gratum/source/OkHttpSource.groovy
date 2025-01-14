@@ -1,6 +1,7 @@
 package gratum.source
 
 import gratum.etl.Pipeline
+import gratum.etl.RejectionCategory
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import okhttp3.Credentials
@@ -13,6 +14,7 @@ import okhttp3.Request
  * the results to a Pipeline.
  *
  * <pre>
+ * {@code
  *  http("http://api.open-notify.org/astros.json").into()
  *  .addStep("Swap Response -> Json") { row ->
  *     row.json
@@ -20,12 +22,14 @@ import okhttp3.Request
  *  .filter([craft: "ISS"])
  *  .printRow()
  *  .go
+ * }
  * </pre>
  * <p>
  * The row played down the Pipeline when using this source will consist of the following columns:
  *</p>
  * <p>
  * <ul>
+ * <li>url - the URL visited</li>
  * <li>response - a OkHttp response object.</li>
  * <li>body - The OkHttp Body object of the response (ie response.body())</li>
  * <li>status - The HTTP status code returned (ie response.code())</li>
@@ -36,6 +40,8 @@ import okhttp3.Request
  */
 @CompileStatic
 class OkHttpSource extends AbstractSource {
+
+    public static final int MAX_RETRIES = 5
 
     HttpUrl url
     OkHttpClient client = new OkHttpClient()
@@ -189,14 +195,16 @@ class OkHttpSource extends AbstractSource {
             configure()
         }
         boolean done = false
-        while( !done ) {
+        int attempts = MAX_RETRIES
+        while( !done && attempts > 0) {
             wrapper.client.newCall(wrapper.build()).execute().withCloseable { response ->
+                attempts--
                 if (response.code() == 429) {
                     Integer retryAfter = response.header("Retry-After") as Integer
                     Thread.sleep(retryAfter * 1000L)
                     done = false
                 } else {
-                    Map<String, Object> result = [response: response, body: response.body(), status: response.code()]
+                    Map<String, Object> result = [url: wrapper.url, response: response, body: response.body(), status: response.code()]
                     String contentType = response.header("Content-Type")?.split(";")?.first()
                     switch (contentType) {
                         case "application/json":
@@ -211,6 +219,13 @@ class OkHttpSource extends AbstractSource {
                     }
                     pipeline.process(result, 1)
                     done = true
+                }
+
+                if( !done && attempts == 0 ) {
+                    pipeline.reject(Pipeline.reject([url: wrapper.url, response: response, body: null, status: response.code()],
+                            "Maximum attempts reach (${MAX_RETRIES})",
+                            RejectionCategory.REJECTION),
+                            1 )
                 }
             }
         }
