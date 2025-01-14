@@ -10,6 +10,8 @@ import static groovyx.net.http.HttpBuilder.configure
 import gratum.etl.Pipeline
 
 /**
+ * @deprecated This class will be removed in the future in favor of {@see gratum.source.OkHttpSource}
+ *
  * A source that retrieves data from a URL.  For example,
  *
  * <pre>
@@ -24,6 +26,7 @@ import gratum.etl.Pipeline
  * To configure the http connection pass a closure that will pass
  * to {@link groovyx.net.http.HttpBuilder#configure(Closure)}.
  */
+@Deprecated
 class HttpSource extends AbstractSource {
 
     enum HttpVerb {
