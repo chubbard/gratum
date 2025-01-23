@@ -9,7 +9,7 @@ targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
 group = 'com.github.chubbard'
-version = '1.1.12'
+version = '1.1.13'
 description = """
 A lightweight standalone ETL engine for groovy.  Gratum is groovy + datum.
 """
@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.18.0'
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
