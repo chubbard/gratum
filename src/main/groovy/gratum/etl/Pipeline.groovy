@@ -35,7 +35,7 @@ import java.util.regex.Pattern
  *
  * <pre>
  *      LoadStatistic stats = http("http://api.open-notify.org/astros.json").
- *          inject { Map json -&gt;
+ *          inject { json -&gt;
  *              json.people
  *          }.
  *          printRow().
@@ -772,6 +772,28 @@ public class Pipeline {
      */
     public Pipeline json(String filename, List<String> columns = null) {
         return save( new JsonSink( new File(filename), columns) )
+    }
+
+    /**
+     * Write out the rows produced into the given filename as <a href=https://jsonlines.org">JSON Lines</a> format.
+     * @param filename the filename to save the JSON lines into.
+     * @param columns Optional list of columns to use clip out certain columns you want to include in the output.  If left
+     * off all columns are included.
+     * @return A Pipeline unmodified.
+     */
+    public Pipeline jsonl(String filename, List<String> columns = null) {
+        return save( new JsonSink( new File(filename), columns).jsonObjectPerLine(true) )
+    }
+
+    /**
+     * Write out the rows produced into a given File as <a href=https://jsonlines.org">JSON Lines</a> format.
+     * @param file the java.io.File to save the JSON lines into.
+     * @param columns Optional list of columns to use clip out certain columns you want to include in the output.  If left
+     * off all columns are included.
+     * @return A Pipeline unmodified.
+     */
+    public Pipeline jsonl(File file, List<String> columns = null) {
+        return save( new JsonSink( file, columns).jsonObjectPerLine(true) )
     }
 
     /**
