@@ -70,6 +70,10 @@ class Step {
         return loaded
     }
 
+    public Map<String,Object> reject(Map<String,Object> row, String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
+        return Pipeline.reject( row, reason, category )
+    }
+
     void incrementRejections(RejectionCategory rejectionCategory) {
         rejections[rejectionCategory] = (rejections[rejectionCategory] ?: 0) + 1
     }
