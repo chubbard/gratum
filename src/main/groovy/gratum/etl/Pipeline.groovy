@@ -13,6 +13,8 @@ import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.FromString
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -65,6 +67,7 @@ public class Pipeline {
 
     public static final String REJECTED_KEY = "__reject__"
     public static final int DO_NOT_TRACK = -1
+    public static final Logger logger = LoggerFactory.getLogger(Pipeline)
 
     String name
     Source src
@@ -180,6 +183,7 @@ public class Pipeline {
                     rejection.throwable.printStackTrace(new PrintWriter(it, true) )
                     it.toString()
                 }
+                logger.warn("Rejection ${rejection.category} ${rejection.step} ${rejection?.reason}", rejection.throwable)
                 return current
             }
             configure.delegate = rejections
@@ -804,9 +808,9 @@ public class Pipeline {
     public Pipeline printRow(String... columns) {
         addStep("print()") { row ->
             if( columns ) {
-                println( "[ ${columns.toList().collect { row[it] }.join(',')} ]" )
+                logger.info( "[ ${columns.toList().collect { row[it] }.join(',')} ]" )
             } else {
-                println( row )
+                logger.info( "${row.toString()}" )
             }
             return row
         }
@@ -1186,7 +1190,7 @@ public class Pipeline {
         try {
             src?.start(this)
         } catch( HaltPipelineException ex ) {
-            // ignore as we were asked to halt.
+            logger.debug("Halting pipeline during steps due to exception.", ex)
         }
     }
 
@@ -1200,9 +1204,12 @@ public class Pipeline {
     public LoadStatistic go() {
         addDefaultRejections()
         long s = System.currentTimeMillis()
+        logger.info("Starting ${name} pipeline")
         start()
         long e = System.currentTimeMillis()
-        return toLoadStatistic(s, e)
+        LoadStatistic stat = toLoadStatistic(s, e)
+        logger.info("${stat}")
+        return stat
     }
 
     /**
@@ -1294,7 +1301,7 @@ public class Pipeline {
                 current.execute()
             }
         } catch( HaltPipelineException ex ) {
-            // ignore as we were asked to halt.
+            logger.debug("Halting pipeline during doneChain due to exception.", ex)
         } finally {
             complete = true
         }
@@ -1306,7 +1313,7 @@ public class Pipeline {
             this.onRejection { rej ->
                 rej.addStep("Default SCRIPT_ERROR output") { row ->
                     if( row.rejectionCategory == RejectionCategory.SCRIPT_ERROR ) {
-                        println( "${row.rejectionCategory} ${row.rejectionStep} ${row.rejectionReason}\n${row.rejectionException}" )
+                        logger.error( "${row.rejectionCategory} ${row.rejectionStep} ${row.rejectionReason}\n${row.rejectionException}" )
                     }
                     return row
                 }

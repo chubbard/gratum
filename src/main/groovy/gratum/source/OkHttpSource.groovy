@@ -8,6 +8,8 @@ import okhttp3.Credentials
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /*
  * This source fetches data from a URL using the OkHttp library and posts
@@ -43,9 +45,12 @@ class OkHttpSource extends AbstractSource {
 
     public static final int MAX_RETRIES = 5
 
+    public static final Logger logger = LoggerFactory.getLogger(OkHttpSource)
+
     HttpUrl url
     OkHttpClient client = new OkHttpClient()
     Closure configure
+    boolean rejectOnNon200 = false
 
     /**
      * A wrapper class around OKHttp's Request.Builder for building the request being sent
@@ -187,6 +192,11 @@ class OkHttpSource extends AbstractSource {
         return new OkHttpSource( url, client, configure )
     }
 
+    public OkHttpSource rejectNon200(boolean reject) {
+        rejectOnNon200 = reject
+        return this
+    }
+
     @Override
     void doStart(Pipeline pipeline) {
         OkHttpBuilder wrapper = new OkHttpBuilder(client, new Request.Builder(), this.url)
@@ -201,8 +211,13 @@ class OkHttpSource extends AbstractSource {
                 attempts--
                 if (response.code() == 429) {
                     Integer retryAfter = response.header("Retry-After") as Integer
+                    logger.warn("Received ${response.code()} ${response.message()}: Forced to wait ${retryAfter} seconds before retrying ${url}")
                     Thread.sleep(retryAfter * 1000L)
                     done = false
+                } else if( rejectOnNon200 && response.code() > 399 ) {
+                    logger.error("Rejecting due to non-200 response code ${response.code()} for ${url}")
+                    pipeline.reject(Pipeline.reject( [response:response, status: response.code(), url: url], "Encountered ${response.code()} ${response.message()} for ${url}", RejectionCategory.RUNTIME_ERROR),-1)
+                    done = true
                 } else {
                     Map<String, Object> result = [url: wrapper.url, response: response, body: response.body(), status: response.code()]
                     String contentType = response.header("Content-Type")?.split(";")?.first()
@@ -222,9 +237,10 @@ class OkHttpSource extends AbstractSource {
                 }
 
                 if( !done && attempts == 0 ) {
+                    logger.error("Rejecting maximum attempts ${attempts} reached for ${url}")
                     pipeline.reject(Pipeline.reject([url: wrapper.url, response: response, body: null, status: response.code()],
                             "Maximum attempts reach (${MAX_RETRIES})",
-                            RejectionCategory.REJECTION),
+                            RejectionCategory.RUNTIME_ERROR),
                             1 )
                 }
             }

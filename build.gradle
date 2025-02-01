@@ -9,7 +9,7 @@ targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
 group = 'com.github.chubbard'
-version = '1.1.13'
+version = '1.1.14'
 description = """
 A lightweight standalone ETL engine for groovy.  Gratum is groovy + datum.
 """
@@ -49,6 +49,9 @@ dependencies {
     implementation "org.bouncycastle:bcprov-jdk18on:1.79",
             "org.bouncycastle:bcpg-jdk18on:1.79",
             "org.bouncycastle:bcpkix-jdk18on:1.79"
+
+    implementation("org.slf4j:slf4j-api:2.0.16")
+    testRuntimeOnly("org.slf4j:slf4j-jdk14:2.0.16")
 
 //    testCompile "mysql:mysql-connector-java:5.1.40"
 //    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
