@@ -3,6 +3,7 @@ package gratum.source
 import gratum.etl.Pipeline
 import groovy.transform.CompileStatic
 import org.apache.poi.openxml4j.opc.OPCPackage
+import org.apache.poi.openxml4j.opc.PackageAccess
 import org.apache.poi.ss.usermodel.DataFormatter
 import org.apache.poi.ss.util.CellAddress
 import org.apache.poi.util.XMLHelper
@@ -108,7 +109,14 @@ class XlsxSource extends AbstractSource {
     void doStart(Pipeline pipeline) {
         OPCPackage ocp = null
         try {
-            ocp = OPCPackage.open( stream ?: excelFile.newInputStream() )
+            InputStream istream = stream ?: excelFile.newInputStream()
+//            if( password ) {
+//                EncryptionInfo info = new EncryptionInfo()
+//                Decryptor decryptor = Decryptor.getInstance(info)
+//                istream = decryptor.getDataStream( stream, 0, 0 )
+//            }
+
+            ocp = OPCPackage.open( istream )
 
             ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(ocp)
             XSSFReader xssfReader = new XSSFReader(ocp)
