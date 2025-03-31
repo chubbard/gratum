@@ -499,7 +499,7 @@ class PipelineTest {
     void testSortOrder() {
         String lastHobby
         from(GratumFixture.hobbies)
-                .sort(new Tuple2("hobby", SortOrder.DESC))
+                .sort(new Tuple2<>("hobby", SortOrder.DESC))
                 .addStep("Assert order is increasing") { row ->
                     if( lastHobby ) assertTrue( "Assert ${lastHobby} > ${row.hobby}", lastHobby.compareTo( row.hobby ) >= 0 )
                     lastHobby = row.hobby
@@ -546,7 +546,7 @@ class PipelineTest {
         int actualCount = 0
         int expectedCount = 0
         LoadStatistic stats = http("http://api.open-notify.org/astros.json").get()
-            .inject { Map json ->
+            .inject { json ->
                 expectedCount = json.number
                 message = json.message
                 json.people
@@ -1004,6 +1004,34 @@ class PipelineTest {
     }
 
     @Test
+    void testExchangeRejections() {
+        GratumFixture.withResource("titanic.csv", { stream ->
+            LoadStatistic stats = csv("titanic.csv", stream, ",")
+                .filter(Sex: "female")  // make sure rejections before the exchange are counted in the final result
+                .exchange { row ->
+                    String ticket = row.Ticket
+                    List<Map<String,Object>> ticketNumbers = []
+                    for( int i = 0; i < ticket.length(); i++ ) {
+                        if( ticket[i].isInteger() ) {
+                            int number = ticket[i] as int
+                            ticketNumbers << [number: number]
+                        }
+                    }
+                    return CollectionSource.from( ticketNumbers )
+                }
+                .addStep("Are Ticket Numbers <= 5") { row ->
+                    // make sure rejections after the exchange are counted
+                    row.number <= 5 ? row : reject(row, "Ticket Number > 5", RejectionCategory.REJECTION)
+                }
+                .go()
+
+            assert stats.loaded == 809
+            assert stats.getRejections(RejectionCategory.IGNORE_ROW) == 266
+            assert stats.getRejections(RejectionCategory.REJECTION) == stats.rejections - stats.getRejections(RejectionCategory.IGNORE_ROW)
+        })
+    }
+
+    @Test
     void testDoneCallbacksInTimings() {
         boolean called = false
         LoadStatistic stat = from(GratumFixture.hobbies).sort("hobby").after {
@@ -1050,5 +1078,24 @@ class PipelineTest {
                 .go()
         assert stat.loaded == 3
         assert stat.rejections == 0
+    }
+
+    @Test
+    void testInject() {
+        LoadStatistic stat = CollectionSource.from(GratumFixture.people)
+            .filter { it.gender == 'female' }
+            .inject { row ->
+                GratumFixture.hobbies.findAll { hobby -> hobby.id == row.id }
+            }
+            .addStep("Mark these rows with a different rejection category") {
+                it.id == 2 ? it : reject(it, "Not id == 2", RejectionCategory.REJECTION)
+            }
+            .go()
+        assert stat.loaded == 2
+        assert stat.rejections == 4
+        // make sure we get rejections above the inject
+        assert stat.getRejections(RejectionCategory.IGNORE_ROW) == 2
+        // make sure we get rejections below the inject
+        assert stat.getRejections(RejectionCategory.REJECTION) == 2
     }
 }
