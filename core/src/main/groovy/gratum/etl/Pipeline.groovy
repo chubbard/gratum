@@ -1247,6 +1247,24 @@ public class Pipeline {
         }
     }
 
+    Pipeline reduce(String name, Map<String,Object> value,
+                    @DelegatesTo(Pipeline)
+                    @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>,java.util.Map<String,Object>"] )
+                    Closure<Map<String,Object>> logic) {
+        Pipeline downstream = new Pipeline(name, this).source(new ChainedSource(this))
+        downstream.loaded = DO_NOT_TRACK
+        Map<String,Object> current = value
+        addStep("reduce(${name})") { row ->
+            current = logic.call( current, row )
+            row
+        }
+        after {
+            downstream.process(current, 1)
+            return
+        }
+        return downstream
+    }
+
     /**
      * Start processing rows from the source of the pipeline.
      */
@@ -1351,7 +1369,7 @@ public class Pipeline {
             stat.doneStatistics += doneChain*.statistic
         }
 
-        if( loaded > DO_NOT_TRACK ) stat.loaded = loaded
+        if( loaded > DO_NOT_TRACK ) stat.loaded = stat.stepStatistics ? stat.stepStatistics.last().loaded : 0
         return stat
     }
 
