@@ -23,7 +23,7 @@ class Step {
         try {
             Map<String, Object> next = step.call(row)
             if (next == null || next[Pipeline.REJECTED_KEY]) {
-                reject(next, lineNumber)
+                doRejections(next, lineNumber)
             } else {
                 statistics.incrementLoaded()
             }
@@ -46,7 +46,7 @@ class Step {
         }
     }
 
-    private void reject(Map<String, Object> next, int lineNumber) {
+    private void doRejections(Map<String, Object> next, int lineNumber) {
         Rejection rejection = next[Pipeline.REJECTED_KEY] as Rejection
         statistics.incrementRejections(rejection.category)
         pipeline.doRejections(next, statistics.name, lineNumber)
@@ -54,8 +54,11 @@ class Step {
 
     private Map<String,Object> handleExceptionToRejection(Throwable ex, int lineNumber, Map<String, Object> row) {
         statistics.incrementRejections(RejectionCategory.SCRIPT_ERROR)
-        Rejection rejection = new Rejection("Encountered ${ex.message ?: ex} on ${pipeline.name} in step ${this.statistics.name} at ${lineNumber}", RejectionCategory.SCRIPT_ERROR, statistics.name)
-        rejection.cause = ex
+        Rejection rejection = new Rejection(
+                "Encountered ${ex.message ?: ex} on ${pipeline.name} in step ${this.statistics.name} at ${lineNumber}",
+                RejectionCategory.SCRIPT_ERROR,
+                statistics.name,
+                ex)
         row[Pipeline.REJECTED_KEY] = rejection
         pipeline.doRejections(row, statistics.name, lineNumber)
         return row
@@ -75,5 +78,10 @@ class Step {
 
     StepStatistic getStatistics() {
         return this.statistics
+    }
+
+    Map<String,Object> reject(Map<String,Object> row, String reason, RejectionCategory category = RejectionCategory.REJECTION, Throwable ex = null) {
+        row[Pipeline.REJECTED_KEY] = new Rejection(reason, category, statistics.name, ex )
+        return row
     }
 }

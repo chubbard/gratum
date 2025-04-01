@@ -22,16 +22,16 @@
 <html>
 <head>
 
-<title>gratum.source (gratum 1.1.4 API)</title>
+<title>gratum.source (gratum 1.1.13 API)</title>
 <meta name="keywords" content="gratum.source package">
-<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel ="stylesheet" TYPE="text/css" HREF="../../stylesheet.css" title="Style">
 <link href="../../groovy.ico" type="image/x-icon" rel="shortcut icon">
 <link href="../../groovy.ico" type="image/x-icon" rel="icon">
 <script type="text/javascript">
 function windowTitle()
 {
-    parent.document.title="gratum.source (gratum 1.1.4 API)";
+    parent.document.title="gratum.source (gratum 1.1.13 API)";
 }
 </script>
 <noscript>
@@ -194,7 +194,7 @@ function windowTitle()
                                     HttpSource
                                 </a></strong>
                             </td>
-                            <td>A source that retrieves data from a URL.  </td>
+                            <td>@deprecated This class will be removed in the future in favor of {@see gratum.source.OkHttpSource}</td>
                         </tr>
 <tr class="altColor">
                             <td class="colOne">
@@ -212,6 +212,23 @@ function windowTitle()
                                 </a></strong>
                             </td>
                             <td></td>
+                        </tr>
+<tr class="altColor">
+                            <td class="colOne">
+                                <strong><a href="OkHttpSource.html" title="class in gratum/source">
+                                    OkHttpSource
+                                </a></strong>
+                            </td>
+                            <td></td>
+                        </tr>
+<tr class="altColor">
+                            <td class="colOne">
+                                <strong><a href="OkHttpSource.OkHttpBuilder.html" title="class in gratum/source">
+                                    OkHttpSource.OkHttpBuilder
+                                </a></strong>
+                            </td>
+                            <td>A wrapper class around OKHttp's Request.Builder for building the request being sent
+ in an Http call.  </td>
                         </tr>
 <tr class="altColor">
                             <td class="colOne">

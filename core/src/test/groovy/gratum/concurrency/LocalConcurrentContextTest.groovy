@@ -44,14 +44,14 @@ class LocalConcurrentContextTest {
     @Test
     void testRejections() {
         GratumFixture.withResource("titanic.csv") { stream ->
-            LoadStatistic stats = csv("titantic", stream, ",")
+            LoadStatistic stats = csv("titanic", stream, ",")
                     .apply( context.spread { pipeline ->
-                        pipeline.filter("Only Females") { Map row ->
+                        pipeline.filter("Only Females") { row ->
                             row.Sex == "female"
                         }
                     }
                     .collect { Pipeline pipeline ->
-                        pipeline.addStep("Assert we are on the results thread") { Map row ->
+                        pipeline.addStep("Assert we are on the results thread") { row ->
                             assert Thread.currentThread().name.startsWith("Results")
                             return row
                         }

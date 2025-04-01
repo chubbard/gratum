@@ -2,6 +2,7 @@ package gratum.source
 
 import groovy.transform.CompileStatic
 import groovyx.net.http.HttpBuilder
+import groovyx.net.http.HttpConfig
 import groovyx.net.http.HttpObjectConfig
 
 import static groovyx.net.http.HttpBuilder.configure
@@ -9,6 +10,8 @@ import static groovyx.net.http.HttpBuilder.configure
 import gratum.etl.Pipeline
 
 /**
+ * @deprecated This class will be removed in the future in favor of {@see gratum.source.OkHttpSource}
+ *
  * A source that retrieves data from a URL.  For example,
  *
  * <pre>
@@ -23,6 +26,7 @@ import gratum.etl.Pipeline
  * To configure the http connection pass a closure that will pass
  * to {@link groovyx.net.http.HttpBuilder#configure(Closure)}.
  */
+@Deprecated
 class HttpSource extends AbstractSource {
 
     enum HttpVerb {
@@ -69,31 +73,31 @@ class HttpSource extends AbstractSource {
         return new HttpSource(url, builder)
     }
 
-    public Pipeline get(Closure configuration) {
+    public Pipeline get(@DelegatesTo(HttpConfig) Closure configuration = null) {
         verb = HttpVerb.GET
         requestConfiguration = configuration
         return into()
     }
 
-    public Pipeline post(Closure configuration) {
+    public Pipeline post(@DelegatesTo(HttpConfig) Closure configuration = null) {
         verb = HttpVerb.POST
         requestConfiguration = configuration
         return into()
     }
 
-    public Pipeline delete(Closure configuration) {
+    public Pipeline delete(@DelegatesTo(HttpConfig) Closure configuration = null) {
         verb = HttpVerb.DELETE
         requestConfiguration = configuration
         return into()
     }
 
-    public Pipeline put(Closure configuration) {
+    public Pipeline put(@DelegatesTo(HttpConfig) Closure configuration = null) {
         verb = HttpVerb.PUT
         requestConfiguration = configuration
         return into()
     }
 
-    public Pipeline head(Closure configuration) {
+    public Pipeline head(@DelegatesTo(HttpConfig) Closure configuration = null) {
         verb = HttpVerb.HEAD
         requestConfiguration = configuration
         return into()

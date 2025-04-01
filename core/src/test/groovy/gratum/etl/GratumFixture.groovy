@@ -1,5 +1,8 @@
 package gratum.etl
 
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.FromString
+
 class GratumFixture {
     public static final List<Map> _people = [
             [id: 1, name: 'Bill Rhodes', age: 53, gender: 'male', comment: """
@@ -45,7 +48,7 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
         return getClass().getResourceAsStream("/" + resource )
     }
 
-    public static void withResource(String resource, Closure<Void> callback) {
+    public static void withResource(String resource, @ClosureParams( value = FromString, options = ["java.io.InputStream"] ) Closure<Void> callback) {
         this.getResourceAsStream("/" + resource )?.withStream { InputStream stream ->
             callback.call( stream )
         }

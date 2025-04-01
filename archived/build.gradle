@@ -1,7 +1,7 @@
 
 dependencies {
-    implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
-    implementation group: "org.apache.commons", name:"commons-compress", version:"1.21"
+    implementation 'commons-codec:commons-codec:1.15'
+    implementation "org.apache.commons:commons-compress:1.26.2"
     implementation project(':core')
 }
 

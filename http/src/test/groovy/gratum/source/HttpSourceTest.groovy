@@ -10,7 +10,7 @@ import static junit.framework.TestCase.assertNotNull
 class HttpSourceTest {
 
     @Test(timeout = 5000L)
-    public void testHttp() {
+    public void testHttpSource() {
         String message = null
         int actualCount = 0
         int expectedCount = 0

@@ -51,6 +51,8 @@ public class PgpObjectProcessor {
                             }
                         }
                     }
+                } else {
+                    throw new PGPException("Secret key was not found for keyId = " + Long.toHexString(publicKeyEncryptedData.getKeyID()));
                 }
             }
             return processed;

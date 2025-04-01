@@ -1,7 +1,5 @@
 package gratum.pgp
 
-import gratum.etl.Pipeline
-import gratum.pgp.PgpContext
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.FromString
 import gratum.etl.*
@@ -18,10 +16,12 @@ public class Pgp {
      * @param configure The Closure that is passed the PgpContext used to configure how the stream will be encrypted.
      */
     static Closure<Pipeline> encryptPgp(String streamProperty,
-                                @ClosureParams( value = FromString, options = ["gratum.pgp.PgpContext"])
-                                Closure configure ) {
+                                        @ClosureParams( value = FromString, options = ["gratum.pgp.PgpContext"])
+                                        @DelegatesTo(Pipeline)
+                                        Closure configure ) {
         return { Pipeline pipeline ->
             PgpContext pgp = new PgpContext()
+            configure.delegate = pipeline
             configure.call( pgp )
             return pipeline.addStep("encrypt(${streamProperty})") { Map row ->
                 File encryptedTemp = File.createTempFile("pgp-encrypted-output-${streamProperty}".toString(), ".gpg")
@@ -56,9 +56,11 @@ public class Pgp {
      */
     static Closure<Pipeline> decryptPgp(String streamProperty,
                                         @ClosureParams( value = FromString, options = ["gratum.pgp.PgpContext"])
-                               Closure configure ) {
+                                        @DelegatesTo(Pipeline)
+                                        Closure configure ) {
         return { Pipeline pipeline ->
             PgpContext pgp = new PgpContext()
+            configure.delegate = pipeline
             configure.call( pgp )
             return pipeline.addStep("decrypt(${streamProperty})") { Map row ->
                 InputStream stream = row[streamProperty] as InputStream

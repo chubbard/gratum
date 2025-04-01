@@ -8,7 +8,7 @@ import gratum.csv.HaltPipelineException
 import gratum.source.ChainedSource
 import gratum.source.ClosureSource
 import gratum.source.Source
-
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.FromString
@@ -37,14 +37,14 @@ import java.util.regex.Pattern
  *
  * <pre>
  *      LoadStatistic stats = http("http://api.open-notify.org/astros.json").
- *          inject { Map json -&gt;
+ *          inject { json -&gt;
  *              json.people
  *          }.
  *          printRow().
  *          go()
  * </pre>
  *
- * In the above example you can see it using an {@link gratum.source.HttpSource} to fetch JSON data.  
+ * In the above example you can see it using an {@link gratum.source.OkHttpSource} to fetch JSON data.
  * That data is returned as a Map object which has other nested objects within it.  In this case it's
  * pulling out the "people" column which is a Collection of people objects.  Then it injects those members
  * into the down stream steps which uses printRow to print it to the console.  The output would look like
@@ -115,8 +115,8 @@ public class Pipeline {
      */
     public Pipeline prependStep( String name = null,
                                  @DelegatesTo(Pipeline)
-                                 @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
-                                 Closure<Map> step ) {
+                                 @ClosureParams(value = FromString, options = ["java.util.Map<String,Object>"])
+                                 Closure<Map<String,Object>> step ) {
         step.delegate = this
         processChain.add(0, new Step( this, name, step ) )
         return this
@@ -133,18 +133,16 @@ public class Pipeline {
      * @return this Pipeline.
      */
     public Pipeline addStep( String name = null,
-                             @DelegatesTo(Pipeline)
                              @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
-                             Closure<Map<String,Object>> step ) {
+                             @DelegatesTo(Pipeline) Closure<Map<String,Object>> step ) {
         step.delegate = this
         processChain << new Step( this, name, step )
         return this
     }
 
     public Pipeline addStep(GString name,
-                            @DelegatesTo(Pipeline)
                             @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
-                            Closure<Map<String,Object>> step) {
+                            @DelegatesTo(Pipeline) Closure<Map<String,Object>> step) {
         this.addStep( name.toString(), step )
     }
 
@@ -175,19 +173,15 @@ public class Pipeline {
             parent.onRejection( rejectionBranch )
         } else {
             if( !rejections ) rejections = new Pipeline("Rejections(${name})")
-            rejections.addStep("Remap rejections to columns") { Map row ->
-                Map current = (Map)row.clone()
+            rejections.addStep("Remap rejections to columns") { row ->
+                Map<String,Object> current = (Map<String,Object>)row.clone()
                 Rejection rejection = (Rejection)current.remove(REJECTED_KEY)
                 current["rejectionCategory"] = rejection.category
                 current["rejectionReason"] = rejection.reason
                 current["rejectionStep"] = rejection.step
-                if( rejection.cause ) {
-                    StringWriter stack = new StringWriter()
-                    PrintWriter writer = new PrintWriter(stack)
-                    rejection.cause.printStackTrace(writer)
-                    current.rejectionStackTrace = stack.toString()
-                } else {
-                    current.rejectionStackTrace = null
+                current["rejectionException"] = !rejection.throwable ? "" : new StringWriter().with {
+                    rejection.throwable.printStackTrace(new PrintWriter(it, true) )
+                    it.toString()
                 }
                 return current
             }
@@ -212,7 +206,7 @@ public class Pipeline {
         src.parent = this
         this.after {
             int line = 0
-            src.addStep("concat(${src.name})") { Map row ->
+            src.addStep("concat(${src.name})") { row ->
                 line++
                 original.process( row, line )
                 return row
@@ -229,9 +223,8 @@ public class Pipeline {
      * @return A Pipeline that contains only the rows that matched the filter.
      */
     public Pipeline filter(String name = "filter()",
-                           @DelegatesTo(Pipeline)
                            @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
-                           Closure callback) {
+                           @DelegatesTo(Pipeline) Closure callback) {
         callback.delegate = this
         addStep( name ) { row ->
             if( !callback(row) ) {
@@ -275,7 +268,7 @@ public class Pipeline {
      */
     public Pipeline filter( Map columns ) {
         Condition condition = new Condition( columns )
-        addStep( "filter ${ condition }" ) { Map row ->
+        addStep( "filter ${ condition }" ) { row ->
             if( condition.matches(row) ) {
                 return row
             } else {
@@ -292,7 +285,7 @@ public class Pipeline {
      */
     public Pipeline trim() {
         addStep("trim()") { row ->
-            row.each { String key, Object value -> row[key] = row[key] instanceof String ? ((String)value).trim() : value }
+            row.each { String key, Object value -> row[key] = (value as String)?.trim() }
             return row
         }
     }
@@ -311,7 +304,7 @@ public class Pipeline {
 
         Pipeline tail = split( branch )
 
-        addStep( "branch(${branchName})" ) { Map row ->
+        addStep( "branch(${branchName})" ) { row ->
             branch.process( new LinkedHashMap(row) )
             return row
         }
@@ -339,7 +332,7 @@ public class Pipeline {
         Pipeline tail = split(branch)
         split.delegate = branch
         Condition selection = new Condition( condition )
-        addStep( "branch(${condition})" ) { Map row ->
+        addStep( "branch(${condition})" ) { row ->
             if( selection.matches( row )) {
                 branch.process( new LinkedHashMap(row) )
             }
@@ -376,7 +369,7 @@ public class Pipeline {
      */
     public Pipeline join( Pipeline other, Object columns, boolean left = false ) {
         Map<String,List<Map<String,Object>>> cache =[:]
-        other.addStep("join(${other.name}, ${columns}).cache") { Map row ->
+        other.addStep("join(${other.name}, ${columns}).cache") { row ->
             String key = keyOf(row, rightColumn(columns) )
             if( !cache.containsKey(key) ) cache.put(key, [])
             cache[key] << row
@@ -426,8 +419,8 @@ public class Pipeline {
      * @param decider a Closure which decides if the values from a prior row will be used to fill in missing values in the current row.
      * @return A Pipeline where the row's empty column values are filled in by the previous row.
      */
-    public Pipeline fillDownBy( @DelegatesTo( Pipeline )
-                                @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>", "java.util.Map<String,?>"])
+    public Pipeline fillDownBy( @DelegatesTo(Pipeline)
+                                @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>", "java.util.Map<String,Object>"])
                                 Closure<Boolean> decider ) {
         Map<String,Object> previousRow = null
         decider.delegate = this
@@ -454,7 +447,7 @@ public class Pipeline {
      * @return A Pipeline where all of the columns in the keys of the Map are renamed to the Map's corresponding values.
      */
     public Pipeline renameFields( Map fieldNames ) {
-        addStep("renameFields(${fieldNames}") { Map row ->
+        addStep("renameFields(${fieldNames}") { row ->
             for( String src : fieldNames.keySet() ) {
                 if( row.containsKey(src) ) {
                     String dest = fieldNames.get( src )
@@ -482,14 +475,14 @@ public class Pipeline {
 
     public Pipeline intersect( Pipeline other, def columns ) {
         Map <String,List<Map>> cache = [:]
-        other.addStep("intersect(${other.name}, ${columns}).cache") { Map row ->
+        other.addStep("intersect(${other.name}, ${columns}).cache") { row ->
             String key = keyOf(row, rightColumn(columns) )
             if( !cache.containsKey(key) ) cache.put(key, [])
             cache[key] << row
             return row
         }.start()
 
-        addStep("intersect(${this.name}, ${columns})") { Map row ->
+        addStep("intersect(${this.name}, ${columns})") { row ->
             String key = keyOf( row, leftColumn(columns) )
             row.included = cache.containsKey(key)
             return row
@@ -531,7 +524,7 @@ public class Pipeline {
      */
     public Pipeline groupBy( String... columns ) {
         Map cache = [:]
-        addStep("groupBy(${columns.join(',')})") { Map row ->
+        addStep("groupBy(${columns.join(',')})") { row ->
             Map current = cache
             columns.eachWithIndex { String col, int i ->
                 if( !current.containsKey(row[col]) ) {
@@ -616,28 +609,42 @@ public class Pipeline {
     }
 
     /**
-     * Return a Pipeline where the rows are ordered by the given columns.  The value of
-     * each column is compared using the <=> operator.
-     * @param columns to sort by
-     * @return a Pipeline that where it's rows are ordered according to the given columns.
+     * Return a Pipeline where the rows are ordered by the given columns and sort order.
+     * @param columns a list of Tuple2 where the first item is the column name and the second is the sort order.
+     * @return a Pipeline whose rows are sorted according to the given columns and order.
      */
-    public Pipeline sort(String... columns) {
-        // todo sort externally
-
-        Comparator<Map> comparator = new Comparator<Map>() {
+    public Pipeline sort(Tuple2<String,SortOrder>... columns) {
+        Comparator<Map<String,Object>> comparator = new Comparator<Map<String, Object>>() {
             @Override
-            int compare(Map o1, Map o2) {
-                for( String key : columns ) {
-                    int value = (Comparable)o1[key] <=> (Comparable)o2[key]
-                    if( value != 0 ) return value
+            int compare(Map<String, Object> o1, Map<String, Object> o2) {
+                for( Tuple2<String,SortOrder> key : columns ) {
+                    int value = (Comparable)o1[key.first] <=> (Comparable)o2[key.first]
+                    switch( key.second ){
+                        case SortOrder.ASC:
+                            break
+                        case SortOrder.DESC:
+                            value = Math.negateExact(value)
+                            break
+                    }
+                    if( value != 0 ) return value;
                 }
                 return 0
             }
         }
 
+        sort("sort(${columns.collect { t -> "${t.first}/${t.second}" }.join(",")}", comparator )
+    }
+
+    /**
+     * Sort the rows according to the given comparator
+     * @param name - The name identifying the step added to the pipeline for sort.
+     * @param comparator - The comparator used to sort the rows.
+     * @return A Pipeline that orders the rows according to the Comparator
+     */
+    public Pipeline sort(String name, Comparator<Map<String,Object>> comparator) {
         LRUMap stringCache = new LRUMap<String,String>(1000)
         List<Map> ordered = []
-        addStep("sort(${columns})") { Map<String,?> row ->
+        addStep(name) { row ->
             //int index = Collections.binarySearch( ordered, row, comparator )
             //ordered.add( Math.abs(index + 1), row )
             Map<String,?> cachedMap = row.collectEntries { e ->
@@ -662,6 +669,27 @@ public class Pipeline {
         }
 
         return next
+
+    }
+
+    /**
+     * Return a Pipeline where the rows are ordered by the given columns.  The value of
+     * each column is compared using the <=> operator.
+     * @param columns to sort by
+     * @return a Pipeline that where it's rows are ordered according to the given columns.
+     */
+    public Pipeline sort(String... columns) {
+        Comparator<Map> comparator = new Comparator<Map>() {
+            @Override
+            int compare(Map o1, Map o2) {
+                for( String key : columns ) {
+                    int value = (Comparable)o1[key] <=> (Comparable)o2[key]
+                    if( value != 0 ) return value
+                }
+                return 0
+            }
+        }
+        sort("sort(${columns})", comparator)
     }
 
     /**
@@ -670,7 +698,7 @@ public class Pipeline {
      * @return A Pipeline where all rows contains a java.lang.Double at the given column
      */
     Pipeline asDouble(String column) {
-        addStep("asDouble(${column})") { Map row ->
+        addStep("asDouble(${column})") { row ->
             String value = row[column] as String
             try {
                 if (value) row[column] = Double.parseDouble(value)
@@ -687,7 +715,7 @@ public class Pipeline {
      * @return A Pipeline where all rows contain a java.lang.Integer at given column
      */
     Pipeline asInt(String column) {
-        addStep("asInt(${column})") { Map row ->
+        addStep("asInt(${column})") { row ->
             String value = row[column] as String
             try {
                 if( value ) row[column] = Integer.parseInt(value)
@@ -704,7 +732,7 @@ public class Pipeline {
      * @return A Pipeline where all rows contain a java.lang.Boolean at given column
      */
     Pipeline asBoolean(String column) {
-        addStep("asBoolean(${column}") { Map row ->
+        addStep("asBoolean(${column}") { row ->
             String value = row[column]
             if( value ) {
                 switch( value ) {
@@ -817,12 +845,34 @@ public class Pipeline {
     }
 
     /**
+     * Write out the rows produced into the given filename as <a href=https://jsonlines.org">JSON Lines</a> format.
+     * @param filename the filename to save the JSON lines into.
+     * @param columns Optional list of columns to use clip out certain columns you want to include in the output.  If left
+     * off all columns are included.
+     * @return A Pipeline unmodified.
+     */
+    public Pipeline jsonl(String filename, List<String> columns = null) {
+        return save( new JsonSink( new File(filename), columns).jsonObjectPerLine(true) )
+    }
+
+    /**
+     * Write out the rows produced into a given File as <a href=https://jsonlines.org">JSON Lines</a> format.
+     * @param file the java.io.File to save the JSON lines into.
+     * @param columns Optional list of columns to use clip out certain columns you want to include in the output.  If left
+     * off all columns are included.
+     * @return A Pipeline unmodified.
+     */
+    public Pipeline jsonl(File file, List<String> columns = null) {
+        return save( new JsonSink( file, columns).jsonObjectPerLine(true) )
+    }
+
+    /**
      * Prints the values of the given columns for each row to the console, or all columns if no columns are given.
      * @param columns The names of the columns to print to the console
      * @return this Pipeline
      */
     public Pipeline printRow(String... columns) {
-        addStep("print()") { Map row ->
+        addStep("print()") { row ->
             if( columns ) {
                 println( "[ ${columns.toList().collect { row[it] }.join(',')} ]" )
             } else {
@@ -835,7 +885,7 @@ public class Pipeline {
 
     public Pipeline progress( int col = 50 ) {
         int line = 1
-        addStep("progress()") { Map row ->
+        addStep("progress()") { row ->
             line++
             printf(".")
             if( line % col ) println()
@@ -850,7 +900,7 @@ public class Pipeline {
      * @return The Pipeline where each row has a fieldname set to the given value
      */
     public Pipeline setField(String fieldName, Object value ) {
-        addStep("setField(${fieldName})") { Map row ->
+        addStep("setField(${fieldName})") { row ->
             row[fieldName] = value
             return row
         }
@@ -863,11 +913,11 @@ public class Pipeline {
      * @return The Pipeline where the fieldname exists in every row
      */
     public Pipeline addField(String fieldName,
-                             @DelegatesTo(Pipeline)
                              @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
+                             @DelegatesTo(Pipeline)
                              Closure fieldValue) {
         fieldValue.delegate = this
-        addStep("addField(${fieldName})") { Map row ->
+        addStep("addField(${fieldName})") { row ->
             Object value = fieldValue(row)
             if( value instanceof Rejection ) {
                 row[REJECTED_KEY] = value
@@ -884,14 +934,13 @@ public class Pipeline {
      * which will always remove the fieldName if not provided.
      *
      * @param fieldName the name of the field to remove depending on what the optional closure returns
-     * @param removeLogic an optiona closure that when given can return true or false to indicate to remove
+     * @param removeLogic an optional closure that when given can return true or false to indicate to remove
      * the field or not.  If not provided the field is always removed.
      * @return The pipeline where the fieldName has been removed when the removeLogic closure returns true or itself is null.
      */
     public Pipeline removeField(String fieldName,
-                                @DelegatesTo(Pipeline)
                                 @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
-                                Closure removeLogic = null) {
+                                @DelegatesTo(Pipeline) Closure removeLogic = null) {
         removeLogic?.delegate = this
         addStep( "removeField(${fieldName})") { row ->
             if( removeLogic == null || removeLogic(row) ) {
@@ -928,7 +977,7 @@ public class Pipeline {
      */
     public Pipeline clip(String... columns) {
         Set<String> cols = columns as HashSet
-        addStep( "clip(${columns.join(",")}") { Map row ->
+        addStep( "clip(${columns.join(",")}") { row ->
             Map<String,Object> result = [:] as Map<String,Object>
             for( String key : row.keySet() ) {
                 if( cols.contains(key) ) {
@@ -948,7 +997,7 @@ public class Pipeline {
      */
     Pipeline unique(String column) {
         Set<Object> unique = [:] as HashSet
-        addStep("unique(${column})") { Map row ->
+        addStep("unique(${column})") { row ->
             if( unique.contains(row[column]) ) {
                 return reject(row, "Non-unique row returned", RejectionCategory.IGNORE_ROW)
             }
@@ -966,9 +1015,8 @@ public class Pipeline {
      * @return Pipeline that will receive all members of the Iterable returned from the given closure.
      */
     public Pipeline inject(GString name,
-                           @DelegatesTo(Pipeline)
                            @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
-                           Closure<Iterable<Map<String,Object>>> closure ) {
+                           @DelegatesTo(Pipeline) Closure<Iterable<Map<String,Object>>> closure ) {
         return this.inject( name.toString(), closure )
     }
 
@@ -981,13 +1029,12 @@ public class Pipeline {
      * @return The Pipeline that will receive all members of the Iterable returned from the closure.
      */
     public Pipeline inject(String name,
-                           @DelegatesTo(Pipeline)
                            @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
-                           Closure<Iterable<Map<String,Object>>> closure) {
-        Pipeline next = new Pipeline(this.name, this)
+                           @DelegatesTo(Pipeline) Closure<Iterable<Map<String,Object>>> closure) {
+        Pipeline next = new Pipeline(name, this)
         next.src = new ChainedSource( this )
         closure.delegate = this
-        addStep(name) { Map row ->
+        addStep(name) { row ->
             Iterable<Map<String,Object>> result = closure.call( row )
             if( result == null ) {
                 return reject( row, "Unknown Reason: null returned", RejectionCategory.REJECTION )
@@ -1013,9 +1060,9 @@ public class Pipeline {
      *
      * @return A Pipeline whose records consist of the records from all Pipelines returned from the closure
      */
-    public Pipeline exchange(@DelegatesTo(Pipeline)
-                             @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
-                             Closure<Pipeline> closure) {
+    public Pipeline exchange( @DelegatesTo(Pipeline)
+                              @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
+                              Closure<Pipeline> closure) {
         Pipeline next = new Pipeline( name, this )
         next.src = new ChainedSource(this)
         closure.delegate = this
@@ -1049,8 +1096,8 @@ public class Pipeline {
      * @return A Pipeline where the destination columns are initialized to the values in the Map when the destination
      * column is empty.
      */
-    public Pipeline defaultValues( Map<String,?> defaults ) {
-        this.addStep("defaultValues for ${defaults.keySet()}") { Map row ->
+    public Pipeline defaultValues( Map<String,Object> defaults ) {
+        this.addStep("defaultValues for ${defaults.keySet()}") { row ->
             defaults.each { String column, Object value ->
                 if( !row[column] ) row[column] = value
             }
@@ -1064,7 +1111,7 @@ public class Pipeline {
      * @return A pipeline where the rows will have the destination columns set to the source column if empty/null.
      */
     public Pipeline defaultsBy( Map<String,String> defaults ) {
-        this.addStep("defaultsBy for ${defaults.keySet()}") { Map row ->
+        this.addStep("defaultsBy for ${defaults.keySet()}") { row ->
             defaults.each { String destColumn, String srcColumn ->
                 if( !row[destColumn] ) row[destColumn] = row[srcColumn]
             }
@@ -1085,7 +1132,7 @@ public class Pipeline {
      */
     public Pipeline limit(long limit, boolean halt = true) {
         int current = 0
-        this.addStep("Limit(${limit})") { Map row ->
+        this.addStep("Limit(${limit})") { row ->
             current++
             if( current > limit ) {
                 if( halt ) {
@@ -1141,7 +1188,7 @@ public class Pipeline {
      * replaced with the given withClause
      */
     public Pipeline replaceAll(String column, Pattern regEx, String withClause) {
-        addStep( "replaceAll(${column}, ${regEx.toString()})") { Map row ->
+        addStep( "replaceAll(${column}, ${regEx.toString()})") { row ->
             String v = row[column]
             row[column] = v?.replaceAll( regEx, withClause )
             return row
@@ -1158,7 +1205,7 @@ public class Pipeline {
      * @return this Pipeline
      */
     public Pipeline replaceValues(String column, Map<String,String> values ) {
-        addStep( "replaceValues(${column}, ${values})" ) { Map row ->
+        addStep( "replaceValues(${column}, ${values})" ) { row ->
             String v = row[column]
             if( values.containsKey(v) ) {
                 row[column] = values[ v ] ?: row[column]
@@ -1219,6 +1266,7 @@ public class Pipeline {
      * @return The LoadStatistic instance from this Pipeline.
      */
     public LoadStatistic go() {
+        addDefaultRejections()
         long s = System.currentTimeMillis()
         start()
         long e = System.currentTimeMillis()
@@ -1275,10 +1323,10 @@ public class Pipeline {
      * @param category The rejection category to group this specific rejection
      * @param ex The cause of the rejection when an exception is thrown
      * @return
+     * @deprecated Switch to use {@link gratum.etl.Step#reject}
      */
     public static Rejection reject( String reason, RejectionCategory category = RejectionCategory.REJECTION, Throwable ex = null ) {
-        Rejection rej =  new Rejection( reason, category )
-        if( ex ) rej.cause = ex
+        Rejection rej =  new Rejection( reason, category, null, ex )
         return rej
     }
 
@@ -1287,7 +1335,7 @@ public class Pipeline {
         return row
     }
 
-    public void reject(Map<String,Object> row, int lineNumber = -1) {
+   public void reject(Map<String,Object> row, int lineNumber = -1) {
         rejections?.process( row, lineNumber )
     }
 
@@ -1319,13 +1367,28 @@ public class Pipeline {
 
     public void finished() {
         try {
-            doneChain.each { AfterStep current ->
+            doneChain.each { current ->
                 current.execute()
             }
         } catch( HaltPipelineException ex ) {
             // ignore as we were asked to halt.
         } finally {
             complete = true
+        }
+    }
+
+    @CompileDynamic // annoying to do this, but this method trigger a bug in groovy compiler so turned off static compilation for this method
+    void addDefaultRejections() {
+        if( !this.rejections ) {
+            this.onRejection { rej ->
+                rej.addStep("Default SCRIPT_ERROR output") { row ->
+                    if( row.rejectionCategory == RejectionCategory.SCRIPT_ERROR ) {
+                        println( "${row.rejectionCategory} ${row.rejectionStep} ${row.rejectionReason}\n${row.rejectionException}" )
+                    }
+                    return row
+                }
+                return
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
 
 description = """
-A simplified standalone ETL engine for groovy.  Gratum is groovy + datum.
+A lightweight standalone ETL engine for groovy.  Gratum is groovy + datum.
 """
 
 allprojects {
@@ -20,7 +20,7 @@ allprojects {
     }
 
     dependencies {
-        implementation('org.codehaus.groovy:groovy-all:2.5.18') {
+        implementation('org.codehaus.groovy:groovy-all:2.5.23') {
             exclude group: 'org.codehaus.groovy', module:'groovy-swing'
             exclude group: 'org.codehaus.groovy', module:'groovy-testng'
             exclude group: 'org.codehaus.groovy', module:'groovy-console'
@@ -40,19 +40,21 @@ allprojects {
         description = project.description
     }
 
-    task sourceJar(type: Jar) {
+    tasks.register("sourceJar", Jar) {
         classifier 'sources'
         baseName = "gratum-${project.name}"
         from sourceSets.main.allSource
     }
 
-    task javadocJar(type: Jar, dependsOn: javadoc) {
+    tasks.register("javadocJar", Jar ) {
+        dependsOn("javadoc")
         classifier 'javadoc'
         archivesBaseName = "gratum-${project.name}"
         from javadoc.destinationDir
     }
 
-    task groovydocJar(type: Jar, dependsOn: groovydoc ) {
+    tasks.register('groovydocJar', Jar) {
+        dependsOn groovydoc
         classifier 'groovydoc'
         archivesBaseName = "gratum-${project.name}"
         from groovydoc.destinationDir

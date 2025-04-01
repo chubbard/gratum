@@ -1,15 +1,15 @@
 
 dependencies {
-    implementation group: 'commons-io', name: 'commons-io', version: '2.8.0'
-    implementation "org.bouncycastle:bcprov-jdk15on:1.70",
-            "org.bouncycastle:bcprov-ext-jdk15on:1.70",
-            "org.bouncycastle:bcpg-jdk15on:1.70",
-            "org.bouncycastle:bcpkix-jdk15on:1.70"
+    implementation group: 'commons-io', name: 'commons-io', version: '2.18.0'
+    implementation "org.bouncycastle:bcprov-jdk18on:1.80",
+            "org.bouncycastle:bcprov-ext-jdk18on:1.78.1",
+            "org.bouncycastle:bcpg-jdk18on:1.78.1",
+            "org.bouncycastle:bcpkix-jdk18on:1.80"
     implementation project(':core')
 }
 
 description = """
-Adds support for PGP descryption/encryption to Gratum.
+Adds support for PGP decryption/encryption to Gratum.
 """
 
 sourceSets {

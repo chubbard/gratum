@@ -14,6 +14,7 @@ class JsonSink implements Sink<Map<String,Object>> {
     BufferedWriter writer
     Collection<String> columns
     File output
+    boolean jsonObjectPerLine = false
 
     JsonSink(File file, Collection<String> columns = null){
         this.output = file
@@ -33,21 +34,34 @@ class JsonSink implements Sink<Map<String,Object>> {
         name
     }
 
+    JsonSink jsonObjectPerLine(boolean value) {
+        jsonObjectPerLine = value
+        return this
+    }
+
     @Override
     void attach(Pipeline pipeline) {
-        writer.writeLine("[")
+        if( !jsonObjectPerLine ) writer.writeLine("[")
         if( columns ) {
             pipeline.addStep("Json to ${name}") { Map row ->
                 String json = JsonOutput.toJson( row.subMap( columns ) )
                 writer.write( json )
-                writer.write(",\n")
+                if( jsonObjectPerLine ) {
+                    writer.write("\n")
+                } else {
+                    writer.write(",\n")
+                }
                 return row
             }
         } else {
             pipeline.addStep("Json to ${name}") { Map row ->
                 String json = JsonOutput.toJson( row )
                 writer.write( json )
-                writer.write(",\n")
+                if( jsonObjectPerLine ) {
+                    writer.write("\n")
+                } else {
+                    writer.write(",\n")
+                }
                 return row
             }
         }
@@ -64,7 +78,7 @@ class JsonSink implements Sink<Map<String,Object>> {
 
     @Override
     void close() throws IOException {
-        writer.write("\n]")
+        if( !jsonObjectPerLine ) writer.write("\n]")
         writer.flush()
         writer.close()
     }
