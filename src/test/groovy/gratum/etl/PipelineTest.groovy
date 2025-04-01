@@ -1098,4 +1098,29 @@ class PipelineTest {
         // make sure we get rejections below the inject
         assert stat.getRejections(RejectionCategory.REJECTION) == 2
     }
+
+    @Test
+    void testReduce() {
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic stats = csv("titanic.csv", stream, ",")
+                .asDouble("Fare")
+                .reduce("Calculate Total", [ticketPrice:0.0d, count: 0]) { sum, row ->
+                    Double fare = row["Fare"] ?: null
+                    if( fare > 0.0d ) {
+                        sum.ticketPrice += fare
+                        sum.count++
+                    }
+                    return sum
+                }
+                .addStep("Test Reduce") { row ->
+                    assert row.ticketPrice > 0.0d
+                    assert row.count > 0
+                    return row
+                }
+                .go()
+
+            assert stats.loaded == 418
+            assert stats.rejections == 0
+        }
+    }
 }
