@@ -571,7 +571,7 @@ public class Pipeline {
                             value = Math.negateExact(value)
                             break
                     }
-                    if( value != 0 ) return value;
+                    if( value != 0 ) return value
                 }
                 return 0
             }
@@ -619,7 +619,7 @@ public class Pipeline {
             int compare(Map o1, Map o2) {
                 for( String key : columns ) {
                     int value = (Comparable)o1[key] <=> (Comparable)o2[key]
-                    if( value != 0 ) return value;
+                    if( value != 0 ) return value
                 }
                 return 0
             }
