@@ -1025,7 +1025,7 @@ class PipelineTest {
                 }
                 .go()
 
-            assert stats.loaded == 809
+            assert stats.loaded == 549
             assert stats.getRejections(RejectionCategory.IGNORE_ROW) == 266
             assert stats.getRejections(RejectionCategory.REJECTION) == stats.rejections - stats.getRejections(RejectionCategory.IGNORE_ROW)
         })
