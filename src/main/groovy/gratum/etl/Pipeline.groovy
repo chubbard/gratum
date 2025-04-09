@@ -1253,7 +1253,7 @@ public class Pipeline {
     }
 
     public static Map reject(Map<String,Object> row, String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
-        row[ REJECTED_KEY ] = reject( reason, category )
+        row[ REJECTED_KEY ] = new Rejection( reason, category )
         return row
     }
 
