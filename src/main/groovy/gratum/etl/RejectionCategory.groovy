@@ -12,5 +12,6 @@ enum RejectionCategory {
     DUPLICATE,
     REJECTION,
     SCRIPT_ERROR,
+    RUNTIME_ERROR,
     IGNORE_ROW
 }

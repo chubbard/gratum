@@ -1,5 +1,6 @@
 package gratum.source
 
+import gratum.etl.GratumFixture
 import gratum.etl.LoadStatistic
 import org.junit.Test
 
@@ -76,5 +77,33 @@ class XlsxSourceTest {
 
         assert stat.loaded == 7
         assert stat.rejections == 0
+    }
+
+    @Test
+    void testDecryptXlsx() {
+        File encryptedFile = File.createTempFile("encrypted_players", ".xlsx")
+        GratumFixture.withResource("encrypted_players.xlsx") {
+            encryptedFile << it
+        }
+        try {
+            LoadStatistic stat = XlsxSource.xlsx(encryptedFile)
+                    .password("Freedom")
+                    .dateFormat("MM/dd/yyyy")
+                    .into()
+                    .asDate("birth_date", "MM/dd/yyyy")
+                    .addStep("Verify Dates") { Map<String, Object> row ->
+                        assert row.birth_date instanceof Date
+                        Calendar cal = Calendar.getInstance()
+                        cal.setTime(row.birth_date)
+                        assert cal.get(Calendar.YEAR) > 1900
+                        return row
+                    }
+                    .go()
+
+            assert stat.loaded == 7
+            assert stat.rejections == 0
+        } finally {
+            encryptedFile.delete()
+        }
     }
 }

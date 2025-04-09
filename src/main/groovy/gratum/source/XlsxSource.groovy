@@ -3,8 +3,13 @@ package gratum.source
 import gratum.etl.Pipeline
 import groovy.transform.CompileStatic
 import org.apache.poi.openxml4j.opc.OPCPackage
+import org.apache.poi.poifs.crypt.Decryptor
+import org.apache.poi.poifs.crypt.EncryptionInfo
+import org.apache.poi.poifs.crypt.EncryptionMode
+import org.apache.poi.poifs.filesystem.POIFSFileSystem
 import org.apache.poi.ss.usermodel.DataFormatter
 import org.apache.poi.ss.util.CellAddress
+import org.apache.poi.util.LittleEndianInputStream
 import org.apache.poi.util.XMLHelper
 import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable
 import org.apache.poi.xssf.eventusermodel.XSSFReader
@@ -16,6 +21,7 @@ import org.xml.sax.XMLReader
 import org.xml.sax.ContentHandler
 
 import javax.xml.parsers.ParserConfigurationException
+import java.security.KeyException
 
 /**
  * A {@link gratum.source.Source} that implements reading excel workbooks in xlsx
@@ -29,6 +35,7 @@ class XlsxSource extends AbstractSource {
     String sheet
     Closure<Void> headerClosure = null
     String dateFormat = "yyyy-MM-dd"
+    String password
 
     /**
      * Reads the given InputStream as an excel format file (xlsx), and processes
@@ -96,6 +103,16 @@ class XlsxSource extends AbstractSource {
         return this
     }
 
+    /**
+     * The password to use for encrypted spreadsheets
+     * @param password the given password to use to decrypt the stylesheet.
+     * @return this instance
+     */
+    public XlsxSource password(String password) {
+        this.password = password
+        return this
+    }
+
     void setSheet(String sheet) {
         this.sheet = sheet
     }
@@ -104,11 +121,42 @@ class XlsxSource extends AbstractSource {
         this.dateFormat = dateFormat
     }
 
+    void setPassword(String password) {
+        this.password = password
+    }
+
     @Override
     void doStart(Pipeline pipeline) {
         OPCPackage ocp = null
         try {
-            ocp = OPCPackage.open( stream ?: excelFile.newInputStream() )
+            InputStream istream = null
+            if( password ) {
+                if( excelFile ) {
+                    POIFSFileSystem filesystem  = new POIFSFileSystem(excelFile)
+                    EncryptionInfo info = new EncryptionInfo(filesystem)
+                    Decryptor decryptor = Decryptor.getInstance(info)
+                    if( decryptor.verifyPassword(password) ) {
+                        istream = decryptor.getDataStream( filesystem )
+                    } else {
+                        throw new KeyException("Password is missing or incorrect.")
+                    }
+                } else if( stream ) {
+                    // todo having trouble with this block
+                    EncryptionInfo info = new EncryptionInfo(new LittleEndianInputStream(stream), EncryptionMode.standard)
+                    Decryptor decryptor = Decryptor.getInstance(info)
+                    if( decryptor.verifyPassword(password) ) {
+                        istream = decryptor.getDataStream(stream, 0, 0)
+                    } else {
+                        throw new KeyException("Password is missing or incorrect.")
+                    }
+                } else {
+                    throw new RuntimeException("Must specify a file or InputStream to load.")
+                }
+            } else {
+                istream = stream ?: excelFile.newInputStream()
+            }
+
+            ocp = OPCPackage.open( istream )
 
             ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(ocp)
             XSSFReader xssfReader = new XSSFReader(ocp)

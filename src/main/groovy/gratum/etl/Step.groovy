@@ -14,9 +14,10 @@ class Step {
     private Map<RejectionCategory,Integer> rejections = [:]
     private long duration = 0
 
-    Step(String name, Closure<Map<String,Object>> step) {
+    Step(String name, @DelegatesTo(Step) Closure<Map<String,Object>> step) {
         this.name = name
         this.step = step
+        this.step.delegate = this
     }
 
     public Map<String,Object> execute(Pipeline pipeline, Map<String,Object> row, int lineNumber) {
@@ -67,6 +68,10 @@ class Step {
 
     public int getLoaded() {
         return loaded
+    }
+
+    public Map<String,Object> reject(Map<String,Object> row, String reason, RejectionCategory category = RejectionCategory.REJECTION ) {
+        return Pipeline.reject( row, reason, category )
     }
 
     void incrementRejections(RejectionCategory rejectionCategory) {

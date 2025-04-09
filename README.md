@@ -18,14 +18,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.12'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.14'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>1.1.12</version>
+        <version>1.1.14</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -404,6 +404,171 @@ name of the pipeline.
 It's much easier to use the existing operation methods that are included in the Pipeline.  For example,
 we used an `addStep` to add a step that filtered out rows.  This is so common there is already an operation
 that does this for you called `filter`.  There are plenty of existing methods to perform common operations.
+
+## Concurrency
+
+Gratum out of the box is single threaded, and it uses the existing thread that invokes `go()` to process the `Pipeline`.
+However, there are times when you want to process data across many threads to speed things up on modern CPU architecture.
+A `Pipeline` is single threaded.  A single thread traverses a single instance of
+a pipeline when it is processing data.  So each thread has its own instance of a `Pipeline` that's even if it appears
+that only one `Pipeline` has been created.  `Pipeline` instances are not shared between threads.
+
+Concurrency in Gratum is performed using the `LocalConcurrentContext` object.  This object provides the operators to
+define what portions of a `Pipeline` are concurrent and which parts are single threaded.  `LocalConcurrentContext` works
+on a spread-collect style concurrency.  Rows traversing a `Pipeline` are spread across multiple threads for 
+processing, and the output of those threads are collected back onto a collector Pipeline for further processing.
+
+Let's look at an example:
+
+```groovy
+   csv("titanic.csv", ",")
+    .apply( new LocalConcurrentContext(4, 200)
+        .spread { pipeline ->
+            pipeline.filter(gender: "male")
+        }.collect { pipeline ->
+            pipeline.save("male_passengers.csv", ",")
+        }.connect()
+    )
+    .go()
+```
+In this example, we are reading the CSV file `titanic.csv` and each row in the CSV is being spread across 4 workers.
+(1 worker equates to a thread).  Each worker pulls rows from a queue (i.e. queue of size 200) that the producer thread (i.e. 
+the thread invoking `go()`) will place a row onto it.  When the queue fills up the producer thread is paused and waits
+for the queue to drain.
+
+The `spread` operator defines the worker's pipeline.  The spread closure is invoked multiple times to configure a Pipeline 
+for each worker.  This way each worker receives the same instructions, but also separate instances.  You can treat things
+within this closure as belonging to that worker thread (this is important later).
+
+The `collect` operator defines the pipeline used to gather results from the worker's pipelines.  This runs on a single 
+thread, but it is not the same as the original thread.  All rows that were outputted from each worker's pipeline will
+be passed to the collect pipeline for further processing.  Using the `collect` operator is optional.
+
+Finally, the `connect` operator returns the closure used to configure the original pipeline and set up the spread-collect 
+pattern.  This is required.
+
+In the example, above titantic.csv is read out by the producer thread, each row is sent to 1 of 4 workers, the workers filter 
+out any rows that are `gender == "male"` and returns only the male rows.  The collect pipeline receives the filtered rows 
+and writes those to `male_passengers.csv`.  This is a trivial example that wouldn't really benefit from threading, but
+it does illustrate the patterns involved.
+
+### Safe Concurrency
+
+Concurrency brings with it issues of safety when dealing with reading and writing access to shared resources.  This often
+brings up locking, mutexes, latches, etc.  Gratum does not dictate any locking your program should use.  If you must
+synchronize access that is an exercise for you to figure out.  But, there are some ways to safely access worker local 
+state that doesn't involve synchronization.
+
+Closures are great because they can access the outer scope to read and modify values.  These operations can function like
+instance variables on objects giving a closure  state that persists between function calls.  When using concurrency
+in Gratum you must be careful about which variables you modify and read from within your closures as workers could access
+something that is shared creating bugs.
+
+Here is an example:
+
+```groovy
+
+// this would be visible and shared across all threads (producer, workers, collector).
+// Variables at this scope would need synchronization to prevent race conditions and
+// concurrency errors.  Be very very careful accessing variables defined at this scope.
+Map<String,String> values = [:]
+
+csv("images.csv", ",")
+    .asDouble("price")
+    .apply( new LocalConcurrentContext(4, 200)
+            .spread { pipeline ->
+                // these local variables are visible to operations on the 
+                // pipeline used by the worker.  They are not shared between
+                // workers so it's safe to use these.
+                Base64 base64 = Base64.newInstance()
+                Decoder decoder = base64.getDecoder()
+                
+                pipeline.addField("image") { row ->
+                    // this method uses a single instance of Base64 decoder across all rows played down its pipeline.
+                    // this reduces the memory used and increases performance because it's not constructing an instance
+                    // for every row it encounters!
+                    decoder.decode( row["imageBase64"] )
+                    row
+                }
+                .save( new Sink() {
+                    int imagesProcessed = 0
+                    
+                    String getName() { return "png" }
+                    
+                    void attach(Pipeline pipeline) {
+                        pipeline.addStep("Save PNG") { row->
+                            File output = new File(row.filename as String)
+                            output.withOutputStream { stream ->
+                                stream.write( row.image as byte[] )
+                            }
+                            imagesProcessed++
+                        }
+                    }
+                    
+                    Map<String,String> getResult() {
+                        return [processed: imagesProcessed]
+                    }
+                })
+            }
+            .collect { pipeline ->
+                // this is local to the collector thread so variables defined within this closure
+                // are safe to use without synchronization
+                int total = 0
+                pipeline.addStep("Total") { row ->
+                    total += row.processed
+                }
+                .after {
+                    println("Processed ${total} images")
+                }
+            }
+            .connect()
+    )
+    .go()
+```
+
+In the above example, it shows how variables defined in different closures are shared among threads or not shared (and thus
+safe to use in your operators).  Defining variables within the `spread` and `collect` closures are safe to use within their
+respective pipeline's operators.  It's not safe to use variables defined in the method where the pipeline is first 
+constructed from multiple threads (ie the `spread` and `collect` closures).  The producer thread may use them safely (i.e.
+any operator defined above the `apply` method using the `LocalConncurrentContext`).
+
+## Examples
+
+Use `OkHttpSource` to fetch JSON from a URL and iterate over an array within that JSON document.
+```
+import static gratum.source.OkHttpSource.*
+
+http("http://api.open-notify.org/astros.json")
+    .into()
+    .inject("") { row ->
+        row.json?.people
+    }
+    .printRow("name","craft")
+    .go()
+```
+Another `OkHttpSource` to fetch JSON data from a URL and iterate over the data contained in the JSON document.
+```
+import groovy.json.JsonSlurper
+
+import static gratum.source.OkHttpSource.*
+
+http( "https://www.freeforexapi.com/api/live" ) {
+        query( pairs: ["EURGBP","USDJPY"].join(",") )
+        header("Accept", "application/json")
+    }
+    .into()
+    .addField("json") { row ->
+        // this has to be here because this service returns a Content-Type of text/html 
+        // instead of the correct mime-type of application/json so we manually parse it
+        new JsonSlurper().parse(row.body.charStream())
+    }
+    .filter("Only proceed when markets are open") { row -> row.json.rates }
+    .inject("Flatten JSON and inject rates") { row ->
+        row.json?.rates?.collect { currency, obj -> [ currency: currency, rate: obj.rate, timestamp: obj.timestamp ] }
+    }
+    .printRow("currency", "rate", "timestamp")
+    .go()
+```
 
 ## API Docs
 
