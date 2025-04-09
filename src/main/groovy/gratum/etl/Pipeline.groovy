@@ -1299,7 +1299,7 @@ public class Pipeline {
             stat.addTiming("${name}.after", (Long)doneChain.sum() {it.duration } )
         }
 
-        if( loaded > DO_NOT_TRACK ) stat.loaded = stat.stepStatistics ? stat.stepStatistics.last().loaded : 0
+        if( loaded > DO_NOT_TRACK ) stat.loaded = loaded
         return stat
     }
 
