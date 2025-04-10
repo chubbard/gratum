@@ -155,6 +155,7 @@ public class Pipeline {
      * @return this Pipeline.
      */
     public Pipeline after( @DelegatesTo(Pipeline) Closure<Void> step ) {
+        step.delegate = this
         doneChain << new AfterStep(step)
         return this
     }

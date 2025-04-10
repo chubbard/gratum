@@ -1034,9 +1034,13 @@ class PipelineTest {
     @Test
     void testDoneCallbacksInTimings() {
         boolean called = false
+        long s = System.currentTimeMillis()
         LoadStatistic stat = from(GratumFixture.hobbies).sort("hobby").after {
             called = true
             Thread.sleep(10) // ensure we don't go too fast :-)
+            long e = System.currentTimeMillis()
+            LoadStatistic afterStat = toLoadStatistic(s,e)
+            assert afterStat.loaded == 8
         }.go()
 
         assert stat.stepTimings.containsKey("sort([hobby]).after")
