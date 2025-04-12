@@ -37,11 +37,11 @@ class JsonSource extends AbstractSource {
     }
 
     public static JsonSource jsonl(Reader reader, String name = "Reader") {
-        return new JsonSource( name, reader ).parseRecordPerLine(true)
+        return new JsonSource( name, reader ).recordPerLine(true)
     }
 
     public static JsonSource jsonl(File file) {
-        return jsonl( new FileReader(file), file.name )
+        return jsonl( new FileReader(file), file.name ).recordPerLine(true)
     }
 
     public JsonSource recordPerLine( boolean recordPerLine ) {
