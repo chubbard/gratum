@@ -9,7 +9,7 @@ targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
 group = 'com.github.chubbard'
-version = '1.1.14'
+version = '1.1.15'
 description = """
 A lightweight standalone ETL engine for groovy.  Gratum is groovy + datum.
 """
