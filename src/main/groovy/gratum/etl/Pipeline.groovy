@@ -184,7 +184,6 @@ public class Pipeline {
                     rejection.throwable.printStackTrace(new PrintWriter(it, true) )
                     it.toString()
                 }
-                logger.warn("Rejection ${rejection.category} ${rejection.step} ${rejection?.reason}", rejection.throwable)
                 return current
             }
             configure.delegate = rejections
