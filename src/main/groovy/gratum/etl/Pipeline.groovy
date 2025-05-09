@@ -1211,10 +1211,13 @@ public class Pipeline {
     }
 
     /**
-     * Collects or flattens a set of rows that share the same value in succession within the stream into a List of
-     * those matching rows.  This group rows that share the same value of the given field name.  The invokes the given
-     * windowClosure passing the list of group rows.  The windowClosure returns a list of the rows it wants to continue
+     * Collects, or flattens, a set of rows that share the same value in succession within the stream into a List of
+     * those matching rows.  This groups rows that share the same value of the given field name.  Then invokes the given
+     * windowClosure passing the list of grouped rows.  The windowClosure returns a list of the rows it wants to continue
      * downstream.  This works best with data that has a somewhat predictable order when it comes to the given field name.
+     * The flattenWindow operation caches up rows that share the same value for the given field, and once it encounters
+     * a row whose given value differs it invokes the windowClosure with the like valued cached rows.  Then it proceeds
+     * caching rows that match the different valued row and repeats the same caching logic.
      *
      * @param field the field name to look for common values within.
      * @param windowClosure the logic to use the process the rows that share a successive common value in the field name.

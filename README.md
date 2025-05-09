@@ -658,9 +658,9 @@ http( "https://www.freeforexapi.com/api/live" ) {
 
 [apply](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#apply(Closure%3CVoid%3E))
 
-[reduce](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#reduce(Closure%3CMap%3CString,Object%3E%3E))
+[reduce](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#reduce(java.lang.String,%20Map%3CString,%20Object%3E,%20Closure%3CMap%3CString,%20Object%3E%3E))
 
-[flattenWindow](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#flattenWindow(Closure%3CList%3CMap%3CString,Object%3E%3E%3E))
+[flattenWindow](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#flattenWindow(java.lang.String,%20Closure%3CList%3CMap%3CString,%20Object%3E%3E%3E))
 
 ### Output
 
