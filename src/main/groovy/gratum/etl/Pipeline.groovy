@@ -1015,7 +1015,7 @@ public class Pipeline {
      */
     public Pipeline defaultValues( Map<String,Object> defaults ) {
         this.addStep("defaultValues for ${defaults.keySet()}") { row ->
-            defaults.each { String column, Object value ->
+            defaults?.each { String column, Object value ->
                 if( !row[column] ) row[column] = value
             }
             return row
@@ -1029,7 +1029,7 @@ public class Pipeline {
      */
     public Pipeline defaultsBy( Map<String,String> defaults ) {
         this.addStep("defaultsBy for ${defaults.keySet()}") { row ->
-            defaults.each { String destColumn, String srcColumn ->
+            defaults?.each { String destColumn, String srcColumn ->
                 if( !row[destColumn] ) row[destColumn] = row[srcColumn]
             }
             return row
@@ -1184,6 +1184,15 @@ public class Pipeline {
         }
     }
 
+    /**
+     * Reduces all upstream rows into a value that is passed into the given closure (similar to Groovy inject method).
+     * The downstream result is the value returned from the closure's final invocation.  The downstream operators will
+     * see only 1 row object.
+     * @param name The given name of this step
+     * @param value The initial value passed into the given closure.
+     * @param logic The closure that is invoked given the current value and the current row.
+     * @return the value of the next current value or the final value that will be sent to downstream operators.
+     */
     Pipeline reduce(String name, Map<String,Object> value,
                     @DelegatesTo(Pipeline)
                     @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>,java.util.Map<String,Object>"] )
@@ -1198,6 +1207,47 @@ public class Pipeline {
         after {
             downstream.process(current, 1)
             return
+        }
+        return downstream
+    }
+
+    /**
+     * Collects or flattens a set of rows that share the same value in succession within the stream into a List of
+     * those matching rows.  This group rows that share the same value of the given field name.  The invokes the given
+     * windowClosure passing the list of group rows.  The windowClosure returns a list of the rows it wants to continue
+     * downstream.  This works best with data that has a somewhat predictable order when it comes to the given field name.
+     *
+     * @param field the field name to look for common values within.
+     * @param windowClosure the logic to use the process the rows that share a successive common value in the field name.
+     * @return A downstream pipeline to continue add operations to.
+     */
+    Pipeline flattenWindow(String field,
+                           @DelegatesTo(Pipeline)
+                           @ClosureParams( value = FromString.class, options = ["java.util.List<Map<String,Object>>"])
+                           Closure<List<Map<String,Object>>> windowClosure ) {
+        Map<String,List<Map<String,Object>>> window = [:]
+        Pipeline downstream = new Pipeline( name, this ).source( new ChainedSource(this) )
+        int line = 0
+        windowClosure.delegate = this
+        addStep("Window(${field})") { row ->
+            if( window[row[field] as String] ) {
+                window[row[field] as String].add( row )
+            } else {
+                if( !window.isEmpty() ) {
+                    List<Map<String,Object>> rows = windowClosure( window.entrySet().first().value )
+                    rows.each { r -> downstream.process( r, ++line ) }
+                    window.clear()
+                }
+                window[row[field] as String] = [ row ]
+            }
+            return row
+        }
+        .after {
+            if( !window.isEmpty() ) {
+                List<Map<String,Object>> rows = windowClosure( window.entrySet().first().value )
+                rows.each { r -> downstream.process( r, ++line ) }
+            }
+            downstream.finished()
         }
         return downstream
     }

@@ -18,14 +18,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.14'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.15'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>1.1.14</version>
+        <version>1.1.15</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -658,6 +658,8 @@ http( "https://www.freeforexapi.com/api/live" ) {
 
 [apply](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#apply(Closure%3CVoid%3E))
 
+[flattenWindow](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#flattenWindow(Closure%3CList%3CMap%3CString,Object%3E%3E%3E))
+
 ### Output
 
 [save](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#save(java.lang.String,%20java.lang.String,%20List%3CString%3E))
@@ -682,6 +684,10 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 [xls](https://chubbard.github.io/gratum/groovydoc/gratum/source/XlsSource.html)
 
 [xlsx](https://chubbard.github.io/gratum/groovydoc/gratum/source/XlsxSource.html)
+
+[json](https://chubbard.github.io/gratum/groovydoc/gratum/source/JsonSource.html)
+
+[jsonl](https://chubbard.github.io/gratum/groovydoc/gratum/source/JsonSource.html)
 
 [collection](https://chubbard.github.io/gratum/groovydoc/gratum/source/CollectionSource.html)
 
