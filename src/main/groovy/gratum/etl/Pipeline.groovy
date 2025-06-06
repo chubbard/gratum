@@ -169,29 +169,35 @@ public class Pipeline {
      */
     public Pipeline onRejection( @DelegatesTo(Pipeline)
                                  @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
-                                 Closure<Void> configure ) {
+                                 Closure<Pipeline> configure ) {
         if( parent ) {
             parent.onRejection( configure )
         } else {
-            if( !rejections ) rejections = new Pipeline("Rejections(${name})")
-            rejections.addStep("Remap rejections to columns") { row ->
-                Map<String,Object> current = (Map<String,Object>)row.clone()
-                Rejection rejection = (Rejection)current.remove(REJECTED_KEY)
-                current.rejectionCategory = rejection.category
-                current.rejectionReason = rejection.reason
-                current.rejectionStep = rejection.step
-                current.rejectionException = !rejection.throwable ? "" : new StringWriter().with {
-                    rejection.throwable.printStackTrace(new PrintWriter(it, true) )
-                    it.toString()
+            if( !rejections ) {
+                rejections = new Pipeline("Rejections(${name})")
+                rejections.addStep("Remap rejections to columns") { row ->
+                    Map<String,Object> current = (Map<String,Object>)row.clone()
+                    Rejection rejection = (Rejection)current.remove(REJECTED_KEY)
+                    if( rejection ) {
+                        current.rejectionCategory = rejection.category
+                        current.rejectionReason = rejection.reason
+                        current.rejectionStep = rejection.step
+                        current.rejectionException = !rejection.throwable ? "" : new StringWriter().with {
+                            rejection.throwable.printStackTrace(new PrintWriter(it, true))
+                            it.toString()
+                        }
+                    } else {
+                        logger.warn("Rejection was missing during processing rejections.")
+                    }
+                    return current
                 }
-                return current
+                after {
+                    rejections.finished()
+                    return
+                }
             }
             configure.delegate = rejections
             configure( rejections )
-            after {
-                rejections.finished()
-                return
-            }
         }
         return this
     }
@@ -228,11 +234,16 @@ public class Pipeline {
                            @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                            @DelegatesTo(Pipeline) Closure callback) {
         callback.delegate = this
+        int rejections = 0
         addStep( name ) { row ->
             if( !callback(row) ) {
+                rejections++
                 return reject(row,"Row did not match the filter closure.", RejectionCategory.IGNORE_ROW )
             }
             return row
+        }
+        after {
+            if( rejections > 0 ) println("${name} rejected ${rejections}")
         }
         return this
     }
@@ -1341,7 +1352,7 @@ public class Pipeline {
         }
 
         for( Step s : processChain ) {
-            s.rejections.each { RejectionCategory cat, Integer count ->
+            s.rejections.each { cat, count ->
                 stat.addRejection( cat, s.name, count )
             }
 
@@ -1380,7 +1391,7 @@ public class Pipeline {
 
     @CompileDynamic // annoying to do this, but this method trigger a bug in groovy compiler so turned off static compilation for this method
     void addDefaultRejections() {
-        if( !this.rejections ) {
+        if( !parent && !this.rejections ) {
             this.onRejection { rej ->
                 rej.addStep("Default SCRIPT_ERROR output") { row ->
                     if( row.rejectionCategory == RejectionCategory.SCRIPT_ERROR ) {
