@@ -4,6 +4,8 @@ import gratum.csv.CSVFile
 import gratum.csv.CSVReader
 import gratum.etl.Pipeline
 import groovy.transform.CompileStatic
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -46,6 +48,8 @@ import groovy.transform.CompileStatic
  */
 @CompileStatic
 public class CsvSource extends AbstractSource {
+
+    public static final Logger logger = LoggerFactory.getLogger(CsvSource.class)
 
     CSVFile csvFile
 
@@ -153,7 +157,7 @@ public class CsvSource extends AbstractSource {
 
             @Override
             void afterProcessing() {
-
+                logger.debug("{} => Total Lines Parsed: {}", name, line)
             }
         }
 

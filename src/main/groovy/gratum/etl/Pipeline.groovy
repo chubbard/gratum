@@ -210,17 +210,29 @@ public class Pipeline {
      * @return Returns a new pipeline that combines all of the rows from this pipeline and the src pipeline.
      */
     public Pipeline concat( Pipeline src ) {
-        Pipeline original = this
-        src.parent = this
-        this.after {
-            int line = 0
-            src.addStep("concat(${src.name})") { row ->
-                line++
-                original.process( row, line )
-                return row
-            }.start()
+        Pipeline concatPipe = createChildPipeline("concat(${src.name})", src)
+        int line = 0
+        src.addStep("concat(${src.name})"){ row ->
+            line++
+            concatPipe.process(row, line)
+            return row
         }
-        return this
+        this.after {
+            src.start()
+        }
+        return concatPipe
+    }
+
+    @CompileDynamic
+    private Pipeline createChildPipeline(String name, Pipeline src) {
+        Pipeline child = new Pipeline(name, this).source(new ChainedSource(this))
+        int line = 0
+        addStep(name) { row ->
+            line++
+            child.process(row, line)
+            return row
+        }
+        return child
     }
 
     /**
@@ -234,16 +246,11 @@ public class Pipeline {
                            @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                            @DelegatesTo(Pipeline) Closure callback) {
         callback.delegate = this
-        int rejections = 0
         addStep( name ) { row ->
             if( !callback(row) ) {
-                rejections++
                 return reject(row,"Row did not match the filter closure.", RejectionCategory.IGNORE_ROW )
             }
             return row
-        }
-        after {
-            if( rejections > 0 ) println("${name} rejected ${rejections}")
         }
         return this
     }
@@ -1401,6 +1408,8 @@ public class Pipeline {
                 }
                 return
             }
+        } else if( parent ) {
+            parent.addDefaultRejections()
         }
     }
 }
