@@ -240,18 +240,26 @@ class PipelineTest {
         LoadStatistic stats = from([
                 [name: 'Chuck', atBats: '200', hits: '100', battingAverage: '0.5'],
                 [name: 'Sam', atBats: '300', hits: '125', battingAverage: '0.4166']
-        ]).concat( from([
+        ])
+        .filter("Filter out Sam") { row ->
+            row['name'] != 'Sam'
+        }
+        .concat( from([
                 [name: 'Rob', atBats: '100', hits: '75', battingAverage: '0.75'],
-                [name: 'Sean', atBats: '20', hits: 'none', battingAverage: 'none']
+                [name: 'Sean', atBats: '20', hits: 'none', battingAverage: 'none'],
+                [name: 'Sam', atBats: '350', hits: '127', battingAverage: '0.363']
         ]))
         .addStep("Assert we get rows") { row ->
             called++
+            if( row.name == 'Sam' ) {
+                assert row.atBats == '350'
+            }
             return row
         }
         .go()
 
         assert stats.loaded == 4
-        assert stats.rejections == 0
+        assert stats.rejections == 1
         assert stats.loaded == called
     }
 
