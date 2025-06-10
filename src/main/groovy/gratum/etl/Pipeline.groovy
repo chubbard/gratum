@@ -210,7 +210,7 @@ public class Pipeline {
      * @return Returns a new pipeline that combines all of the rows from this pipeline and the src pipeline.
      */
     public Pipeline concat( Pipeline src ) {
-        Pipeline concatPipe = createChildPipeline("concat(${src.name})", src)
+        Pipeline concatPipe = createChildPipeline("concat(${src.name})")
         int line = 0
         src.addStep("concat(${src.name})"){ row ->
             line++
@@ -223,8 +223,7 @@ public class Pipeline {
         return concatPipe
     }
 
-    @CompileDynamic
-    private Pipeline createChildPipeline(String name, Pipeline src) {
+    private Pipeline createChildPipeline(String name) {
         Pipeline child = new Pipeline(name, this).source(new ChainedSource(this))
         int line = 0
         addStep(name) { row ->
@@ -762,6 +761,19 @@ public class Pipeline {
      */
     public Pipeline save(String filename, String separator = ",", List<String> columns = null ) {
         return this.save( new CsvSink(filename, separator, columns) )
+    }
+
+    /**
+     * This writes each row to the specified file as a CSV separated by the given separator.  It can optionally
+     * select a subset of column names from each row.  If unspecified all columns will be saved.
+     *
+     * @param csvFile the File to write the CSV file to
+     * @param separator the field separator to use between each field value (default ",")
+     * @param columns the list of fields to write from each row.  (default null)
+     * @return A Pipeline that returns a row for the csv file.
+     */
+    public Pipeline save(File csvFile, String separator = ",", List<String> columns = null) {
+        return this.save( new CsvSink(csvFile, separator, columns) )
     }
 
     /**

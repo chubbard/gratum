@@ -796,7 +796,7 @@ class PipelineTest {
         File tmp = File.createTempFile("people", ".csv")
         try {
             LoadStatistic stat = from(GratumFixture.people)
-                    .save(tmp.absolutePath, "|")
+                    .save(tmp, "|")
                     .addStep("Verify we have a CSV file on the Pipeline") { row ->
                         assert row.file != null
                         assert row.filename == tmp.absolutePath

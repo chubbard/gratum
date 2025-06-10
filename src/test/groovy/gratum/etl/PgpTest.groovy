@@ -41,7 +41,7 @@ class PgpTest {
         File tmp = File.createTempFile("pgp-encryption-test", ".gpg")
         try {
             LoadStatistic stat = from(GratumFixture.people)
-                    .save(tmp.getAbsolutePath())
+                    .save(tmp)
                     .encryptPgp("stream") { PgpContext pgp ->
                         pgp.addSecretKeys( secretKeyRingFile ).identities(["Sue <sue@boy.com>"]).overwrite(true)
                     }
@@ -66,7 +66,7 @@ class PgpTest {
         File tmp = File.createTempFile("pgp-decryption", ".csv")
         try {
             LoadStatistic stat = from(GratumFixture.people)
-                    .save(tmp.getAbsolutePath())
+                    .save(tmp)
                     .encryptPgp("stream") { PgpContext pgp ->
                         pgp.addSecretKeys( secretKeyRingFile )
                                 .identities(["Sue <sue@boy.com>"])

@@ -18,9 +18,9 @@ class PipelinePerformanceTest {
             if( perfFile.exists() ) {
                 LoadStatistic stat = csv(perfFile, "|")
                         .branch([PehEELink: { it.startsWith("PW") }]) { Pipeline p ->
-                            return p.save(tmpFilePw.absolutePath, "|")
+                            return p.save(tmpFilePw, "|")
                         }.branch([PehEELink: { !it.startsWith("PW") }]) { Pipeline p ->
-                            return p.save(tmpFileNotPw.absolutePath, "|")
+                            return p.save(tmpFileNotPw, "|")
                         }
                         .go()
                 println( stat )

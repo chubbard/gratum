@@ -17,6 +17,13 @@ class CsvSink implements Sink<Map<String,Object>> {
         }
     }
 
+    public CsvSink(File file, String separtor, List<String> headers = null) {
+        this.csvFile = new CSVFile(file, separtor)
+        if( headers) {
+            this.csvFile.setColumnHeaders(headers)
+        }
+    }
+
     @Override
     String getName() {
         return csvFile.getFile().name
