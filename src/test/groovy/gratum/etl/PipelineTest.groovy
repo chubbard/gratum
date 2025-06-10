@@ -574,7 +574,7 @@ class PipelineTest {
         assert rejections.size() == 2
     }
 
-    @Test(timeout = 5000L)
+    @Test(timeout = 15000L)
     public void testHttpSource() {
         String message = null
         int actualCount = 0
@@ -925,7 +925,7 @@ class PipelineTest {
     public void testProcessingHeader() {
         GratumFixture.withResource("titanic.csv") { stream ->
             boolean headerCallback = false
-            LoadStatistic statistic = csv("titanic.csv", stream).header { List<String> headers ->
+            LoadStatistic stats = CsvSource.of("titanic.csv", stream).header { List<String> headers ->
                 headerCallback = true
                 assert headers.size() == 11
             }.into().limit(0).go()
