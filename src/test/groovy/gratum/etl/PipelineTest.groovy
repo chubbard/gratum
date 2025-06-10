@@ -18,44 +18,49 @@ class PipelineTest {
 
     @Test
     void testPrependStep() {
-        int afterRows = 0, beforeRows = 0
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-            .filter([Sex: "male"])
-            .addStep("Count the rows") { Map row ->
-                afterRows++
-                return row
-            }
-            .prependStep("Count the rows before") { Map row ->
-                beforeRows++
-                return row
-            }
-            .go()
-        assert statistic != null
-        assert statistic.loaded == 266
-        assert afterRows == 266
-        assert beforeRows > afterRows
-        assert statistic.duration.toMillis() < 100
+        GratumFixture.withResource("titanic.csv") { stream ->
+            int afterRows = 0, beforeRows = 0
+            LoadStatistic statistic = csv("titanic.csv", stream)
+                .filter([Sex: "male"])
+                .addStep("Count the rows") { Map row ->
+                    afterRows++
+                    return row
+                }
+                .prependStep("Count the rows before") { Map row ->
+                    beforeRows++
+                    return row
+                }
+                .go()
+
+            assert statistic != null
+            assert statistic.loaded == 266
+            assert afterRows == 266
+            assert beforeRows > afterRows
+            assert statistic.duration.toMillis() < 100
+        }
     }
 
     @Test
     void testSimpleFilter() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-            .filter([Sex:"male"])
-            .onRejection { Pipeline rej ->
-                rej.addStep("Verify sex was filtered out") { Map row ->
-                    assertFalse( row.Sex == "male")
-                    return row
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic statistic = csv("titanic.csv", stream)
+                .filter([Sex:"male"])
+                .onRejection { Pipeline rej ->
+                    rej.addStep("Verify sex was filtered out") { Map row ->
+                        assertFalse( row.Sex == "male")
+                        return row
+                    }
+                    return
                 }
-                return
-            }
-            .go()
+                .go()
 
-        assert statistic
-        assert statistic.name == "titanic.csv"
-        assert statistic.loaded == 266
-        assert statistic.rejections == 152
-        assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 152
-        assert statistic.duration.toMillis() < 100
+            assert statistic
+            assert statistic.name == "titanic.csv"
+            assert statistic.loaded == 266
+            assert statistic.rejections == 152
+            assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 152
+            assert statistic.duration.toMillis() < 100
+        }
     }
 
     @Test
@@ -85,148 +90,157 @@ class PipelineTest {
 
     @Test
     void testFilterMapWithCollection() {
-        List<String> filter = ["3", "2"]
-
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
+        GratumFixture.withResource("titanic.csv") { stream ->
+            List<String> filter = ["3", "2"]
+            LoadStatistic statistic = csv( "titanic.csv", stream )
                 .filter([Pclass: filter, Sex: "male"])
                 .onRejection { rej ->
                     rej.addStep("verify not sex != male && pClass != 3") { row ->
                         assert !filter.contains(row.Pclass) || row.Sex != "male"
                         return row
                     }
-                    return
                 }
                 .go()
 
-        assert statistic.loaded == 209
-        assert statistic.rejections == 209
-        assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 209
-        assert statistic.getRejections( RejectionCategory.IGNORE_ROW, "filter Pclass -> [3, 2],Sex -> male" ) == 209
+            assert statistic.loaded == 209
+            assert statistic.rejections == 209
+            assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 209
+            assert statistic.getRejections( RejectionCategory.IGNORE_ROW, "filter Pclass -> [3, 2],Sex -> male" ) == 209
+        }
     }
 
     @Test
     void testFilterMap() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-            .filter([Pclass: "3", Sex: "male"])
-            .onRejection { Pipeline rej ->
-                rej.addStep("verify not sex != male && pClass != 3") { Map row ->
-                    assert row.Pclass != "3" || row.Sex != "male"
-                    return row
-                }
-                return
-            }
-            .go()
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic statistic = csv( "titanic.csv", stream )
+                    .filter([Pclass: "3", Sex: "male"])
+                    .onRejection { Pipeline rej ->
+                        rej.addStep("verify not sex != male && pClass != 3") { Map row ->
+                            assert row.Pclass != "3" || row.Sex != "male"
+                            return row
+                        }
+                        return
+                    }
+                    .go()
 
-        assert statistic.loaded == 146
-        assert statistic.rejections == 272
-        assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 272
-        assert statistic.getRejections( RejectionCategory.IGNORE_ROW, "filter Pclass -> 3,Sex -> male" ) == 272
+            assert statistic.loaded == 146
+            assert statistic.rejections == 272
+            assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 272
+            assert statistic.getRejections( RejectionCategory.IGNORE_ROW, "filter Pclass -> 3,Sex -> male" ) == 272
+        }
     }
 
     @Test
     void testFilterMapWithClosure() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-            .filter([Pclass: { value -> (value as Integer) < 3 } ])
-            .onRejection { Pipeline rej ->
-                rej.addStep("Verify all rejections are == 3") { Map row ->
-                    assert row.Pclass == "3"
-                    return row
-                }
-                return
-            }
-            .go()
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic statistic = csv("titanic.csv", stream )
+                    .filter([Pclass: { value -> (value as Integer) < 3 } ])
+                    .onRejection { Pipeline rej ->
+                        rej.addStep("Verify all rejections are == 3") { Map row ->
+                            assert row.Pclass == "3"
+                            return row
+                        }
+                    }
+                    .go()
 
-        assert statistic.loaded == 200
-        assert statistic.rejections == 218
-        assert statistic.getRejections( RejectionCategory.IGNORE_ROW ) == 218
+            assert statistic.loaded == 200
+            assert statistic.rejections == 218
+            assert statistic.getRejections( RejectionCategory.IGNORE_ROW ) == 218
+        }
     }
 
     @Test
     void testWildcardFilterClosure() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-            .filter([ "*": { Map row -> row['Pclass'] == "3" || row['Sex'] == "Male"  } ])
-            .onRejection { Pipeline rej ->
-                rej.addStep("Verify all rejections Pclass <> 3 and Sex <> Male") { Map row ->
-                    assert row.Pclass != "3" && row.Sex != "Male"
-                    return row
-                }
-                return
-            }
-            .go()
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic statistic = csv("titanic.csv", stream)
+                    .filter([ "*": { Map row -> row['Pclass'] == "3" || row['Sex'] == "Male"  } ])
+                    .onRejection { Pipeline rej ->
+                        rej.addStep("Verify all rejections Pclass <> 3 and Sex <> Male") { Map row ->
+                            assert row.Pclass != "3" && row.Sex != "Male"
+                            return row
+                        }
+                        return
+                    }
+                    .go()
 
-        assert statistic.loaded == 218
-        assert statistic.rejections == 200
-        assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 200
+            assert statistic.loaded == 218
+            assert statistic.rejections == 200
+            assert statistic.getRejections(RejectionCategory.IGNORE_ROW) == 200
+        }
     }
 
     @Test
     void testSimpleGroupBy() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-            .groupBy("Sex")
-            .addStep("Assert groupBy(Sex)") { Map row ->
-                assert row.male?.size() == 266
-                assert row.female?.size() == 152
-                return row
-            }
-            .go()
-
-        assert statistic.loaded == 1
-        assert statistic.rejections == 0
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic statistic = csv("titanic.csv", stream)
+                    .groupBy("Sex")
+                    .addStep("Assert groupBy(Sex)") { Map row ->
+                        assert row.male?.size() == 266
+                        assert row.female?.size() == 152
+                        return row
+                    }
+                    .go()
+            assert statistic.loaded == 1
+            assert statistic.rejections == 0
+        }
     }
 
     @Test
     void testMultipleGroupBy() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-            .asInt("Age")
-            .filter() { Map row ->
-                row.Age ? row.Age < 20 : false
-            }
-            .groupBy("Sex", "Pclass")
-            .addStep( "Assert groupBy(Sex,Pclass") { Map row ->
-                // size reflects how many sub-values there are for each group.
-                // not total items fitting into this group, only
-                // the leaves hold that information.
-                assert row.male?.size() == 3
-                assert row.female?.size() == 3
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic statistic = csv("titanic.csv", stream)
+                    .asInt("Age")
+                    .filter() { Map row ->
+                        row.Age ? row.Age < 20 : false
+                    }
+                    .groupBy("Sex", "Pclass")
+                    .addStep("Assert groupBy(Sex,Pclass") { Map row ->
+                        // size reflects how many sub-values there are for each group.
+                        // not total items fitting into this group, only
+                        // the leaves hold that information.
+                        assert row.male?.size() == 3
+                        assert row.female?.size() == 3
 
-                assert row.male['1'].size() == 3
-                assert row.male['2'].size() == 7
-                assert row.male['3'].size() == 16
+                        assert row.male['1'].size() == 3
+                        assert row.male['2'].size() == 7
+                        assert row.male['3'].size() == 16
 
-                assert row.female['1'].size() == 2
-                assert row.female['2'].size() == 7
-                assert row.female['3'].size() == 16
+                        assert row.female['1'].size() == 2
+                        assert row.female['2'].size() == 7
+                        assert row.female['3'].size() == 16
 
-                return row
-            }
-            .go()
-
-        // verify that step timings for steps before the groupBy() are included in the returned statistics
-        assert statistic.stepTimings.containsKey("asInt(Age)")
-        assert statistic.stepTimings.containsKey("filter()")
-        assert statistic.stepTimings.containsKey("groupBy(Sex,Pclass)")
+                        return row
+                    }
+                    .go()
+            // verify that step timings for steps before the groupBy() are included in the returned statistics
+            assert statistic.stepTimings.containsKey("asInt(Age)")
+            assert statistic.stepTimings.containsKey("filter()")
+            assert statistic.stepTimings.containsKey("groupBy(Sex,Pclass)")
+        }
     }
 
     @Test
     void testEmptyGroupBy() {
-        LoadStatistic statistic = csv("src/test/resources/titanic.csv")
-            .filter([Sex: 'K'])
-            .groupBy("Sex")
-            .addStep("Assert groupBy(Sex)") { row ->
-                assertTrue( row.isEmpty() )
-                return row
-            }
-            .go()
-        assert statistic.loaded == 1
-        assert statistic.rejections == 418
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic statistic = csv("titanic.csv", stream)
+                    .filter([Sex: 'K'])
+                    .groupBy("Sex")
+                    .addStep("Assert groupBy(Sex)") { row ->
+                        assertTrue(row.isEmpty())
+                        return row
+                    }
+                    .go()
+            assert statistic.loaded == 1
+            assert statistic.rejections == 418
 
-        assertTrue( "Assert that the timings include the filter(Sex->K)) step", statistic.stepTimings.containsKey("filter Sex -> K") )
-        // I'm not entirely sure why this assert was added.  It seems logical to include
-        // it as it's a step on the Pipeline but it was done for specific reasons, but
-        // those reasons are lost to history.  I'm leaving it in case I remember why this was
-        // important or not.
-//        assertFalse( "Assert that timings does NOT include groupBy because all rows are filtered out.", statistic.stepTimings.containsKey("groupBy(Sex)") )
-        assert statistic.stepTimings.containsKey("groupBy(Sex)")
+            assertTrue("Assert that the timings include the filter(Sex->K)) step", statistic.stepTimings.containsKey("filter Sex -> K"))
+            // I'm not entirely sure why this assert was added.  It seems logical to include
+            // it as it's a step on the Pipeline but it was done for specific reasons, but
+            // those reasons are lost to history.  I'm leaving it in case I remember why this was
+            // important or not.
+            //        assertFalse( "Assert that timings does NOT include groupBy because all rows are filtered out.", statistic.stepTimings.containsKey("groupBy(Sex)") )
+            assert statistic.stepTimings.containsKey("groupBy(Sex)")
+        }
     }
 
     @Test
@@ -298,158 +312,170 @@ class PipelineTest {
 
     @Test
     void renameFields() {
-        csv("src/test/resources/titanic.csv")
-            .addStep("Test Sex Exists") { row ->
-                assertTrue("Assert row.Sex exists", row.containsKey("Sex"))
-                assertTrue("Assert row.Age exists", row.containsKey("Age"))
-                return row
-            }
-            .renameFields([Sex: "gender", "Age": "age"])
-            .addStep("Test Sex renamed to gender and Age to age") { row ->
-                assertTrue( row.containsKey("gender") )
-                assertTrue( row.containsKey("age") )
-                return row
-            }
-            .go()
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic statistic = csv("titanic.csv", stream)
+                .addStep("Test Sex Exists") { row ->
+                    assertTrue("Assert row.Sex exists", row.containsKey("Sex"))
+                    assertTrue("Assert row.Age exists", row.containsKey("Age"))
+                    return row
+                }
+                .renameFields([Sex: "gender", "Age": "age"])
+                .addStep("Test Sex renamed to gender and Age to age") { row ->
+                    assertTrue(row.containsKey("gender"))
+                    assertTrue(row.containsKey("age"))
+                    return row
+                }
+                .go()
+        }
     }
 
     @Test
     void testAddField() {
-        csv("src/test/resources/titanic.csv")
-            .addField("survived") { row ->
-                return true
-            }
-            .addStep("Test Field added") { row ->
-                assertTrue( row.containsKey("survived") )
-                return row
-            }
-            .go()
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic statistic = csv("titanic.csv", stream)
+                .addField("survived") { row ->
+                    return true
+                }
+                .addStep("Test Field added") { row ->
+                    assertTrue( row.containsKey("survived") )
+                    return row
+                }
+                .go()
+        }
     }
 
     @Test
     void testFillDownBy() {
-        int count = 0
-        csv("src/test/resources/fill_down.csv")
-            .addStep("Assert fields are missing data.") { row ->
-                if( !row.first_name ) {
-                    count++
-                    assert !row.first_anem
-                    assert !row.last_name
-                    assert !row.date_of_birth
-                }
-                return row
-            }
-            .fillDownBy { Map row, Map previousRow ->
-                return row.id == previousRow.id
-            }
-            .addStep("Assert values were filled down") { row ->
-                row.each { String key, Object value ->
-                    assertNotNull( "Assert ${key} is filled in with a value", value )
-                    assertTrue("Assert that ${key} is non-empty", !(value as String).isEmpty() )
-                }
-                return row
-            }
-            .go()
+        GratumFixture.withResource("fill_down.csv") { stream ->
+            int count = 0
+            LoadStatistic statistic = csv("fill_down.csv", stream)
+                    .addStep("Assert fields are missing data.") { row ->
+                        if (!row.first_name) {
+                            count++
+                            assert !row.first_anem
+                            assert !row.last_name
+                            assert !row.date_of_birth
+                        }
+                        return row
+                    }
+                    .fillDownBy { Map row, Map previousRow ->
+                        return row.id == previousRow.id
+                    }
+                    .addStep("Assert values were filled down") { row ->
+                        row.each { String key, Object value ->
+                            assertNotNull("Assert ${key} is filled in with a value", value)
+                            assertTrue("Assert that ${key} is non-empty", !(value as String).isEmpty())
+                        }
+                        return row
+                    }
+                    .go()
 
-        assertTrue("Assert that we encountered rows that weren't filled in", count > 0 )
+            assertTrue("Assert that we encountered rows that weren't filled in", count > 0)
+        }
     }
 
     @Test
     void testBranch() {
         boolean branchEntered = false
-        csv("src/test/resources/titanic.csv")
-            .branch { Pipeline pipeline ->
-                return pipeline.filter([Sex: "female"])
-                    .addStep("Verify sex was filtered out") { row ->
-                        assertTrue( row.Sex == "female" )
-                        return row
-                    }
-                    .defaultValues("branch": true)
-                    .addStep("Branch Entered") { Map row ->
-                        assert row.branch
-                        branchEntered = true
-                        return row
-                    }
-            }
-            .addStep("Verify branch field is NOT on the outer Pipeline") { row ->
-                assert row.branch == null
-                return row
-            }
-            .filter([Sex:"male"])
-            .addStep("Verify sex was filtered to male") { row ->
-                assertTrue( row.Sex == "male")
-                return row
-            }
-            .go()
-        assert branchEntered
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic statistic = csv("titanic.csv", stream)
+                .branch { Pipeline pipeline ->
+                    return pipeline.filter([Sex: "female"])
+                            .addStep("Verify sex was filtered out") { row ->
+                                assertTrue(row.Sex == "female")
+                                return row
+                            }
+                            .defaultValues("branch": true)
+                            .addStep("Branch Entered") { Map row ->
+                                assert row.branch
+                                branchEntered = true
+                                return row
+                            }
+                }
+                .addStep("Verify branch field is NOT on the outer Pipeline") { row ->
+                    assert row.branch == null
+                    return row
+                }
+                .filter([Sex: "male"])
+                .addStep("Verify sex was filtered to male") { row ->
+                    assertTrue(row.Sex == "male")
+                    return row
+                }
+                .go()
+            assert branchEntered
+        }
     }
 
     @Test
     void testBranchWithGroupBy() {
-        csv("src/test/resources/titanic.csv")
-            .branch { Pipeline p ->
-                return p.groupBy("Sex", "Pclass").addStep { row ->
-                    assertNotNull( row["male"] )
-                    assertNotNull( row["male"]["3"] )
-                    assertNotNull( row["male"]["2"] )
-                    assertNotNull( row["male"]["1"] )
+        GratumFixture.withResource("titanic.csv") { stream ->
+            LoadStatistic statistic = csv("titanic.csv", stream)
+                .branch { Pipeline p ->
+                    return p.groupBy("Sex", "Pclass").addStep { row ->
+                        assertNotNull(row["male"])
+                        assertNotNull(row["male"]["3"])
+                        assertNotNull(row["male"]["2"])
+                        assertNotNull(row["male"]["1"])
 
-                    assert row["male"]["3"].size() == 146
-                    assert row["male"]["2"].size() == 63
-                    assert row["male"]["1"].size() == 57
+                        assert row["male"]["3"].size() == 146
+                        assert row["male"]["2"].size() == 63
+                        assert row["male"]["1"].size() == 57
 
-                    assert row["female"]
-                    assert row["female"]["3"]
-                    assert row["female"]["2"]
-                    assert row["female"]["1"]
+                        assert row["female"]
+                        assert row["female"]["3"]
+                        assert row["female"]["2"]
+                        assert row["female"]["1"]
 
-                    assert row["female"]["3"].size() == 72
-                    assert row["female"]["2"].size() == 30
-                    assert row["female"]["1"].size() == 50
-                    return row
+                        assert row["female"]["3"].size() == 72
+                        assert row["female"]["2"].size() == 30
+                        assert row["female"]["1"].size() == 50
+                        return row
+                    }
                 }
-            }
-            .go()
+                .go()
+        }
     }
 
     @Test
     void testComplexBranch() {
-        List<Map<String,Object>> rows = []
-        boolean closedCalled = false
-        csv("src/test/resources/titanic.csv")
-            .branch("Testing complex branching") { pipeline ->
-                pipeline.inject { row ->
-                    return [ row ]
-                }
-                .save(new Sink() {
-                    @Override
-                    String getName() {
-                        return "collection"
-                    }
-
-                    @Override
-                    void attach(Pipeline p) {
-                        p.addStep("Collect") { row ->
-                            rows << row
-                            return row
+        GratumFixture.withResource("titanic.csv") { stream ->
+            List<Map<String,Object>> rows = []
+            boolean closedCalled = false
+            LoadStatistic statistic = csv("titanic.csv", stream)
+                    .branch("Testing complex branching") { pipeline ->
+                        pipeline.inject { row ->
+                            return [row]
                         }
-                    }
+                        .save(new Sink() {
+                            @Override
+                            String getName() {
+                                return "collection"
+                            }
 
-                    @Override
-                    Map<String, Object> getResult() {
-                        return [ rows: rows ]
-                    }
+                            @Override
+                            void attach(Pipeline p) {
+                                p.addStep("Collect") { row ->
+                                    rows << row
+                                    return row
+                                }
+                            }
 
-                    @Override
-                    void close() throws IOException {
-                        closedCalled = true
-                    }
-                })
-            }
-            .go()
+                            @Override
+                            Map<String, Object> getResult() {
+                                return [rows: rows]
+                            }
 
-        assert rows.size() > 0
-        assert closedCalled
+                            @Override
+                            void close() throws IOException {
+                                closedCalled = true
+                            }
+                        })
+                    }
+                    .go()
+
+            assert rows.size() > 0
+            assert closedCalled
+        }
     }
 
     @Test
@@ -897,26 +923,29 @@ class PipelineTest {
 
     @Test
     public void testProcessingHeader() {
-        boolean headerCallback = false
-        LoadStatistic stats = CsvSource.of("src/test/resources/titanic.csv").header { List<String> headers ->
-            headerCallback = true
-            assert headers.size() == 11
-        }.into().limit(0).go()
+        GratumFixture.withResource("titanic.csv") { stream ->
+            boolean headerCallback = false
+            LoadStatistic statistic = csv("titanic.csv", stream).header { List<String> headers ->
+                headerCallback = true
+                assert headers.size() == 11
+            }.into().limit(0).go()
 
-        assert stats.loaded == 0
-        assert stats.rejections == 0
-        assert headerCallback
+            assert stats.loaded == 0
+            assert stats.rejections == 0
+            assert headerCallback
+        }
     }
 
     @Test
     public void testCsvWithoutEscaping() {
         int line = 1
-        CsvSource.of("src/test/resources/unescaped.csv", "|")
+        GratumFixture.withResource("unescaped.csv") { stream ->
+            LoadStatistic statistic = CsvSource.of("unescaped.csv", stream, "|")
                 .escaping(false)
                 .into()
                 .trim()
                 .addStep("Test csv without escaping") { row ->
-                    switch( line ) {
+                    switch (line) {
                         case 1:
                             assert row.ConNameFirst == "martini"
                             break
@@ -932,6 +961,7 @@ class PipelineTest {
                     return row
                 }
                 .go()
+        }
     }
 
     @Test
@@ -941,13 +971,12 @@ class PipelineTest {
             CollectionSource.of(GratumFixture.getPeople()).into()
                     .filter(gender: "male")
                     .save("testRejectionsFilterAcrossMultiplePipelines.csv", "|")
-                    .onRejection { Pipeline rejections ->
-                        rejections.addStep("Assert We see males") { row ->
+                    .onRejection { rejections ->
+                        rejections.addStep("Assert We see only females") { row ->
                             rejectionsCalled = true
                             assert row.gender == "female"
                             return row
                         }
-                        return
                     }
                     .go()
 

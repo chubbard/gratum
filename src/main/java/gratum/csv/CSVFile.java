@@ -196,7 +196,9 @@ public class CSVFile implements Closeable {
     }
     public void write( Object... row ) throws IOException {
         if( writer == null ) {
-            if( !file.getParentFile().exists() ) file.getParentFile().mkdirs();
+            File parentFile = file.getParentFile();
+            if( parentFile == null ) parentFile = file.getAbsoluteFile().getParentFile();
+            if( !parentFile.exists() ) parentFile.mkdirs();
             // make sure we write BOM since excel seems to need this to recognize UTF8
             writer = new PrintWriter( new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8) );
             if( writeBom ) writer.print('\ufeff');
