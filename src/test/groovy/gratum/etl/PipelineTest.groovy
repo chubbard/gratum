@@ -1,5 +1,6 @@
 package gratum.etl
 
+import gratum.csv.CSVFile
 import gratum.sink.Sink
 import gratum.source.CollectionSource
 import gratum.source.CsvSource
@@ -541,6 +542,48 @@ class PipelineTest {
                 }.go()
 
         assertNotNull("Assert that lastHobby is not null meaning we executing some portion of the assertions above.", lastHobby)
+    }
+
+    @Test
+    void testSortExternalWithoutDownstream() {
+        List<Map<String,Object>> hobbies = []
+        from((0..10_000).collect { r ->
+            GratumFixture.hobbies[r%GratumFixture.hobbies.size()]
+        }).sort("Sort Hobby") {
+            pageSize = 1000
+            downstream = false
+            comparator = new Comparator<Map<String, Object>>() {
+                @Override
+                int compare(Map<String, Object> o1, Map<String, Object> o2) {
+                    if( o1 && !o2 ) return -1
+                    if( !o1 && o2 ) return 1
+                    String hobby1 = o1["hobby"]
+                    String hobby2 = o2["hobby"]
+                    return hobby1 <=> hobby2
+                }
+            }
+            after { file ->
+                assert file != null
+                assert file.size() > 0
+                CSVFile csv = new CSVFile( file, "," );
+                try {
+                    csv.withCloseable {
+                        String lastHobby = ""
+                        for (Map<String, Object> row : csv.mapIterator()) {
+                            String hobby = row["hobby"]
+                            assert (lastHobby <=> hobby) <= 0
+                            lastHobby = hobby
+                        }
+                    }
+                } finally {
+                    file.delete()
+                }
+            }
+        }
+        .addStep("Assert Downstream isn't called") { row ->
+            fail("Downstream steps have been turned off.")
+            return row
+        }.go()
     }
 
     @Test

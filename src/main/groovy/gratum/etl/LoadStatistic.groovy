@@ -11,8 +11,8 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class LoadStatistic {
     String name
-    Map<RejectionCategory, Map<String,Integer>> rejectionsByCategory = [:]
-    Map<String,Long> stepTimings = [:]
+    Map<RejectionCategory, Map<? extends CharSequence,Integer>> rejectionsByCategory = [:]
+    Map<CharSequence,Long> stepTimings = [:]
     Integer loaded = 0
     Long start = 0
     Long end = 0
@@ -52,7 +52,7 @@ class LoadStatistic {
     }
 
     public Integer getRejections() {
-        return rejectionsByCategory.inject(0) { Integer sum, RejectionCategory cat, Map<String,Integer> stepCounts ->
+        return rejectionsByCategory.inject(0) { sum, cat, stepCounts ->
             sum + (Integer)stepCounts.values().sum()
         }
     }
@@ -61,17 +61,18 @@ class LoadStatistic {
         addRejection( rejection?.category ?: RejectionCategory.REJECTION, rejection.step)
     }
 
-    public void addRejection( RejectionCategory category, String stepName, Integer count = 1 ) {
+    public void addRejection( RejectionCategory category, CharSequence stepName, Integer count = 1 ) {
+        String step = stepName as String
         if( !rejectionsByCategory[category] ) {
-            rejectionsByCategory[category] = [(stepName): 0]
-        } else if( !rejectionsByCategory[category][stepName] ) {
-            rejectionsByCategory[category][stepName] = 0
+            rejectionsByCategory[category] = [(step): 0]
+        } else if( !rejectionsByCategory[category][step] ) {
+            rejectionsByCategory[category][step] = 0
         }
-        Integer total = rejectionsByCategory[category][stepName] + count
-        rejectionsByCategory[category][stepName] = total
+        Integer total = rejectionsByCategory[category][step] + count
+        rejectionsByCategory[category][step] = total
     }
 
-    public Map<RejectionCategory, Map<String,Integer>> getRejectionsByCategory() {
+    public Map<RejectionCategory, Map<? extends CharSequence,Integer>> getRejectionsByCategory() {
         return rejectionsByCategory
     }
 
@@ -83,7 +84,7 @@ class LoadStatistic {
         return rejectionsByCategory?.get(cat)?.get(step)
     }
 
-    public Map<String,Integer> getRejectionsFor( RejectionCategory category ) {
+    public Map<? extends CharSequence,Integer> getRejectionsFor( RejectionCategory category ) {
         return rejectionsByCategory[category];
     }
 
@@ -96,7 +97,7 @@ class LoadStatistic {
         return ret
     }
 
-    public double avg( String step ) {
+    public double avg( CharSequence step ) {
         double avg = stepTimings[step] / (loaded + rejections)
         return avg
     }
@@ -111,7 +112,7 @@ class LoadStatistic {
         if( timings ) {
             pw.println("\n----")
             pw.println("Step Timings")
-            this.stepTimings.each { String step, Long totalTime ->
+            this.stepTimings.each { step, totalTime ->
                 pw.printf("%s: %,.2f ms%n", step, this.avg(step) )
             }
         }
@@ -119,9 +120,9 @@ class LoadStatistic {
         if( this.rejections > 0 ) {
             pw.println("\n----")
             pw.println("Rejections by category")
-            this.rejectionsByCategory.each { RejectionCategory category, Map<String,Integer> steps ->
+            this.rejectionsByCategory.each { category,  steps ->
                 pw.printf( "%s: %,d%n", category, steps.values().sum(0) )
-                steps.each { String step, Integer count ->
+                steps.each { step, count ->
                     pw.printf( "\t%s: %,d%n", step, count )
                 }
             }
@@ -131,7 +132,7 @@ class LoadStatistic {
         return out.toString()
     }
 
-    void addTiming(String step, long duration) {
+    void addTiming(CharSequence step, long duration) {
         stepTimings[step] = duration
     }
 
@@ -142,11 +143,11 @@ class LoadStatistic {
     }
 
     void mergeRejections(LoadStatistic src) {
-        src.rejectionsByCategory.each { RejectionCategory cat, Map<String,Integer> steps ->
+        src.rejectionsByCategory.each { cat, steps ->
             if( !rejectionsByCategory[ cat ] ) {
                 rejectionsByCategory.put(cat, [:])
             }
-            steps.each { String step, Integer count ->
+            steps.each { step, count ->
                 if( !rejectionsByCategory[ cat ].containsKey( step ) ) rejectionsByCategory[cat][step] = 0
                 rejectionsByCategory[cat][step] = rejectionsByCategory[cat][step] + count
             }
@@ -154,7 +155,7 @@ class LoadStatistic {
     }
 
     void mergeTimings(LoadStatistic src) {
-        src.stepTimings.each { String step, Long time ->
+        src.stepTimings.each { step, time ->
             if( !stepTimings[ step ] ) stepTimings.put( step, 0L )
             stepTimings[ step ] = stepTimings[ step ] + src.stepTimings [ step ]
         }
