@@ -2,6 +2,7 @@ package gratum.etl
 
 import gratum.csv.CSVFile
 import gratum.sink.Sink
+import gratum.source.ClosureSource
 import gratum.source.CollectionSource
 import gratum.source.CsvSource
 import org.junit.Test
@@ -546,10 +547,15 @@ class PipelineTest {
 
     @Test
     void testSortExternalWithoutDownstream() {
-        List<Map<String,Object>> hobbies = []
-        from((0..10_000).collect { r ->
-            GratumFixture.hobbies[r%GratumFixture.hobbies.size()]
-        }).sort("Sort Hobby") {
+        boolean afterWasCalled = false
+        int upperBound = 10_005
+        ClosureSource.of { pipeline ->
+            for( int i = 0; i < upperBound; i++ ) {
+                pipeline.process(GratumFixture.hobbies[i%GratumFixture.hobbies.size()])
+            }
+        }
+        .into()
+        .sort("Sort Hobby") {
             pageSize = 1000
             downstream = false
             comparator = new Comparator<Map<String, Object>>() {
@@ -563,17 +569,21 @@ class PipelineTest {
                 }
             }
             after { file ->
+                afterWasCalled = true
                 assert file != null
                 assert file.size() > 0
                 CSVFile csv = new CSVFile( file, "," );
                 try {
                     csv.withCloseable {
                         String lastHobby = ""
+                        int lines = 0
                         for (Map<String, Object> row : csv.mapIterator()) {
                             String hobby = row["hobby"]
                             assert (lastHobby <=> hobby) <= 0
                             lastHobby = hobby
+                            lines++
                         }
+                        assert lines == upperBound
                     }
                 } finally {
                     file.delete()
@@ -584,6 +594,8 @@ class PipelineTest {
             fail("Downstream steps have been turned off.")
             return row
         }.go()
+
+        assert afterWasCalled
     }
 
     @Test

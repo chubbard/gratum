@@ -555,14 +555,13 @@ public class Pipeline {
             return row
         }
 
-        Pipeline other = new Pipeline( name, this )
-        other.src = new AbstractSource() {
+        Pipeline other = new Pipeline( name, this ).source(new AbstractSource() {
             @Override
             void doStart(Pipeline pipeline) {
                 pipeline.parent.start() // first start our parent pipeline
                 pipeline.process( cache, 1 )
             }
-        }
+        })
         return other
     }
 
@@ -573,23 +572,7 @@ public class Pipeline {
      */
     public Pipeline sort(Tuple2<String,SortOrder>... columns) {
         sort("sort(${columns.collect { t -> "${t.first}/${t.second}" }.join(",")}") {
-            comparator = new Comparator<Map<String, Object>>() {
-                @Override
-                int compare(Map<String, Object> o1, Map<String, Object> o2) {
-                    for( Tuple2<String,SortOrder> key : columns ) {
-                        int value = (Comparable)o1[key.first] <=> (Comparable)o2[key.first]
-                        switch( key.second ){
-                            case SortOrder.ASC:
-                                break
-                            case SortOrder.DESC:
-                                value = Math.negateExact(value)
-                                break
-                        }
-                        if( value != 0 ) return value
-                    }
-                    return 0
-                }
-            }
+            orderBy(columns)
         }
     }
 
@@ -607,15 +590,16 @@ public class Pipeline {
             configure.delegate = cfg
             configure()
         }
-
-        List<Map> page = []
         File tmpDir = File.createTempDir("sorting_")
+        List<Map> page = []
         int pageIndex = 1
-        addStep(name.toString()) { row ->
+
+        addStep(name) { row ->
             page << row
             if( page.size() >= cfg.pageSize && cfg.pageSize > 0 ) {
                 page.sort(cfg.comparator)
-                CollectionSource.from(page).save("${tmpDir}/page_${pageIndex++}.csv").go()
+                String filename = "${tmpDir}/page_${pageIndex++}.csv"
+                CollectionSource.from(page).save(filename).go()
                 page.clear()
             }
             return row
@@ -624,6 +608,14 @@ public class Pipeline {
         Pipeline next = new Pipeline(name, this).source(new ChainedSource(this))
         after {
             if( cfg.pageSize > 0 ) {
+                // any residual rows left in the page buffer flush to disk
+                if( !page.isEmpty() ) {
+                    page.sort(cfg.comparator)
+                    String filename = "${tmpDir}/page_${pageIndex++}.csv"
+                    CollectionSource.from(page).save(filename).go()
+                    page.clear()
+                }
+
                 List<File> pages = tmpDir.listFiles() as List<File>
                 while(pages.size() > 1) {
                     File page1 = pages.pop()
@@ -645,7 +637,6 @@ public class Pipeline {
                 page.sort(cfg.comparator)
                 ((ChainedSource)next.src).process( page )
             }
-            null
         }
         return next
     }
@@ -658,18 +649,47 @@ public class Pipeline {
      */
     public Pipeline sort(String... columns) {
         sort("sort(${columns})" ) {
-            comparator = new Comparator<Map<String, Object>>() {
-                @Override
-                int compare(Map<String, Object> o1, Map<String, Object> o2) {
-                    for( String key : columns ) {
-                        int value = (Comparable)o1[key] <=> (Comparable)o2[key]
-                        if( value != 0 ) return value
-                    }
-                    return 0
-                }
-            }
+            orderBy(columns)
         }
     }
+
+    CSVFile mergePage(CSVFile page1, CSVFile page2, Comparator<Map<String,Object>> comparator) {
+        String[] p1 = page1.file.name.split("[_.]")
+        String[] p2 = page2.file.name.split("[_.]")
+        String v1 = p1[1]
+        String v2 = p2[p2.length-2]
+        CSVFile result = new CSVFile( new File(page1.file.parentFile, "page_${v1}_${v2}.csv"), "," )
+
+        try {
+            Iterator<Map<String, Object>> it1 = page1.mapIterator()
+            Iterator<Map<String, Object>> it2 = page2.mapIterator()
+            Map<String, Object> row1 = null
+            Map<String, Object> row2 = null
+            while (it1.hasNext() || it2.hasNext()) {
+                if (!row1 && it1.hasNext()) row1 = it1.next()
+                if (!row2 && it2.hasNext()) row2 = it2.next()
+                int c = row1 && row2 ? comparator.compare(row1, row2) : (row1 ? -1 : 1)
+                if (c == 0) {
+                    result.write(row1)
+                    result.write(row2)
+                    row1 = null
+                    row2 = null
+                } else if (c < 0) {
+                    result.write(row1)
+                    row1 = null
+                } else {
+                    result.write(row2)
+                    row2 = null
+                }
+            }
+            return result
+        } finally {
+            page1.close()
+            page2.close()
+            result.close()
+        }
+    }
+
 
     /**
      * Return a Pipeline where the given column is converted from a string to a java.lang.Double.
@@ -813,9 +833,8 @@ public class Pipeline {
     public Pipeline save(Sink<Map<String,Object>> sink ) {
         sink.attach( this )
 
-        Pipeline next = new Pipeline( sink.name, this )
+        Pipeline next = new Pipeline( sink.name, this ).source(new ChainedSource(this))
         next.loaded = DO_NOT_TRACK
-        next.src = new ChainedSource( this )
         after {
             sink.close()
             next.process(sink.result)
@@ -986,8 +1005,7 @@ public class Pipeline {
     public Pipeline inject(CharSequence name,
                            @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                            @DelegatesTo(Pipeline) Closure<Iterable<Map<String,Object>>> closure) {
-        Pipeline next = new Pipeline(name, this)
-        next.src = new ChainedSource( this )
+        Pipeline next = new Pipeline(name, this).source(new ChainedSource( this ))
         closure.delegate = this
         addStep(name) { row ->
             Iterable<Map<String,Object>> result = closure.call( row )
@@ -1021,8 +1039,7 @@ public class Pipeline {
     public Pipeline exchange( @DelegatesTo(Pipeline)
                               @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                               Closure<Pipeline> closure) {
-        Pipeline next = new Pipeline( name, this )
-        next.src = new ChainedSource(this)
+        Pipeline next = new Pipeline( name, this ).source(new ChainedSource(this))
         addStep("exchange(${next.name})") { row ->
             Pipeline pipeline = closure( row )
             pipeline.addStep("Exchange Bridge(${pipeline.name})") { current ->
@@ -1433,41 +1450,6 @@ public class Pipeline {
             }
         } else if( parent ) {
             parent.addDefaultRejections()
-        }
-    }
-
-    CSVFile mergePage(CSVFile page1, CSVFile page2, Comparator<Map<String,Object>> comparator) {
-        String[] p1 = page1.file.name.split("[_.]")
-        String[] p2 = page2.file.name.split("[_.]")
-        String v1 = p1[1]
-        String v2 = p2[p2.length-2]
-        CSVFile result = new CSVFile( new File(page1.file.parentFile, "page_${v1}_${v2}.csv"), "," )
-
-        try {
-            Iterator<Map<String, Object>> it1 = page1.mapIterator()
-            Iterator<Map<String, Object>> it2 = page2.mapIterator()
-            Map<String, Object> row1 = null
-            Map<String, Object> row2 = null
-            while (it1.hasNext() || it2.hasNext()) {
-                if (!row1 && it1.hasNext()) row1 = it1.next()
-                if (!row2 && it2.hasNext()) row2 = it2.next()
-                int c = comparator.compare(row1, row2)
-                if (c == 0) {
-                    result.write(row1)
-                    result.write(row2)
-                    row1 = null
-                    row2 = null
-                } else if (c < 0) {
-                    result.write(row1)
-                    row1 = null
-                } else {
-                    result.write(row2)
-                    row2 = null
-                }
-            }
-            return result
-        } finally {
-            result.close()
         }
     }
 }

@@ -27,6 +27,8 @@ public class LocalConcurrentContext implements ConcurrentContext {
     List<PipelineWorker> workers = []
     PipelineWorker resultProcessor
 
+    boolean finishWhenQueueIsEmpty = false
+
     public LocalConcurrentContext(int workers = 8, int queueSize = 200) {
         workerSize = workers
         eventQueue = new ArrayBlockingQueue<>(queueSize)
@@ -83,7 +85,7 @@ public class LocalConcurrentContext implements ConcurrentContext {
                     return stat
                 }
             }
-            next.src = new ChainedSource( pipeline )
+            .source(new ChainedSource(pipeline))
             return next
         } as Closure<Pipeline>
     }
@@ -101,6 +103,10 @@ public class LocalConcurrentContext implements ConcurrentContext {
                                 done = true
                             } else if (row) {
                                 pipeline.process(row)
+                            }
+                            if( finishWhenQueueIsEmpty && eventQueue.isEmpty() ) {
+                                logger.debug("Requested to stop when queue is empty.  Stopping worker.")
+                                break
                             }
                         }
                     }
@@ -144,7 +150,7 @@ public class LocalConcurrentContext implements ConcurrentContext {
                             } else {
                                 pipeline.process(row)
                             }
-                        } else if (latch.count == 1) {
+                        } else if (resultQueue.isEmpty() && latch.count == 1) {
                             done = true
                         }
                     }
@@ -157,5 +163,21 @@ public class LocalConcurrentContext implements ConcurrentContext {
             }
         })
         resultProcessor.start()
+    }
+
+    void finishWhenQueueIsEmpty() {
+        finishWhenQueueIsEmpty = true;
+    }
+
+    boolean isFinishWhenQueueIsEmpty() {
+        return finishWhenQueueIsEmpty;
+    }
+
+    void queueWorker(Map<String,Object> row) {
+        eventQueue.put(row)
+    }
+
+    void queueResult(Map<String,Object> row) {
+        resultQueue.put(row)
     }
 }
