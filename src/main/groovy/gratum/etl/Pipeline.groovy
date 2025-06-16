@@ -590,7 +590,7 @@ public class Pipeline {
             configure.delegate = cfg
             configure()
         }
-        File tmpDir = File.createTempDir("sorting_")
+        File tmpDir = File.createTempDir("sorting_", "")
         List<Map> page = []
         int pageIndex = 1
 
