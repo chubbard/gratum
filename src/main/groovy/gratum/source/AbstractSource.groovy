@@ -6,12 +6,12 @@ import groovy.transform.CompileStatic
 @CompileStatic
 abstract class AbstractSource implements Source {
 
-    String name
+    CharSequence name
 
     AbstractSource() {
     }
 
-    AbstractSource(String name) {
+    AbstractSource(CharSequence name) {
         this.name = name
     }
 /**
@@ -28,7 +28,7 @@ abstract class AbstractSource implements Source {
      * @param name A string with the name of the pipeline to use.
      * @return this Source
      */
-    public <T extends AbstractSource> T name(String name) {
+    public <T extends AbstractSource> T name(CharSequence name) {
         this.name = name
         return (T)this
     }
@@ -44,7 +44,7 @@ abstract class AbstractSource implements Source {
 
     abstract void doStart(Pipeline pipeline)
 
-    void setName(String name) {
+    void setName(CharSequence name) {
         this.name = name
     }
 }

@@ -12,5 +12,5 @@ public interface CSVReader {
     /* Return true to stop parsing csv */
     public boolean processRow( List<String> header, List<String> row ) throws Exception;
 
-    public void afterProcessing();
+    public default void afterProcessing() {};
 }

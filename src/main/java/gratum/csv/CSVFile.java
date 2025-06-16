@@ -1,12 +1,14 @@
 package gratum.csv;
 
 import org.apache.commons.io.input.BOMInputStream;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Consumer;
 
-public class CSVFile implements Closeable {
+public class CSVFile implements Closeable, Iterable<List<String>> {
 
     private File file;
     private Reader reader;
@@ -43,12 +45,16 @@ public class CSVFile implements Closeable {
     }
 
     public int parse( CSVReader callback ) throws IOException {
+        return parse(getReader(), callback);
+    }
+
+    protected Reader getReader() throws IOException {
         if( file != null ) {
             BOMInputStream bom = new BOMInputStream(new FileInputStream(file));
-            Reader reader = bom.hasBOM() ? new InputStreamReader(bom, bom.getBOMCharsetName()) : new InputStreamReader(bom, StandardCharsets.UTF_8);
-            return parse(reader, callback);
+            reader = bom.hasBOM() ? new InputStreamReader(bom, bom.getBOMCharsetName()) : new InputStreamReader(bom, StandardCharsets.UTF_8);
+            return reader;
         } else {
-            return parse(reader,callback);
+            return reader;
         }
     }
 
@@ -91,7 +97,7 @@ public class CSVFile implements Closeable {
         return file != null ? file.getName() : "<stream>";
     }
 
-    private List<String> readNext( LineNumberReader reader ) throws IOException {
+    protected List<String> readNext( LineNumberReader reader ) throws IOException {
         do {
             lastLine = reader.readLine();
             if( lastLine == null ) return null;
@@ -247,15 +253,61 @@ public class CSVFile implements Closeable {
         return builder.toString();
     }
 
+    @NotNull
+    @Override
+    public Iterator<List<String>> iterator() {
+        try {
+            return new PullCsvIterator(this, getReader());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Iterator<Map<String, Object>> mapIterator() {
+        try {
+            return new PullCsvMapIterator(this, getReader());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void forEach(Consumer<? super List<String>> action) {
+        try {
+            parse(new CSVReader() {
+                @Override
+                public void processHeaders(List<String> header) throws Exception {
+                    action.accept(header);
+                }
+
+                @Override
+                public boolean processRow(List<String> header, List<String> row) throws Exception {
+                    action.accept( row );
+                    return true;
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Spliterator<List<String>> spliterator() {
+        return Iterable.super.spliterator();
+    }
+
     public void flush() {
         if( writer != null ) {
             writer.flush();
         }
     }
-    public void close() {
-        flush();
+    public void close() throws IOException {
         if( writer != null ) {
+            flush();
             writer.close();
+        }
+        if( reader != null ) {
+            reader.close();
         }
     }
 

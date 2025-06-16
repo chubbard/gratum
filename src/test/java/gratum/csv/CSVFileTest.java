@@ -54,11 +54,6 @@ public class CSVFileTest extends TestCase {
                 line++;
                 return false;
             }
-
-            @Override
-            public void afterProcessing() {
-
-            }
         } );
     }
 
@@ -117,11 +112,6 @@ public class CSVFileTest extends TestCase {
                 line++;
                 return false;
             }
-
-            @Override
-            public void afterProcessing() {
-
-            }
         } );
     }
 
@@ -150,11 +140,6 @@ public class CSVFileTest extends TestCase {
                 assertEquals("Service Delivery", row.get(7));
                 assertEquals("Core Services", row.get(8));
                 return true;
-            }
-
-            @Override
-            public void afterProcessing() {
-
             }
         });
     }
@@ -316,10 +301,6 @@ public class CSVFileTest extends TestCase {
                 line++;
                 return false;
             }
-
-            @Override
-            public void afterProcessing() {
-            }
         });
     }
 
@@ -338,10 +319,6 @@ public class CSVFileTest extends TestCase {
                 assertEquals( "line " + line, header.size(), row.size() );
                 line++;
                 return false;
-            }
-
-            @Override
-            public void afterProcessing() {
             }
         });
     }

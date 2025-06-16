@@ -1,5 +1,6 @@
 package gratum.etl
 
+import gratum.csv.CSVFile
 import gratum.pgp.PgpContext
 import gratum.sink.CsvSink
 import gratum.sink.JsonSink
@@ -8,6 +9,7 @@ import gratum.source.AbstractSource
 import gratum.csv.HaltPipelineException
 import gratum.source.ChainedSource
 import gratum.source.ClosureSource
+import gratum.source.CollectionSource
 import gratum.source.Source
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
@@ -69,7 +71,7 @@ public class Pipeline {
     public static final int DO_NOT_TRACK = -1
     public static final Logger logger = LoggerFactory.getLogger(Pipeline)
 
-    String name
+    CharSequence name
     Source src
     List<Step> processChain = []
     List<AfterStep> doneChain = []
@@ -78,7 +80,7 @@ public class Pipeline {
     boolean complete = false
     int loaded = 0
 
-    Pipeline(String name, Pipeline parent = null) {
+    Pipeline(CharSequence name, Pipeline parent = null) {
         this.name = name
         this.parent = parent
     }
@@ -92,7 +94,7 @@ public class Pipeline {
      * passed to send a row into the pipeline.
      * @return The pipeline attached to results of the startClosure.
      */
-    public static Pipeline create( String name,
+    public static Pipeline create( CharSequence name,
                                    @DelegatesTo(Pipeline)
                                    @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                                    Closure startClosure ) {
@@ -104,7 +106,7 @@ public class Pipeline {
      *
      * @return The name of the Pipeline
      */
-    public String getName() {
+    public CharSequence getName() {
         return this.name
     }
 
@@ -114,7 +116,7 @@ public class Pipeline {
      * @param step The code used to process each row on the Pipeline.
      * @return this Pipeline.
      */
-    public Pipeline prependStep( String name = null,
+    public Pipeline prependStep( CharSequence name = null,
                                  @DelegatesTo(Pipeline)
                                  @ClosureParams(value = FromString, options = ["java.lang.Map<String,String>"])
                                  Closure<Map<String,Object>> step ) {
@@ -133,18 +135,12 @@ public class Pipeline {
      * @param step The code used to process each row on the Pipeline.
      * @return this Pipeline.
      */
-    public Pipeline addStep( String name = null,
+    public Pipeline addStep( CharSequence name = null,
                              @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                              @DelegatesTo(Pipeline) Closure<Map<String,Object>> step ) {
         step.delegate = this
         processChain << new Step( name, step )
         return this
-    }
-
-    public Pipeline addStep(GString name,
-                            @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
-                            @DelegatesTo(Pipeline) Closure<Map<String,Object>> step) {
-        this.addStep( name.toString(), step )
     }
 
     /**
@@ -241,7 +237,7 @@ public class Pipeline {
      * @param callback A callback that is passed a row, and returns a boolean.  All rows that return a false are rejected.
      * @return A Pipeline that contains only the rows that matched the filter.
      */
-    public Pipeline filter(String name = "filter()",
+    public Pipeline filter(CharSequence name = "filter()",
                            @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                            @DelegatesTo(Pipeline) Closure callback) {
         callback.delegate = this
@@ -316,7 +312,7 @@ public class Pipeline {
      * @param split The closure that is passed a new Pipeline where all the rows from this Pipeline are copied onto.
      * @return this Pipeline
      */
-    public Pipeline branch( String branchName = "branch",
+    public Pipeline branch( CharSequence branchName = "branch",
                             @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
                             Closure<Pipeline> split) {
         final Pipeline branch = new Pipeline( "${name}/${branchName}" )
@@ -559,14 +555,13 @@ public class Pipeline {
             return row
         }
 
-        Pipeline other = new Pipeline( name, this )
-        other.src = new AbstractSource() {
+        Pipeline other = new Pipeline( name, this ).source(new AbstractSource() {
             @Override
             void doStart(Pipeline pipeline) {
                 pipeline.parent.start() // first start our parent pipeline
                 pipeline.process( cache, 1 )
             }
-        }
+        })
         return other
     }
 
@@ -576,52 +571,74 @@ public class Pipeline {
      * @return a Pipeline whose rows are sorted according to the given columns and order.
      */
     public Pipeline sort(Tuple2<String,SortOrder>... columns) {
-        Comparator<Map<String,Object>> comparator = new Comparator<Map<String, Object>>() {
-            @Override
-            int compare(Map<String, Object> o1, Map<String, Object> o2) {
-                for( Tuple2<String,SortOrder> key : columns ) {
-                    int value = (Comparable)o1[key.first] <=> (Comparable)o2[key.first]
-                    switch( key.second ){
-                        case SortOrder.ASC:
-                            break
-                        case SortOrder.DESC:
-                            value = Math.negateExact(value)
-                            break
-                    }
-                    if( value != 0 ) return value
-                }
-                return 0
-            }
+        sort("sort(${columns.collect { t -> "${t.first}/${t.second}" }.join(",")}") {
+            orderBy(columns)
         }
-
-        sort("sort(${columns.collect { t -> "${t.first}/${t.second}" }.join(",")}", comparator )
     }
 
     /**
      * Sort the rows according to the given comparator
      * @param name - The name identifying the step added to the pipeline for sort.
      * @param comparator - The comparator used to sort the rows.
+     * @param configure - a closure to configure the behavior of the sort.  The delegate is a
+     * {@link gratum.etl.SortConfig}
      * @return A Pipeline that orders the rows according to the Comparator
      */
-    public Pipeline sort(String name, Comparator<Map<String,Object>> comparator) {
-        List<Map> ordered = []
+    public Pipeline sort(CharSequence name, @DelegatesTo(SortConfig) Closure configure) {
+        SortConfig cfg = new SortConfig()
+        if( configure ) {
+            configure.delegate = cfg
+            configure()
+        }
+        File tmpDir = File.createTempDir("sorting_")
+        List<Map> page = []
+        int pageIndex = 1
+
         addStep(name) { row ->
-            //int index = Collections.binarySearch( ordered, row, comparator )
-            //ordered.add( Math.abs(index + 1), row )
-            ordered << row
+            page << row
+            if( page.size() >= cfg.pageSize && cfg.pageSize > 0 ) {
+                page.sort(cfg.comparator)
+                String filename = "${tmpDir}/page_${pageIndex++}.csv"
+                CollectionSource.from(page).save(filename).go()
+                page.clear()
+            }
             return row
         }
 
-        Pipeline next = new Pipeline(name, this)
-        next.src = new ChainedSource( this )
+        Pipeline next = new Pipeline(name, this).source(new ChainedSource(this))
         after {
-            ordered.sort( comparator )
-            ((ChainedSource)next.src).process( ordered )
-            null
+            if( cfg.pageSize > 0 ) {
+                // any residual rows left in the page buffer flush to disk
+                if( !page.isEmpty() ) {
+                    page.sort(cfg.comparator)
+                    String filename = "${tmpDir}/page_${pageIndex++}.csv"
+                    CollectionSource.from(page).save(filename).go()
+                    page.clear()
+                }
+
+                List<File> pages = tmpDir.listFiles() as List<File>
+                while(pages.size() > 1) {
+                    File page1 = pages.pop()
+                    File page2 = pages.pop()
+                    CSVFile mergedPage = mergePage( new CSVFile(page1, ","), new CSVFile(page2, ","), cfg.comparator )
+                    pages.add( mergedPage.file )
+                    page1.delete()
+                    page2.delete()
+                }
+                cfg?.after?.call(pages.first())
+                if( cfg.downstream ) {
+                    CSVFile csvFile = new CSVFile( pages.first(), "," )
+                    Iterator<Map<String,Object>> rows = csvFile.mapIterator()
+                    while( rows.hasNext() ) {
+                        next.process( rows.next() )
+                    }
+                }
+            } else {
+                page.sort(cfg.comparator)
+                ((ChainedSource)next.src).process( page )
+            }
         }
-
         return next
-
     }
 
     /**
@@ -631,18 +648,48 @@ public class Pipeline {
      * @return a Pipeline that where it's rows are ordered according to the given columns.
      */
     public Pipeline sort(String... columns) {
-        Comparator<Map> comparator = new Comparator<Map>() {
-            @Override
-            int compare(Map o1, Map o2) {
-                for( String key : columns ) {
-                    int value = (Comparable)o1[key] <=> (Comparable)o2[key]
-                    if( value != 0 ) return value
-                }
-                return 0
-            }
+        sort("sort(${columns})" ) {
+            orderBy(columns)
         }
-        sort("sort(${columns})", comparator)
     }
+
+    CSVFile mergePage(CSVFile page1, CSVFile page2, Comparator<Map<String,Object>> comparator) {
+        String[] p1 = page1.file.name.split("[_.]")
+        String[] p2 = page2.file.name.split("[_.]")
+        String v1 = p1[1]
+        String v2 = p2[p2.length-2]
+        CSVFile result = new CSVFile( new File(page1.file.parentFile, "page_${v1}_${v2}.csv"), "," )
+
+        try {
+            Iterator<Map<String, Object>> it1 = page1.mapIterator()
+            Iterator<Map<String, Object>> it2 = page2.mapIterator()
+            Map<String, Object> row1 = null
+            Map<String, Object> row2 = null
+            while (it1.hasNext() || it2.hasNext()) {
+                if (!row1 && it1.hasNext()) row1 = it1.next()
+                if (!row2 && it2.hasNext()) row2 = it2.next()
+                int c = row1 && row2 ? comparator.compare(row1, row2) : (row1 ? -1 : 1)
+                if (c == 0) {
+                    result.write(row1)
+                    result.write(row2)
+                    row1 = null
+                    row2 = null
+                } else if (c < 0) {
+                    result.write(row1)
+                    row1 = null
+                } else {
+                    result.write(row2)
+                    row2 = null
+                }
+            }
+            return result
+        } finally {
+            page1.close()
+            page2.close()
+            result.close()
+        }
+    }
+
 
     /**
      * Return a Pipeline where the given column is converted from a string to a java.lang.Double.
@@ -786,9 +833,8 @@ public class Pipeline {
     public Pipeline save(Sink<Map<String,Object>> sink ) {
         sink.attach( this )
 
-        Pipeline next = new Pipeline( sink.name, this )
+        Pipeline next = new Pipeline( sink.name, this ).source(new ChainedSource(this))
         next.loaded = DO_NOT_TRACK
-        next.src = new ChainedSource( this )
         after {
             sink.close()
             next.process(sink.result)
@@ -922,13 +968,10 @@ public class Pipeline {
      */
     public Pipeline clip(String... columns) {
         addStep( "clip(${columns.join(",")}") { row ->
-            Map<String,Object> result = [:] as Map<String,Object>
-            for( String key : row.keySet() ) {
-                if( columns.contains(key) ) {
-                    result[key] = row[key]
-                }
+            row.retainAll { key, value ->
+                columns.contains(key)
             }
-            return result
+            return row
         }
         return this
     }
@@ -952,19 +995,6 @@ public class Pipeline {
     }
 
     /**
-     * Just a helper method for using GString in {@link #inject(String,Closure)}.
-     *
-     * @param name Name of the inject step
-     * @param closure Closure returns a an Iterable used to inject those rows into down stream steps.
-     * @return Pipeline that will receive all members of the Iterable returned from the given closure.
-     */
-    public Pipeline inject(GString name,
-                           @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
-                           @DelegatesTo(Pipeline) Closure<Iterable<Map<String,Object>>> closure ) {
-        return this.inject( name.toString(), closure )
-    }
-
-    /**
      * Injects the Collection&lt;Map&gt; returned from the given closure into the downstream steps as individual rows.
      * The given closure is called for every row passed through the preceding step.  Each member of the returned
      * collection will be fed into downstream steps as separate rows.
@@ -972,11 +1002,10 @@ public class Pipeline {
      * @param closure Takes a Map and returns a Collection&lt;Map&gt; that will be fed into the downstream steps
      * @return The Pipeline that will receive all members of the Iterable returned from the closure.
      */
-    public Pipeline inject(String name,
+    public Pipeline inject(CharSequence name,
                            @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                            @DelegatesTo(Pipeline) Closure<Iterable<Map<String,Object>>> closure) {
-        Pipeline next = new Pipeline(name, this)
-        next.src = new ChainedSource( this )
+        Pipeline next = new Pipeline(name, this).source(new ChainedSource( this ))
         closure.delegate = this
         addStep(name) { row ->
             Iterable<Map<String,Object>> result = closure.call( row )
@@ -1010,8 +1039,7 @@ public class Pipeline {
     public Pipeline exchange( @DelegatesTo(Pipeline)
                               @ClosureParams( value = FromString, options = ["java.util.Map<String,Object>"])
                               Closure<Pipeline> closure) {
-        Pipeline next = new Pipeline( name, this )
-        next.src = new ChainedSource(this)
+        Pipeline next = new Pipeline( name, this ).source(new ChainedSource(this))
         addStep("exchange(${next.name})") { row ->
             Pipeline pipeline = closure( row )
             pipeline.addStep("Exchange Bridge(${pipeline.name})") { current ->
@@ -1329,7 +1357,7 @@ public class Pipeline {
         return false // don't stop!
     }
 
-    void doRejections(Map<String,Object> current, String stepName, int lineNumber) {
+    void doRejections(Map<String,Object> current, CharSequence stepName, int lineNumber) {
         if( parent ) {
             parent.doRejections( current, stepName, lineNumber )
         } else {

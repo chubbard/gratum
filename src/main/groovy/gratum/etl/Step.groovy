@@ -8,13 +8,13 @@ import groovy.transform.CompileStatic
 class Step {
     public static final int MAX_ERROR_THRESHOLD = 50
 
-    public String name
+    public CharSequence name
     public Closure<Map<String,Object>> step
     private int loaded = 0
     private Map<RejectionCategory,Integer> rejections = [:]
     private long duration = 0
 
-    Step(String name, @DelegatesTo(Step) Closure<Map<String,Object>> step) {
+    Step(CharSequence name, @DelegatesTo(Step) Closure<Map<String,Object>> step) {
         this.name = name
         this.step = step
         this.step.delegate = this
