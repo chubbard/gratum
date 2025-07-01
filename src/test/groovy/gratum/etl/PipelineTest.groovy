@@ -18,6 +18,23 @@ import static gratum.source.CollectionSource.*
 
 class PipelineTest {
 
+    class ColumnComparator implements Comparator<Map<String,Object>> {
+        String[] columns
+
+        ColumnComparator(String[] columns) {
+            this.columns = columns
+        }
+
+        @Override
+        int compare(Map<String, Object> o1, Map<String, Object> o2) {
+            for( String key : columns ) {
+                int value = (Comparable)o1[key] <=> (Comparable)o2[key]
+                if( value != 0 ) return value
+            }
+            return 0
+        }
+    }
+
     @Test
     void testPrependStep() {
         GratumFixture.withResource("titanic.csv") { stream ->
@@ -543,6 +560,77 @@ class PipelineTest {
                 }.go()
 
         assertNotNull("Assert that lastHobby is not null meaning we executing some portion of the assertions above.", lastHobby)
+    }
+
+    @Test
+    void testSortExternalMultiColumnNoDownstream() {
+        int originalLines = 0
+        boolean afterWasCalled = false
+        ColumnComparator rowChecker = new ColumnComparator(
+                "employeeNumber",
+                "payRun",
+                "payType"
+        )
+        ClosureSource.of { pipeline ->
+            List<String> payTypes = ["Normal", "Additional", "Off-cycle"]
+            List<String> lineTypes = ["Earnings", "Deductions", "Tax", "Net"]
+            for( int payRun = 100; payRun < 400; payRun++ ) {
+                lineTypes.each { lineType ->
+                    for( int employeeNumber = 1000; employeeNumber < 1215; employeeNumber++ ) {
+                        pipeline.process([
+                                employeeNumber: employeeNumber,
+                                payRun: payRun,
+                                payType: payTypes[Math.round(Math.random() * payTypes.size()) % payTypes.size()],
+                                lineType: lineType
+                        ], originalLines)
+                        originalLines++
+                        if( Math.random() > 0.75 ) {
+                            pipeline.process([
+                                    employeeNumber: employeeNumber,
+                                    payRun: payRun,
+                                    payType: payTypes[Math.round(Math.random() * payTypes.size()) % payTypes.size()],
+                                    lineType: lineType
+                            ], originalLines)
+                            originalLines++
+                        }
+                    }
+                }
+            }
+        }
+        .into()
+        .sort("Sorting") {
+            pageSize = 1000
+            downstream = false
+            orderBy("employeeNumber", "payRun", "payType")
+            after { file ->
+                afterWasCalled = true
+                assert file != null
+                assert file.size() > 0
+                CSVFile csv = new CSVFile( file, "," );
+                try {
+                    csv.withCloseable {
+                        Map<String,Object> lastRow = [:]
+                        int lines = 0
+                        for (Map<String, Object> row : csv.mapIterator()) {
+                            if (!lastRow) {
+                                lastRow = row
+                            }
+                            assert rowChecker.compare(lastRow,row) <= 0
+                            lines++
+                        }
+                        assert lines == originalLines
+                    }
+                } finally {
+                    file.delete()
+                }
+            }
+        }
+        .addStep("Assert Downstream isn't called") { row ->
+            fail("Downstream steps have been turned off.")
+            return row
+        }.go()
+
+        assert afterWasCalled
     }
 
     @Test

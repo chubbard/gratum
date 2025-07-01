@@ -593,6 +593,7 @@ public class Pipeline {
         File tmpDir = File.createTempDir("sorting_", "")
         List<Map> page = []
         int pageIndex = 1
+        List<File> pages = []
 
         addStep(name) { row ->
             page << row
@@ -600,6 +601,7 @@ public class Pipeline {
                 page.sort(cfg.comparator)
                 String filename = "${tmpDir}/page_${pageIndex++}.csv"
                 CollectionSource.from(page).save(filename).go()
+                pages << new File( filename )
                 page.clear()
             }
             return row
@@ -613,10 +615,10 @@ public class Pipeline {
                     page.sort(cfg.comparator)
                     String filename = "${tmpDir}/page_${pageIndex++}.csv"
                     CollectionSource.from(page).save(filename).go()
+                    pages << new File(filename)
                     page.clear()
                 }
 
-                List<File> pages = tmpDir.listFiles() as List<File>
                 while(pages.size() > 1) {
                     File page1 = pages.pop()
                     File page2 = pages.pop()
@@ -656,9 +658,9 @@ public class Pipeline {
     CSVFile mergePage(CSVFile page1, CSVFile page2, Comparator<Map<String,Object>> comparator) {
         String[] p1 = page1.file.name.split("[_.]")
         String[] p2 = page2.file.name.split("[_.]")
-        String v1 = p1[1]
-        String v2 = p2[p2.length-2]
-        CSVFile result = new CSVFile( new File(page1.file.parentFile, "page_${v1}_${v2}.csv"), "," )
+        String start1 = p1[1]
+        String end2 = p2[p2.length-2]
+        CSVFile result = new CSVFile( new File(page1.file.parentFile, "page_${start1}_${end2}.csv"), "," )
 
         try {
             Iterator<Map<String, Object>> it1 = page1.mapIterator()
@@ -681,6 +683,11 @@ public class Pipeline {
                     result.write(row2)
                     row2 = null
                 }
+            }
+            if( row1 ) {
+                result.write(row1)
+            } else if( row2 ) {
+                result.write(row2)
             }
             return result
         } finally {
