@@ -101,9 +101,30 @@ public class CSVFile implements Closeable, Iterable<List<String>> {
         do {
             lastLine = reader.readLine();
             if( lastLine == null ) return null;
+            int totalQuotes = 0;
+            do {
+                totalQuotes = countQuotes(lastLine);
+                if (totalQuotes % 2 > 0) {
+                    String nextLine = reader.readLine();
+                    lastLine += "\\n" + nextLine;
+                }
+            } while( totalQuotes % 2 > 0 );
         } while( lastLine.length() == 0 );
 
         return escaped ? parseColumnsWithEscaping() : parseColumnsWithoutEscaping();
+    }
+
+    private int countQuotes(String line) {
+        int lastIndex = 0;
+        int count = 0;
+        do {
+            lastIndex = line.indexOf('"', lastIndex);
+            if( lastIndex >= 0 ) {
+                count++;
+                lastIndex++;
+            }
+        } while( lastIndex >= 0 );
+        return count;
     }
 
     private List<String> parseColumnsWithoutEscaping() {
@@ -132,6 +153,7 @@ public class CSVFile implements Closeable, Iterable<List<String>> {
         char sep = separator.charAt(0);
         boolean skipSeparator = false;
         boolean stripQuotes = false;
+
         for( int i = 0; i < lastLine.length(); i++ ) {
             char currentChar = lastLine.charAt(i);
             if( currentChar == '"' ) {
@@ -150,7 +172,15 @@ public class CSVFile implements Closeable, Iterable<List<String>> {
         }
 
         if( columnStart < lastLine.length() ) {
-            String content = stripQuotes ? lastLine.substring( columnStart + 1, lastLine.length() - 1 ) : lastLine.substring( columnStart );
+            String content;
+            if( stripQuotes ) {
+                int columnEnd = lastLine.length();
+                if( lastLine.charAt(columnStart) == '"') columnStart++;
+                if( lastLine.charAt(lastLine.length()-1) == '"') columnEnd--;
+                content = lastLine.substring(columnStart,columnEnd);
+            } else {
+                content = lastLine.substring(columnStart);
+            }
             line.add( unescape(content) );
         } else {
             // we have a trailing comma at the end without anything after it so add an empty string.
