@@ -115,16 +115,19 @@ public class CSVFile implements Closeable, Iterable<List<String>> {
     }
 
     private int countQuotes(String line) {
-        int lastIndex = 0;
-        int count = 0;
-        do {
-            lastIndex = line.indexOf('"', lastIndex);
-            if( lastIndex >= 0 ) {
-                count++;
-                lastIndex++;
-            }
-        } while( lastIndex >= 0 );
-        return count;
+        if( escaped ) {
+            int lastIndex = 0;
+            int count = 0;
+            do {
+                lastIndex = line.indexOf('"', lastIndex);
+                if (lastIndex >= 0) {
+                    count++;
+                    lastIndex++;
+                }
+            } while (lastIndex >= 0);
+            return count;
+        } else
+            return 0;
     }
 
     private List<String> parseColumnsWithoutEscaping() {
@@ -272,6 +275,11 @@ public class CSVFile implements Closeable, Iterable<List<String>> {
                 case '\n':
                     builder.append( source, lastIndex, i );
                     builder.append("\\n");
+                    lastIndex = i + 1;
+                    break;
+                case '\r':
+                    builder.append(source, lastIndex, i);
+                    builder.append("");
                     lastIndex = i + 1;
                     break;
             }

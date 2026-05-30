@@ -20,6 +20,10 @@ import org.slf4j.LoggerFactory
 
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.time.DateTimeException
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.regex.Pattern
 
 /**
@@ -772,6 +776,90 @@ public class Pipeline {
                 }
             }
             return row
+        }
+    }
+
+    /**
+     * Parses the string at the given column name into a LocalDate object using the given format.  Any
+     * value that cannot be parsed by the format is rejected.  Null values or empty strings are not rejected.
+     *
+     * @param column The field to use to find the string value to parse
+     * @param formats One or more formats of the string to use to parse into a java.time.LocalDate.
+     * The first format that parses without exception will be used.
+     * @return A Pipeline where all rows contain a java.time.LocalDate at given field name
+     */
+    Pipeline asLocalDate(String column, DateTimeFormatter... formatters) {
+        addStep("asLocalDate(${column}, with ${formatters.size()} formats)") { row ->
+            if( row[column] instanceof LocalDate ) return row
+            String val = row[column] as String
+            if( val ) {
+                row[column] = formatters.findResult {format ->
+                    try {
+                        String d = row[column]
+                        row[column] = LocalDate.parse(d, format)
+                    } catch( DateTimeException ex ) {
+                        return null
+                    }
+                }
+            } else {
+                return row
+            }
+            return row[column] ? row : reject( row, "${val} could not be parsed by ${formatters.size()} formats", RejectionCategory.INVALID_FORMAT )
+        }
+    }
+
+    /**
+     * Helper method for parsing the string at the given column using the given date format.  This delegates
+     * to {@link #asLocalDate(java.lang.String, java.time.format.DateTimeFormatter[])}.
+     *
+     * @param column The field to use to find the string value to parse
+     * @param formats One or more formats of the string to use to parse into a java.time.LocalDate.
+     * The first format that parses without exception will be used. (default format is "yyyy-MM-dd")
+     * @return A Pipeline where all rows contain a java.time.LocalDate at given field name
+     */
+    Pipeline asLocalDate(String column, String... formats = ["yyyy-MM-dd"]) {
+        asLocalDate(column, formats.collect { format -> DateTimeFormatter.ofPattern(format) } as DateTimeFormatter[] )
+    }
+
+    /**
+     * Helper method for parsing the string at the given column using the given date time format.  This delegates
+     * to {@link #asLocalDateTime(java.lang.String, java.time.format.DateTimeFormatter[])}.
+     *
+     * @param column The field to use to find the string value to parse
+     * @param formats One or more formats of the string to use to parse into a java.time.LocalDateTime.
+     * The first format that parses without exception will be used. (default format is "yyyy-MM-dd HH:mm")
+     * @return A Pipeline where all rows contain a java.time.LocalDateTime at given field name
+     */
+    Pipeline asLocalDateTime(String column, String... formats = ["yyyy-MM-dd HH:mm:ss"]) {
+        asLocalDateTime(column, formats.collect { format -> DateTimeFormatter.ofPattern(format) } as DateTimeFormatter[] )
+    }
+
+    /**
+     * Parses the string at the given column name into a LocalDateTime object using the given format.  Any
+     * value that cannot be parsed by the format is rejected.  Null values or empty strings are not rejected.
+     *
+     * @param column The field to use to find the string value to parse
+     * @param formats One or more formats of the string to use to parse into a java.time.LocalDateTime.
+     * The first format that parses without exception will be used.
+     * @return A Pipeline where all rows contain a java.time.LocalDateTime at given field name
+     */
+    Pipeline asLocalDateTime(String column, DateTimeFormatter... formats) {
+        addStep("asLocalDateTime(${column}, with ${formats.size()} formatters)") { row ->
+            if( row[column] instanceof LocalDateTime ) return row
+            String val = row[column] as String
+            if( val ) {
+                row[column] = formats.findResult {format ->
+                    try {
+                        String d = row[column]
+                        row[column] = LocalDateTime.parse(d, format)
+                    } catch( DateTimeException ex ) {
+                        return null
+                    }
+                }
+            } else {
+                return row
+            }
+            return row[column] ? row : reject( row, "${val} could not be parsed by ${formats.size()} formats", RejectionCategory.INVALID_FORMAT )
         }
     }
 
