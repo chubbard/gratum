@@ -7,6 +7,9 @@ import gratum.source.CollectionSource
 import gratum.source.CsvSource
 import org.junit.Test
 
+import java.time.LocalDate
+import java.time.LocalDateTime
+
 import static junit.framework.TestCase.*
 import static gratum.source.CsvSource.*
 import static gratum.source.HttpSource.*
@@ -784,6 +787,62 @@ class PipelineTest {
 
         assert stats.loaded == 2
         assert stats.rejections == 1
+    }
+
+    @Test
+    void testAsLocalDate() {
+        boolean kirby = false
+        LoadStatistic stats = from([
+                [name: 'Chuck', dateOfBirth: '1992-08-11'],
+                [name: 'Sam', dateOfBirth: '1980-04-12'],
+                [name: 'Rob', dateOfBirth: 'unknown'],
+                [name: 'Sean' ],
+                [name: 'Kirby', dateOfBirth: LocalDate.of(1976,3,25)],
+                [name: 'Huck', dateOfBirth: '08/12/1994']
+        ]).asLocalDate('dateOfBirth', 'yyyy-MM-dd', 'MM/dd/yyyy')
+                .addStep("Assert all are Dates") { row ->
+                    if( row['name'] == 'Kirby' ) {
+                        kirby = true
+                    }
+                    if( row.containsKey('dateOfBirth') ) {
+                        assert row['dateOfBirth'] instanceof LocalDate
+                    }
+                    row
+                }
+                .go()
+
+        assert stats.loaded == 5
+        assert stats.rejections == 1
+        assert stats.getRejections(RejectionCategory.INVALID_FORMAT) == 1
+        assert kirby
+    }
+
+    @Test
+    void testAsLocalDateTime() {
+        boolean kirby = false
+        LoadStatistic stats = from([
+                [name: 'Chuck', punchIn: '1992-08-11 20:20:34'],
+                [name: 'Sam', punchIn: '1980-04-12 23:11:15'],
+                [name: 'Rob', punchIn: 'unknown'],
+                [name: 'Sean' ],
+                [name: 'Kirby', punchIn: LocalDateTime.of(1976,3,25, 12, 15, 30)],
+                [name: 'Huck', punchIn: '08/12/1994 14:57:02']
+        ]).asLocalDateTime('punchIn', 'yyyy-MM-dd HH:mm:ss', 'MM/dd/yyyy HH:mm:ss')
+                .addStep("Assert all are LocalDateTime") { row ->
+                    if( row['name'] == 'Kirby' ) {
+                        kirby = true
+                    }
+                    if( row.containsKey('punchIn') ) {
+                        assert row['punchIn'] instanceof LocalDateTime
+                    }
+                    row
+                }
+                .go()
+
+        assert stats.loaded == 5
+        assert stats.rejections == 1
+        assert stats.getRejections(RejectionCategory.INVALID_FORMAT) == 1
+        assert kirby
     }
 
     @Test
