@@ -10,6 +10,7 @@ import groovy.transform.CompileStatic
  */
 @CompileStatic
 class LoadStatistic {
+    int executionOrder = 0
     String name
     Map<RejectionCategory, Map<? extends CharSequence,Integer>> rejectionsByCategory = [:]
     Map<CharSequence,Long> stepTimings = [:]
