@@ -10,7 +10,7 @@ import groovy.transform.CompileStatic
  */
 @CompileStatic
 class LoadStatistic {
-    int executionOrder = 0
+    Map<String,Object> metadata
     String name
     Map<RejectionCategory, Map<? extends CharSequence,Integer>> rejectionsByCategory = [:]
     Map<CharSequence,Long> stepTimings = [:]
@@ -160,5 +160,11 @@ class LoadStatistic {
             if( !stepTimings[ step ] ) stepTimings.put( step, 0L )
             stepTimings[ step ] = stepTimings[ step ] + src.stepTimings [ step ]
         }
+    }
+
+    LoadStatistic addMetadata(String name, Object value) {
+        if( !metadata  ) metadata = [:]
+        metadata[name] = value
+        return this
     }
 }

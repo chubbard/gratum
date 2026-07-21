@@ -76,4 +76,26 @@ class LoadStatisticTest {
 
         assert stat1.stepTimings.size() == 2
     }
+
+    @Test
+    void testMetadata() {
+        LoadStatistic stat1 = CollectionSource.from([
+                [color: 'red'],
+                [color: 'green'],
+                [color: 'blue'],
+                [color: 'orange'],
+                [color: 'white'],
+                [color: 'black'],
+                [color: 'yellow'],
+                [color: 'purple'],
+                [color: 'cyan']
+        ]).filter([color: ['green', 'blue']])
+                .go()
+
+        stat1.addMetadata('executionOrder', 0).addMetadata('rejectionFilename', 'rejected-colors.csv')
+
+        assert stat1.metadata['rejectionFilename'] == 'rejected-colors.csv'
+        assert stat1.metadata['executionOrder'] == 0
+        assert !stat1.metadata['rejected-colors.csv']
+    }
 }
