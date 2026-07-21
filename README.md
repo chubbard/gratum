@@ -495,8 +495,8 @@ csv("images.csv", ",")
                     
                     String getName() { return "png" }
                     
-                    void attach(Pipeline pipeline) {
-                        pipeline.addStep("Save PNG") { row->
+                    void attach(Pipeline sinkPipe) {
+                        sinkPipe.addStep("Save PNG") { row->
                             File output = new File(row.filename as String)
                             output.withOutputStream { stream ->
                                 stream.write( row.image as byte[] )
