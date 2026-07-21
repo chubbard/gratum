@@ -90,10 +90,16 @@ class LoadStatisticTest {
                 [color: 'purple'],
                 [color: 'cyan']
         ]).filter([color: ['green', 'blue']])
+        .addStep("wait") { row ->
+            Thread.sleep(10L)
+            return row
+        }
                 .go()
 
         stat1.addMetadata('executionOrder', 0).addMetadata('rejectionFilename', 'rejected-colors.csv')
 
+        assert stat1.start < stat1.end
+        assert stat1.duration.toMillis() > 0
         assert stat1.metadata['rejectionFilename'] == 'rejected-colors.csv'
         assert stat1.metadata['executionOrder'] == 0
         assert !stat1.metadata['rejected-colors.csv']

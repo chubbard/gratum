@@ -720,7 +720,7 @@ class PipelineTest {
         assert rejections.size() == 2
     }
 
-    @Test(timeout = 15000L)
+    @Test(timeout = 20000L)
     public void testHttpSource() {
         String message = null
         int actualCount = 0

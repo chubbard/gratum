@@ -63,7 +63,7 @@ public class CSVFile implements Closeable, Iterable<List<String>> {
         int lines = 1;
         if( columnHeaders == null ) {
             try {
-                columnHeaders = readNext(lineNumberReader);
+                columnHeaders = escaped ? readNextEscaped(lineNumberReader) : readNextUnescaped(lineNumberReader);
                 callback.processHeaders( columnHeaders );
                 lines++;
             } catch( Exception ex ) {
@@ -72,8 +72,35 @@ public class CSVFile implements Closeable, Iterable<List<String>> {
         }
 
         try {
+            return escaped ? parseEscapedRows(lineNumberReader, lines, callback) : parseUnescapedRows(lineNumberReader, lines, callback);
+        } finally {
+            lineNumberReader.close();
+            callback.afterProcessing();
+        }
+    }
+
+    private Integer parseUnescapedRows(LineNumberReader reader, int lines, CSVReader callback) throws IOException {
+        try {
             List<String> row;
-            while ((row = readNext(lineNumberReader)) != null) {
+            while((row = readNextUnescaped(reader)) != null) {
+                boolean stop = callback.processRow(columnHeaders, row);
+                if( stop ) return lines;
+                lines++;
+            }
+            return lines;
+        } catch( HaltPipelineException ex ) {
+            throw ex;
+        } catch( RuntimeException ex ) {
+            throw new RuntimeException( getName() + ": Could not parse line " + lines + ": " +  lastLine, ex );
+        } catch( Exception ex ) {
+            throw new IOException(getName() + ": Could not process line " + lines + ": " + lastLine, ex);
+        }
+    }
+
+    private Integer parseEscapedRows(LineNumberReader lineNumberReader, int lines, CSVReader callback) throws IOException {
+        try {
+            List<String> row;
+            while ((row = readNextEscaped(lineNumberReader)) != null) {
                 boolean stop = callback.processRow(columnHeaders, row);
                 if (stop) {
                     return lines;
@@ -86,10 +113,7 @@ public class CSVFile implements Closeable, Iterable<List<String>> {
         } catch( RuntimeException ex ) {
             throw new RuntimeException( getName() + ": Could not parse line " + lines + ": " +  lastLine, ex );
         } catch( Exception ex ) {
-            throw new IOException( getName() + ": Could not process line " + lines + ": " + lastLine, ex );
-        } finally {
-            lineNumberReader.close();
-            callback.afterProcessing();
+            throw new IOException(getName() + ": Could not process line " + lines + ": " + lastLine, ex);
         }
     }
 
@@ -97,7 +121,16 @@ public class CSVFile implements Closeable, Iterable<List<String>> {
         return file != null ? file.getName() : "<stream>";
     }
 
-    protected List<String> readNext( LineNumberReader reader ) throws IOException {
+    protected List<String> readNextUnescaped(LineNumberReader reader) throws IOException {
+        do {
+            lastLine = reader.readLine();
+            if (lastLine == null) return null;
+        } while( lastLine.length() == 0 );
+
+        return parseColumnsWithoutEscaping();
+    }
+
+    protected List<String> readNextEscaped(LineNumberReader reader ) throws IOException {
         do {
             lastLine = reader.readLine();
             if( lastLine == null ) return null;
@@ -111,7 +144,7 @@ public class CSVFile implements Closeable, Iterable<List<String>> {
             } while( totalQuotes % 2 > 0 );
         } while( lastLine.length() == 0 );
 
-        return escaped ? parseColumnsWithEscaping() : parseColumnsWithoutEscaping();
+        return parseColumnsWithEscaping();
     }
 
     private int countQuotes(String line) {
@@ -198,7 +231,23 @@ public class CSVFile implements Closeable, Iterable<List<String>> {
     }
 
     private String unescape( String input ) {
-        return input.replace("\\n", "\n").replace("\"\"", "\"");
+        StringBuilder builder = new StringBuilder(input);
+        for( int i = 0; i < builder.length(); i++ ) {
+            char ch = builder.charAt(i);
+            if( ch == '\\' ) {
+                char next = i+1 < builder.length() ? builder.charAt(i+1) : '\n';
+                if( next == 'n' ) {
+                    builder.replace(i,i+2,"\n");
+                }
+            } else if( ch == '"') {
+                char next = i+1 < builder.length() ? builder.charAt(i+1) : '\n';
+                if( next == '"') {
+                    builder.replace(i,i+2, "\"");
+                }
+            }
+        }
+        return builder.toString();
+//        return input.replace("\\n", "\n").replace("\"\"", "\"");
     }
 
     public void write( Map row, String[] columnHeaders ) throws IOException {

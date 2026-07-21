@@ -31,10 +31,10 @@ public class PullCsvMapIterator implements Iterator<Map<String, Object>> {
     }
 
     private void readNextRow() throws IOException {
-        List<String> row = csv.readNext(lineNumberReader);
+        List<String> row = csv.readNextEscaped(lineNumberReader);
         if( header == null && row != null ) {
             header = row;
-            row = csv.readNext(lineNumberReader);
+            row = csv.readNextEscaped(lineNumberReader);
         }
         if( row != null ) {
             nextRow = new HashMap<>();

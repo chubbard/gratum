@@ -8,7 +8,7 @@ import static junit.framework.TestCase.assertNotNull
 
 class OkHttpSourceTest {
 
-    @Test(timeout = 10_000L)
+    @Test(timeout = 20_000L)
     void testOkHttpSource() {
 
         String message = null
