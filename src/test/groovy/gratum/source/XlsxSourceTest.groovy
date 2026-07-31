@@ -9,7 +9,7 @@ class XlsxSourceTest {
     @Test
     void testXlsxLoading() {
         int id = 1
-        LoadStatistic stat = XlsxSource.xlsx( "Players", Class.getResourceAsStream("/players.xlsx") ).into()
+        LoadStatistic stat = XlsxSource.xlsx( "Players", GratumFixture.getResource("players.xlsx") ).into()
             .asInt("ID")
             .addStep("Verify") { Map row ->
                 assert row.size() == 6 // should have 6 columns
@@ -30,7 +30,7 @@ class XlsxSourceTest {
 
     @Test
     void testXlsxGroupBy() {
-        LoadStatistic stat = XlsxSource.xlsx("Players", Class.getResourceAsStream("/players.xlsx")).into()
+        LoadStatistic stat = XlsxSource.xlsx("Players", GratumFixture.getResource("players.xlsx")).into()
             .groupBy("color")
                     .addStep("Verify groups") { Map<String,List<Map<String,Object>>> row ->
                 assert row.size() == 6
@@ -47,7 +47,7 @@ class XlsxSourceTest {
 
     @Test
     void testXlsxDates() {
-        LoadStatistic stat = XlsxSource.xlsx("Players", Class.getResourceAsStream("/players.xlsx")).into()
+        LoadStatistic stat = XlsxSource.xlsx("Players", GratumFixture.getResource("players.xlsx")).into()
             .asDate("birth_date", "yyyy-MM-dd")
             .addStep("Verify Dates") { Map<String,Object> row ->
                 assert row.birth_date instanceof Date
@@ -64,7 +64,7 @@ class XlsxSourceTest {
 
     @Test
     void testXlsxCustomDateFormat() {
-        LoadStatistic stat = XlsxSource.xlsx("Players", Class.getResourceAsStream("/players.xlsx")).dateFormat("MM/dd/yyyy").into()
+        LoadStatistic stat = XlsxSource.xlsx("Players", GratumFixture.getResource("players.xlsx")).dateFormat("MM/dd/yyyy").into()
                 .asDate("birth_date", "MM/dd/yyyy")
                 .addStep("Verify Dates") { Map<String,Object> row ->
                     assert row.birth_date instanceof Date

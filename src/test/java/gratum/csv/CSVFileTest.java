@@ -1,6 +1,7 @@
 package gratum.csv;
 
 import junit.framework.TestCase;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Ignore;
 
 import java.io.*;
@@ -195,7 +196,7 @@ public class CSVFileTest extends TestCase {
     }
 
     public void testWithoutEscaping() throws IOException {
-        Reader reader = new InputStreamReader( CSVFileTest.class.getResourceAsStream("/unescaped.csv") );
+        Reader reader = new InputStreamReader(getResourceAsStream("unescaped.csv"));
         CSVFile csv = new CSVFile(reader, "|");
         csv.setEscaped(false);
         csv.parse(new CSVReader() {
@@ -289,7 +290,7 @@ public class CSVFileTest extends TestCase {
     }
 
     public void testLastColumnMissing() throws IOException {
-        CSVFile csv = new CSVFile( new InputStreamReader(getClass().getResourceAsStream("/empty_last_column_test.csv")), "," );
+        CSVFile csv = new CSVFile( new InputStreamReader(getResourceAsStream("empty_last_column_test.csv")), "," );
         csv.parse(new CSVReader() {
             int line = 1;
             @Override
@@ -307,7 +308,7 @@ public class CSVFileTest extends TestCase {
     }
 
     public void testUnescapedCsvTailingSeparator() throws IOException {
-        CSVFile csv = new CSVFile( new InputStreamReader(getClass().getResourceAsStream("/empty_last_column_test.csv")), "," );
+        CSVFile csv = new CSVFile( new InputStreamReader(getResourceAsStream("empty_last_column_test.csv")), "," );
         csv.setEscaped(false);
         csv.parse(new CSVReader() {
             int line = 1;
@@ -323,6 +324,11 @@ public class CSVFileTest extends TestCase {
                 return false;
             }
         });
+    }
+
+    @NotNull
+    private static InputStream getResourceAsStream(String name) {
+        return Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(name));
     }
 
     public void testMultilineRows() throws IOException {

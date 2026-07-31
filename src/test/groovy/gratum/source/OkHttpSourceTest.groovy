@@ -45,7 +45,7 @@ class OkHttpSourceTest {
         }
     }
 
-    @Test(timeout = 5000L)
+    @Test(timeout = 20_000L)
     void testOkHttps() {
         LoadStatistic stats = https("https://postman-echo.com/get?color=green&mode=lit")
             .into()
@@ -67,7 +67,7 @@ class OkHttpSourceTest {
         assert stats.rejections == 0
     }
 
-    @Test(timeout = 5000L)
+    @Test(timeout = 20_000L)
     void testOkHttpXml() {
         LoadStatistic stats = https("https://www.purgomalum.com/service/xml?text=Is+this+a+good+idea+to+use+query+params+or+a+shitty+one%3F") {
             header("Accept", "text/xml")

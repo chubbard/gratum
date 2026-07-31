@@ -1,5 +1,6 @@
 package gratum.source
 
+import gratum.etl.GratumFixture
 import gratum.etl.LoadStatistic
 import org.junit.Test
 
@@ -7,7 +8,7 @@ class XlsSourceTest {
 
     @Test
     void testReadingXls() {
-        LoadStatistic stat = XlsSource.xls( "Players", Class.getResourceAsStream("/players.xls") ).into()
+        LoadStatistic stat = XlsSource.xls( "Players", GratumFixture.getResource("players.xls") ).into()
             .addStep("validate players row") { Map<String,Object> row ->
                 assert row.size() == 6
                 row.each { String col, Object value ->
@@ -23,7 +24,7 @@ class XlsSourceTest {
 
     @Test
     void testXlsGroupBy() {
-        LoadStatistic stat = XlsSource.xls("Players", Class.getResourceAsStream("/players.xls")).into()
+        LoadStatistic stat = XlsSource.xls("Players", GratumFixture.getResource("players.xls")).into()
                 .groupBy("color")
                 .addStep("Verify groups") { Map<String,List<Map<String,Object>>> row ->
                     assert row.size() == 6
