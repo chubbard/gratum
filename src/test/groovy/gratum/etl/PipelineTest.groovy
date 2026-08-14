@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit
 
 import static gratum.source.CsvSource.*
 import static gratum.source.CollectionSource.*
+import static gratum.source.OkHttpSource.*
 
 /**
  * Created by charliehubbard on 7/13/18.
@@ -726,11 +727,14 @@ class PipelineTest {
         String message = null
         int actualCount = 0
         int expectedCount = 0
-        LoadStatistic stats = http("http://api.open-notify.org/astros.json").get()
-            .inject { json ->
-                expectedCount = json.number
-                message = json.message
-                json.people
+        LoadStatistic stats = http("http://api.open-notify.org/astros.json").into()
+            .inject { response ->
+                assert response.status == 200
+                assert response.json
+                assert response.json.people
+                expectedCount = response.json.number
+                message = response.json.message
+                response.json.people
             }.addStep("assert astros in space") { row ->
                 actualCount++
                 // assert that we received the data we expected, but we can't really test anything because this will change over time
