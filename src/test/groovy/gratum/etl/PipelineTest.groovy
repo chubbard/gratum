@@ -530,7 +530,7 @@ class PipelineTest {
                 if( row.id < 5 ) {
                     assert  row.hobby
                 } else {
-                    assert row.hobby != null
+                    assert row.hobby == null
                 }
                 return row
             }
