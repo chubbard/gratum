@@ -2,13 +2,13 @@ package gratum.source
 
 import gratum.etl.LoadStatistic
 import org.apache.commons.io.IOUtils
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 class SshSourceTest {
 
     @Test
-    @Ignore
+    @Disabled
     void testSsh() {
         String host = "uknown.host.com"
         String user = "user1"

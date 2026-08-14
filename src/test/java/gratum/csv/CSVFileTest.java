@@ -1,22 +1,17 @@
 package gratum.csv;
 
-import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Ignore;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by charlie on 8/16/15.
  */
-public class CSVFileTest extends TestCase {
+public class CSVFileTest {
 
     public void testCsvNoQuotes() throws IOException {
         String src = "name,age,birthDate\n"
@@ -256,7 +251,7 @@ public class CSVFileTest extends TestCase {
                 @Override
                 public boolean processRow(List<String> header, List<String> row) throws Exception {
                     lines++;
-                    assertTrue("Line contains an \u00e9", row.get(0).contains("\u00e9"));
+                    assertTrue(row.get(0).contains("\u00e9"), "Line does not contain an \u00e9");
                     return false;
                 }
 
@@ -279,7 +274,7 @@ public class CSVFileTest extends TestCase {
                 int n = 1;
                 while( (line = reader.readLine()) != null ) {
                     if( n > 1 ) {
-                        assertTrue("Line contains a \u00e9", line.contains("\u00e9"));
+                        assertTrue(line.contains("\u00e9"), "Line does not contain a \u00e9");
                     }
                     n++;
                 }
@@ -300,7 +295,7 @@ public class CSVFileTest extends TestCase {
 
             @Override
             public boolean processRow(List<String> header, List<String> row) throws Exception {
-                assertEquals( "line " + line, header.size(), row.size() );
+                assertEquals(header.size(), row.size(),  "line " + line);
                 line++;
                 return false;
             }
@@ -319,7 +314,7 @@ public class CSVFileTest extends TestCase {
 
             @Override
             public boolean processRow(List<String> header, List<String> row) throws Exception {
-                assertEquals( "line " + line, header.size(), row.size() );
+                assertEquals(header.size(), row.size(),  "line " + line);
                 line++;
                 return false;
             }
@@ -345,8 +340,8 @@ public class CSVFileTest extends TestCase {
 
             @Override
             public void processHeaders(List<String> header) throws Exception {
-                assertTrue( "Assert personId is present", header.contains("personId") );
-                assertTrue( "Assert comment is present", header.contains("comment") );
+                assertTrue( header.contains("personId"), "Assert personId is present" );
+                assertTrue( header.contains("comment"), "Assert comment is present" );
             }
 
             @Override
@@ -354,19 +349,19 @@ public class CSVFileTest extends TestCase {
                 String personId = row.get(0);
                 String comment = row.get(1);
 
-                assertTrue("Assert personId is present", personId != null && !personId.isEmpty());
-                assertTrue("Assert comment is present", comment != null && !comment.isEmpty());
+                assertTrue(personId != null && !personId.isEmpty(), "Assert personId is present");
+                assertTrue(comment != null && !comment.isEmpty(), "Assert comment is present");
                 if( lineNumber == 0 ) {
-                    assertTrue("Assert that '" + comment + "' contains 1st line", comment.contains("This is a multi-line comment."));
-                    assertTrue("Assert that '" + comment + "' contains 2nd line", comment.contains("It could be something more"));
-                    assertTrue("Assert that '" + comment + "' comment contains 3rd line", comment.contains(",but we decided to just test"));
-                    assertTrue("Assert that '" + comment + "' comment contains 3rd line", comment.contains("having multiple lines to parse."));
+                    assertTrue(comment.contains("This is a multi-line comment."), "Assert that '" + comment + "' contains 1st line");
+                    assertTrue(comment.contains("It could be something more"), "Assert that '" + comment + "' contains 2nd line");
+                    assertTrue(comment.contains(",but we decided to just test"), "Assert that '" + comment + "' comment contains 3rd line");
+                    assertTrue(comment.contains("having multiple lines to parse."), "Assert that '" + comment + "' comment contains 3rd line");
                 } else if( lineNumber == 1 ) {
-                    assertTrue("Assert that '" + comment + "' contains the whole line", comment.contains("This is not multi-line comment.  We needed at least one that didn't have extra lines.\n But we did try escaping a newline just to test combining our methods."));
+                    assertTrue(comment.contains("This is not multi-line comment.  We needed at least one that didn't have extra lines.\n But we did try escaping a newline just to test combining our methods."), "Assert that '" + comment + "' contains the whole line");
                 } else if( lineNumber == 2 ) {
-                    assertTrue("Assert that '" + comment + "' contains the whole line", comment.contains("This is not multi-line without escaping.  We needed just one."));
+                    assertTrue(comment.contains("This is not multi-line without escaping.  We needed just one."), "Assert that '" + comment + "' contains the whole line");
                 }else if( lineNumber == 3 ) {
-                    assertTrue("Assert that '" + comment + "' contains the whole line with \\r", comment.contains("This is a multi-line without escaping, but contains a \\r at the end like windows.\n\nDoes this parse ok?"));
+                    assertTrue(comment.contains("This is a multi-line without escaping, but contains a \\r at the end like windows.\n\nDoes this parse ok?"), "Assert that '" + comment + "' contains the whole line with \\r");
                 }
                 lineNumber++;
                 return false;

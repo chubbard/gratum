@@ -68,7 +68,7 @@ But, to make it easier to get started you'll want to add the following to your
     import gratum.source.*
     import static gratum.source.CsvSource.*
     import static gratum.source.CollectionSource.*
-    import static gratum.source.HttpSource.*
+    import static gratum.source.OkHttpSource.*
     import static gratum.source.ZipSource.*
 
 ## Examples
@@ -622,6 +622,8 @@ http( "https://www.freeforexapi.com/api/live" ) {
 
 [trim](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#trim())
 
+[emptyToNull](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#emptyToNull())
+
 [unique](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#unique(java.lang.String))
 
 [limit](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#limit(long,boolean))
@@ -696,8 +698,6 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 [zip](https://chubbard.github.io/gratum/groovydoc/gratum/source/ZipSource.html)
 
 [http/https](https://chubbard.github.io/gratum/groovydoc/gratum/source/OkHttpSource.html)
-
-[http/https](https://chubbard.github.io/gratum/groovydoc/gratum/source/HttpSource.html) - (deprecated)
 
 [jdbc](https://chubbard.github.io/gratum/groovydoc/gratum/source/JdbcSource.html)
 

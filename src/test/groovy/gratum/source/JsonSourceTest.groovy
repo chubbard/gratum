@@ -1,7 +1,7 @@
 package gratum.source
 
 import gratum.etl.LoadStatistic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class JsonSourceTest {
 

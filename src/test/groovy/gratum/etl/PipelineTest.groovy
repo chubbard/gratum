@@ -5,14 +5,14 @@ import gratum.sink.Sink
 import gratum.source.ClosureSource
 import gratum.source.CollectionSource
 import gratum.source.CsvSource
-import org.junit.Test
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.concurrent.TimeUnit
 
-import static junit.framework.TestCase.*
 import static gratum.source.CsvSource.*
-import static gratum.source.HttpSource.*
 import static gratum.source.CollectionSource.*
 
 /**
@@ -69,7 +69,7 @@ class PipelineTest {
                 .filter([Sex:"male"])
                 .onRejection { Pipeline rej ->
                     rej.addStep("Verify sex was filtered out") { Map row ->
-                        assertFalse( row.Sex == "male")
+                        assert row.Sex != "male"
                         return row
                     }
                     return
@@ -93,7 +93,7 @@ class PipelineTest {
             }
             .onRejection { Pipeline rej ->
                 rej.addStep("Verify sex was filtered out") { Map row ->
-                    assertFalse( "Assert Age = ${row.Age} >= 30.0", row.Age && (row.Age as double) < 30.0 )
+                    assert !row.Age || (row.Age as double) >= 30.0 : "Assert Age = ${row.Age} >= 30.0"
                     return row
                 }
                 return
@@ -248,14 +248,14 @@ class PipelineTest {
                     .filter([Sex: 'K'])
                     .groupBy("Sex")
                     .addStep("Assert groupBy(Sex)") { row ->
-                        assertTrue(row.isEmpty())
+                        assert row.isEmpty()
                         return row
                     }
                     .go()
             assert statistic.loaded == 1
             assert statistic.rejections == 418
 
-            assertTrue("Assert that the timings include the filter(Sex->K)) step", statistic.stepTimings.containsKey("filter Sex -> K"))
+            assert statistic.stepTimings.containsKey("filter Sex -> K")
             // I'm not entirely sure why this assert was added.  It seems logical to include
             // it as it's a step on the Pipeline but it was done for specific reasons, but
             // those reasons are lost to history.  I'm leaving it in case I remember why this was
@@ -337,14 +337,14 @@ class PipelineTest {
         GratumFixture.withResource("titanic.csv") { stream ->
             LoadStatistic statistic = csv("titanic.csv", stream)
                 .addStep("Test Sex Exists") { row ->
-                    assertTrue("Assert row.Sex exists", row.containsKey("Sex"))
-                    assertTrue("Assert row.Age exists", row.containsKey("Age"))
+                    assert row.containsKey("Sex")
+                    assert row.containsKey("Age")
                     return row
                 }
                 .renameFields([Sex: "gender", "Age": "age"])
                 .addStep("Test Sex renamed to gender and Age to age") { row ->
-                    assertTrue(row.containsKey("gender"))
-                    assertTrue(row.containsKey("age"))
+                    assert row.containsKey("gender")
+                    assert row.containsKey("age")
                     return row
                 }
                 .go()
@@ -359,7 +359,7 @@ class PipelineTest {
                     return true
                 }
                 .addStep("Test Field added") { row ->
-                    assertTrue( row.containsKey("survived") )
+                    assert row.containsKey("survived")
                     return row
                 }
                 .go()
@@ -385,14 +385,14 @@ class PipelineTest {
                     }
                     .addStep("Assert values were filled down") { row ->
                         row.each { String key, Object value ->
-                            assertNotNull("Assert ${key} is filled in with a value", value)
-                            assertTrue("Assert that ${key} is non-empty", !(value as String).isEmpty())
+                            assert value != null : "Assert ${key} is filled in with a value"
+                            assert !(value as String).isEmpty() : "Assert that ${key} is non-empty"
                         }
                         return row
                     }
                     .go()
 
-            assertTrue("Assert that we encountered rows that weren't filled in", count > 0)
+            assert count > 0 : "Assert that we encountered rows that weren't filled in"
         }
     }
 
@@ -404,7 +404,7 @@ class PipelineTest {
                 .branch { Pipeline pipeline ->
                     return pipeline.filter([Sex: "female"])
                             .addStep("Verify sex was filtered out") { row ->
-                                assertTrue(row.Sex == "female")
+                                assert row.Sex == "female"
                                 return row
                             }
                             .defaultValues("branch": true)
@@ -420,7 +420,7 @@ class PipelineTest {
                 }
                 .filter([Sex: "male"])
                 .addStep("Verify sex was filtered to male") { row ->
-                    assertTrue(row.Sex == "male")
+                    assert row.Sex == "male"
                     return row
                 }
                 .go()
@@ -434,10 +434,10 @@ class PipelineTest {
             LoadStatistic statistic = csv("titanic.csv", stream)
                 .branch { Pipeline p ->
                     return p.groupBy("Sex", "Pclass").addStep { row ->
-                        assertNotNull(row["male"])
-                        assertNotNull(row["male"]["3"])
-                        assertNotNull(row["male"]["2"])
-                        assertNotNull(row["male"]["1"])
+                        assert row["male"] != null
+                        assert row["male"]["3"]
+                        assert row["male"]["2"]
+                        assert row["male"]["1"]
 
                         assert row["male"]["3"].size() == 146
                         assert row["male"]["2"].size() == 63
@@ -505,7 +505,7 @@ class PipelineTest {
         int rejections = 0
         LoadStatistic stats = from(GratumFixture.people).join( from(GratumFixture.hobbies), ['id'] )
             .addStep("Assert hobbies") { Map row ->
-                assertNotNull( row.hobby )
+                assert row.hobby
                 return row
             }
             .onRejection { Pipeline pipeline ->
@@ -527,9 +527,9 @@ class PipelineTest {
         LoadStatistic stats = from(GratumFixture.people).join( from(GratumFixture.hobbies), ['id'], true )
             .addStep("Assert optional hobbies") { Map row ->
                 if( row.id < 5 ) {
-                    assertNotNull( row.hobby )
+                    assert  row.hobby
                 } else {
-                    assertNull( row.hobby )
+                    assert row.hobby != null
                 }
                 return row
             }
@@ -543,12 +543,12 @@ class PipelineTest {
     void testSort() {
         String lastHobby
         from(GratumFixture.hobbies).sort("hobby").addStep("Assert order is increasing") { row ->
-            if( lastHobby ) assertTrue( "Assert ${lastHobby} < ${row.hobby}", lastHobby.compareTo( row.hobby ) <= 0 )
+            if( lastHobby ) assert lastHobby.compareTo( row.hobby ) <= 0 : "Assert ${lastHobby} < ${row.hobby}"
             lastHobby = row.hobby
             return row
         }.go()
 
-        assertNotNull("Assert that lastHobby is not null meaning we executing some portion of the assertions above.", lastHobby)
+        assert lastHobby : "Assert that lastHobby is not null meaning we executing some portion of the assertions above."
     }
 
     @Test
@@ -557,12 +557,12 @@ class PipelineTest {
         from(GratumFixture.hobbies)
                 .sort(new Tuple2<>("hobby", SortOrder.DESC))
                 .addStep("Assert order is increasing") { row ->
-                    if( lastHobby ) assertTrue( "Assert ${lastHobby} > ${row.hobby}", lastHobby.compareTo( row.hobby ) >= 0 )
+                    if( lastHobby ) assert lastHobby.compareTo( row.hobby ) >= 0 :  "Assert ${lastHobby} > ${row.hobby}"
                     lastHobby = row.hobby
                     return row
                 }.go()
 
-        assertNotNull("Assert that lastHobby is not null meaning we executing some portion of the assertions above.", lastHobby)
+        assert lastHobby : "Assert that lastHobby is not null meaning we executing some portion of the assertions above."
     }
 
     @Test
@@ -720,7 +720,8 @@ class PipelineTest {
         assert rejections.size() == 2
     }
 
-    @Test(timeout = 20000L)
+    @Test
+    @Timeout(value = 20, unit = TimeUnit.SECONDS)
     public void testHttpSource() {
         String message = null
         int actualCount = 0
@@ -733,12 +734,12 @@ class PipelineTest {
             }.addStep("assert astros in space") { row ->
                 actualCount++
                 // assert that we received the data we expected, but we can't really test anything because this will change over time
-                assertNotNull( row.name )
-                assertNotNull( row.craft )
+                assert  row.name
+                assert  row.craft
                 return row
             }.go()
 
-        assertNotNull( "Message should be non-null if we called the service", message )
+        assert  message : "Message should be non-null if we called the service"
         assert message == "success"
         assert stats.loaded == expectedCount
         // provided someone is in space!
@@ -907,12 +908,23 @@ class PipelineTest {
                 [name: 'Lily', member: '0']
         ])
         .asBoolean('member')
-        .addStep("Assert all are boolean true") { row ->
-            assertTrue( row.member instanceof Boolean )
+        .addStep("Assert all are boolean false") { row ->
+            assert row.member instanceof Boolean
             assert row.member != true
             return row
         }.go()
 
+        from([
+                [name: 'Pat', member: 'null'],
+                [name: 'Chuck', member: 'Null'],
+                [name: 'Lily', member: '']
+        ])
+        .asBoolean('member')
+        .addStep("Assert all are boolean null") { row ->
+            assert !(row.member instanceof Boolean)
+            assert row.member == null
+            return row
+        }.go()
     }
 
     @Test
@@ -937,10 +949,10 @@ class PipelineTest {
     void testHeaderless() {
         LoadStatistic stats = csv("src/test/resources/headerless.csv", "|", ["Date", "status", "client", "server", "url", "length", "thread", "userAgent", "referer"])
             .addStep("Assert Columns Exist") { row->
-                assertNotNull( row.status )
-                assertNotNull( row.Date )
-                assertNotNull( row.client )
-                assertNotNull( row.server )
+                assert  row.status
+                assert  row.Date
+                assert  row.client
+                assert  row.server
                 assert !row.Date.isEmpty()
                 assert !row.client.isEmpty()
                 assert !row.server.isEmpty()
@@ -958,8 +970,8 @@ class PipelineTest {
     void testClip() {
         LoadStatistic stat = from(GratumFixture.people).clip("name", "gender").addStep("Test resulting rows") { row ->
             assert row.size() == 2
-            assertTrue( row.containsKey("name") )
-            assertTrue( row.containsKey("gender") )
+            assert  row.containsKey("name")
+            assert  row.containsKey("gender")
             return row
         }.go()
 
@@ -1365,5 +1377,44 @@ class PipelineTest {
             assert stats.loaded == 418
             assert stats.rejections == 0
         }
+    }
+
+    @Test
+    void testEmptyToNull() {
+        Map<String,Integer> counts = [:]
+        from(
+                [name: 'James', age: '26', gender: 'M', phone: '770-234-8852', email: 'james@fulton.org', job: ''],
+                [name: 'Angela', age: '28', gender: 'F', phone: '502-555-1235', email: 'anglega@dekalb.org', job: ''],
+                [name: 'Virginia', age: '35', gender: '', phone: '502-555-1222', email: 'virginia@dekalb.org', job: ''],
+                [name: 'Pat', age: '45', gender: '', phone: '', email: 'pat@dekalb.org', job: ''],
+                [name: 'Ron', age: '55', gender: '', phone: '', email: 'ron@dekalb.org', job: ''],
+                [name: 'David', age: '32', gender: 'M', phone: '', email: 'david@carroll.org', job: ''],
+        )
+        .emptyToNull()
+        .addStep("Check null from empty") { row ->
+            assert row['job'] == null
+            assert !row['email'].isEmpty()
+            assert row['gender'] == null || row['gender']
+            assert row['phone'] == null || row['phone']
+
+            row.each { key, value ->
+                if( !counts.containsKey(key) ) counts[key] = [ 'empty': 0, 'null': 0]
+                if( value == null ) {
+                    counts[key]['null'] = counts[key]['null'] + 1
+                } else if( value.isEmpty() ) {
+                    counts[key]['empty'] = counts[key]['empty'] + 1
+                }
+            }
+            return row
+        }
+        .go()
+
+        assert counts['gender']['null'] == 3
+        assert counts['gender']['empty'] == 0
+        assert counts['phone']['null'] == 3
+        assert counts['phone']['empty'] == 0
+        assert counts['job']['null'] == 6
+        assert counts['name']['null'] == 0
+        assert counts['name']['empty'] == 0
     }
 }

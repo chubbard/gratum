@@ -15,6 +15,7 @@ import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.FromString
+import groovy.transform.stc.SimpleType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -50,7 +51,7 @@ import java.util.regex.Pattern
  *          go()
  * </pre>
  *
- * In the above example you can see it using an {@link gratum.source.HttpSource} to fetch JSON data.  
+ * In the above example you can see it using an {@link gratum.source.OkHttpSource} to fetch JSON data.
  * That data is returned as a Map object which has other nested objects within it.  In this case it's
  * pulling out the "people" column which is a Collection of people objects.  Then it injects those members
  * into the down stream steps which uses printRow to print it to the console.  The output would look like
@@ -100,7 +101,7 @@ public class Pipeline {
      */
     public static Pipeline create( CharSequence name,
                                    @DelegatesTo(Pipeline)
-                                   @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
+                                   @ClosureParams( value = SimpleType, options = ["gratum.etl.Pipeline"])
                                    Closure startClosure ) {
         ClosureSource.of( startClosure ).name( name ).into()
     }
@@ -122,7 +123,7 @@ public class Pipeline {
      */
     public Pipeline prependStep( CharSequence name = null,
                                  @DelegatesTo(Pipeline)
-                                 @ClosureParams(value = FromString, options = ["java.lang.Map<String,String>"])
+                                 @ClosureParams(value = FromString, options = ["java.util.Map<java.lang.String,java.lang.String>"])
                                  Closure<Map<String,Object>> step ) {
         step.delegate = this
         processChain.add(0, new Step( name, step ) )
@@ -168,7 +169,7 @@ public class Pipeline {
      * @return this Pipeline
      */
     public Pipeline onRejection( @DelegatesTo(Pipeline)
-                                 @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
+                                 @ClosureParams( value = SimpleType, options = ["gratum.etl.Pipeline"])
                                  Closure<Pipeline> configure ) {
         if( parent ) {
             parent.onRejection( configure )
@@ -310,6 +311,22 @@ public class Pipeline {
     }
 
     /**
+     * Returns a Pipeline where all columns containing empty strings are replaced with null within each row.
+     *
+     * @return Pipeline where all columns containing empty strings are replaced with null.
+     */
+    public Pipeline emptyToNull() {
+        addStep("emptyToNull()") { row ->
+            for( String key : row.keySet() ) {
+                if( row[key] == "" ) {
+                    row[key] = null
+                }
+            }
+            return row
+        }
+    }
+
+    /**
      * Copies all rows on this Pipeline to another Pipeline that is passed to the given closure.  The given closure
      * can configure additional steps on the branched Pipeline.  The rows passed through this Pipeline are not modified.
      *
@@ -317,7 +334,7 @@ public class Pipeline {
      * @return this Pipeline
      */
     public Pipeline branch( CharSequence branchName = "branch",
-                            @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
+                            @ClosureParams( value = SimpleType, options = ["gratum.etl.Pipeline"])
                             Closure<Pipeline> split) {
         final Pipeline branch = new Pipeline( "${name}/${branchName}" )
 
@@ -345,7 +362,7 @@ public class Pipeline {
      */
     public Pipeline branch(Map<String,?> condition,
                            @DelegatesTo(Pipeline)
-                           @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
+                           @ClosureParams( value = SimpleType, options = ["gratum.etl.Pipeline"])
                            Closure<Pipeline> split) {
         Pipeline branch = new Pipeline( "${name}/branch(${condition})" )
         Pipeline tail = split(branch)
@@ -746,34 +763,23 @@ public class Pipeline {
             String value = row[column]
             if( value ) {
                 switch( value ) {
-                    case "Y":
-                    case "y":
-                    case "yes":
-                    case "YES":
-                    case "Yes":
-                    case "1":
-                    case "T":
-                    case "t":
+                    case ["Y", "y", "yes", "YES", "Yes", "1", "T", "t", "true", "True", "TRUE"]:
                         row[column] = true
                         break
-                    case "n":
-                    case "N":
-                    case "NO":
-                    case "no":
-                    case "No":
-                    case "0":
-                    case "F":
-                    case "f":
-                    case "null":
-                    case "Null":
-                    case "NULL":
-                    case null:
+                    case ["n", "N", "no", "NO", "No", "0", "F", "f", "false", "False", "FALSE"]:
                         row[column] = false
                         break
+                    case ["null", "Null", "NULL"]:
+                        row[column] = null
+                        break
+                    case Integer:
+                        row[column] = value as Boolean
                     default:
-                        row[column] = Boolean.parseBoolean(value)
+                        throw new IllegalArgumentException("${row[column]} cannot be parsed as a Boolean")
                         break
                 }
+            } else {
+                row[column] = null
             }
             return row
         }
@@ -1221,7 +1227,7 @@ public class Pipeline {
      * @param The Closure
      * @return this Pipeline
      */
-    public Pipeline apply( @ClosureParams( value = FromString, options = ["gratum.etl.Pipeline"])
+    public Pipeline apply( @ClosureParams( value = SimpleType, options = ["gratum.etl.Pipeline"])
                             Closure<Pipeline> applyToPipeline) {
         return applyToPipeline.call( this ) ?: this
     }

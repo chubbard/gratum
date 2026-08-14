@@ -25,15 +25,12 @@ dependencies {
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
-    implementation('org.codehaus.groovy:groovy-all:2.5.23') {
-        exclude group: 'org.codehaus.groovy', module:'groovy-swing'
-        exclude group: 'org.codehaus.groovy', module:'groovy-testng'
-        exclude group: 'org.codehaus.groovy', module:'groovy-console'
-        exclude group: 'org.codehaus.groovy', module:'groovy-docgenerator'
-        exclude group: 'org.codehaus.groovy', module:'groovy-ant'
-//        exclude group: 'org.codehaus.groovy', module:'groovy-groovydoc'
-        exclude group: 'org.codehaus.groovy', module:'groovy-groovysh'
-    }
+
+    implementation(platform("org.apache.groovy:groovy-bom:4.0.33"))
+    implementation('org.apache.groovy:groovy')
+    implementation('org.apache.groovy:groovy-json')
+    implementation('org.apache.groovy:groovy-xml')
+    implementation('org.apache.groovy:groovy-sql')
     implementation 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
 
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
@@ -54,6 +51,7 @@ dependencies {
 
     implementation("org.slf4j:slf4j-api:2.0.16")
     testRuntimeOnly("org.slf4j:slf4j-jdk14:2.0.16")
+    testImplementation("com.h2database:h2:2.4.240")
 
 //    testCompile "mysql:mysql-connector-java:5.1.40"
 //    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
@@ -119,6 +117,8 @@ publishing {
 tasks.withType(PublishToMavenRepository).configureEach {
     dependsOn(tasks.withType(Sign))
 }
+
+test { useJUnitPlatform() }
 
 tasks.named('wrapper') {
     gradleVersion = '8.14.5'
