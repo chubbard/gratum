@@ -3,7 +3,7 @@
 # Gratum ETL
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.chubbard/gratum/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.chubbard/gratum)
+[![Maven Central](https://maven-badges.sml.io/maven-central/com.github.chubbard/gratum/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.chubbard/gratum)
 [![Build Status](https://travis-ci.com/chubbard/gratum.svg?branch=master)](https://travis-ci.com/chubbard/gratum)
 
 A lightweight standalone ETL engine for groovy.  Gratum is groovy + datum.
