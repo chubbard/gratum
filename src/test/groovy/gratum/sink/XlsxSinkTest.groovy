@@ -2,19 +2,19 @@ package gratum.sink
 
 import gratum.etl.LoadStatistic
 import gratum.source.CollectionSource
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 import java.time.LocalDate
 
 class XlsxSinkTest {
 
-    @Rule public final TemporaryFolder tempFolder = new TemporaryFolder()
+    @TempDir
+    File tempFolder
 
     @Test
     void testXlsxSink() {
-        File output = tempFolder.newFile("purchases.xlsx")
+        File output = new File(tempFolder, "purchases.xlsx")
 
         LoadStatistic stat = CollectionSource.from([
                 name: 'Toaster',

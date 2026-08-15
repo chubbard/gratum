@@ -30,8 +30,12 @@ class FileSystemSource extends AbstractSource {
     }
 
     /**
-     * Pass any number of files to this method and this source will visit each
-     * file.
+     * Pass any number of java.io.File objects to this method and this source will place each file it
+     * encounters onto the pipeline.  If the File object is a directory it will enumerate all matching
+     * files according to the filename filter, if given, and place each file onto the pipeline.  It will
+     * recursively visit (the default) all sub-directories within the given Files.  If this source is
+     * configured for non-recursive behavior it will skip sub-directories.
+     *
      * @param directories 1 or more java.io.File objects to visit
      * @return this
      */
@@ -40,9 +44,15 @@ class FileSystemSource extends AbstractSource {
     }
 
     /**
-     * Pass an Iterable of files to this method and this source will visit each
-     * file.
-     * @param directories An Iterable of java.io.File objects to visit
+     * Pass an Iterable of files to this method and this source will place each file it encounters
+     * onto the pipeline.  If the File object is a directory it will enumerate all matching files
+     * according to the filename filter, if given, and place each file onto the pipeline.  It will
+     * recursively visit (the default) all sub-directories within the given Files.  If this source is
+     * configured for non-recursive behavior it will skip sub-directories.
+     *
+     * @param directories An Iterable of java.io.File objects to visit, if the File object is a file
+     * it will play that down the pipeline.  If it is a directory it will enumerate all files in that
+     * directory that match the file name filter (if given) and play each file down the pipeline.
      * @return this
      */
     static FileSystemSource files( Iterable<File> directories ) {

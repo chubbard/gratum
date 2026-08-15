@@ -45,11 +45,11 @@ I had the chili dog and the onion rings, but I wish you had tater tots.
     }
 
     public static InputStream getResource(String resource) {
-        return getClass().getResourceAsStream("/" + resource )
+        return Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)
     }
 
     public static void withResource(String resource, @ClosureParams( value = FromString, options = ["java.io.InputStream"] ) Closure<Void> callback) {
-        this.getResourceAsStream("/" + resource )?.withStream { InputStream stream ->
+        getResource(resource )?.withStream { InputStream stream ->
             callback.call( stream )
         }
     }

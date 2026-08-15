@@ -18,14 +18,14 @@ gratum with a couple of beliefs about data transformations.
 
 For Gradle:
 
-     compile group: 'com.github.chubbard', name: 'gratum', version: '1.1.15'
+     compile group: 'com.github.chubbard', name: 'gratum', version: '1.2.0'
 
 For Maven:
 
       <dependency>
         <groupId>com.github.chubbard</groupId>
         <artifactId>gratum</artifactId>
-        <version>1.1.15</version>
+        <version>1.2.0</version>
       </dependency>
       
 ## Oh Shell Yeah!
@@ -68,7 +68,7 @@ But, to make it easier to get started you'll want to add the following to your
     import gratum.source.*
     import static gratum.source.CsvSource.*
     import static gratum.source.CollectionSource.*
-    import static gratum.source.HttpSource.*
+    import static gratum.source.OkHttpSource.*
     import static gratum.source.ZipSource.*
 
 ## Examples
@@ -495,8 +495,8 @@ csv("images.csv", ",")
                     
                     String getName() { return "png" }
                     
-                    void attach(Pipeline pipeline) {
-                        pipeline.addStep("Save PNG") { row->
+                    void attach(Pipeline sinkPipe) {
+                        sinkPipe.addStep("Save PNG") { row->
                             File output = new File(row.filename as String)
                             output.withOutputStream { stream ->
                                 stream.write( row.image as byte[] )
@@ -622,6 +622,8 @@ http( "https://www.freeforexapi.com/api/live" ) {
 
 [trim](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#trim())
 
+[emptyToNull](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#emptyToNull())
+
 [unique](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#unique(java.lang.String))
 
 [limit](https://chubbard.github.io/gratum/groovydoc/gratum/etl/Pipeline.html#limit(long,boolean))
@@ -696,8 +698,6 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 [zip](https://chubbard.github.io/gratum/groovydoc/gratum/source/ZipSource.html)
 
 [http/https](https://chubbard.github.io/gratum/groovydoc/gratum/source/OkHttpSource.html)
-
-[http/https](https://chubbard.github.io/gratum/groovydoc/gratum/source/HttpSource.html) - (deprecated)
 
 [jdbc](https://chubbard.github.io/gratum/groovydoc/gratum/source/JdbcSource.html)
 

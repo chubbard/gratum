@@ -3,8 +3,8 @@ package gratum.concurrency
 import gratum.etl.GratumFixture
 import gratum.etl.LoadStatistic
 import gratum.etl.Pipeline
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import static gratum.source.CsvSource.csv
 
@@ -12,7 +12,7 @@ class LocalConcurrentContextTest {
 
     LocalConcurrentContext context
 
-    @Before
+    @BeforeEach
     void setUp() {
         context = new LocalConcurrentContext(4, 50 )
     }

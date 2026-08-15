@@ -1,14 +1,14 @@
 package gratum.etl
 
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 import static gratum.source.CsvSource.csv
 
 class PipelinePerformanceTest {
 
     @Test
-    @Ignore
+    @Disabled
     void performanceTest() {
         File tmpFilePw = File.createTempFile("pfchangs", "pw.csv")
         File tmpFileNotPw = File.createTempFile("pfchangs", "not_pw.csv")

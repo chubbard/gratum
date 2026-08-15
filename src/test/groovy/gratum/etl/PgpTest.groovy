@@ -6,10 +6,10 @@ import org.bouncycastle.bcpg.ArmoredOutputStream
 import org.bouncycastle.openpgp.PGPCompressedData
 import org.bouncycastle.openpgp.PGPSecretKeyRing
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection
-import org.junit.After
-import org.junit.Before
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 import static gratum.source.CollectionSource.from
 
@@ -17,7 +17,7 @@ class PgpTest {
 
     File secretKeyRingFile
 
-    @Before
+    @BeforeEach
     void setUp() {
         PGPSecretKeyRing key = PgpKeyBuilder.identity("Sue", "sue@boy.com", "SueIsStillABoy!".getChars()).build();
         PGPSecretKeyRingCollection keyRing = new PGPSecretKeyRingCollection([key])
@@ -30,7 +30,7 @@ class PgpTest {
 
     }
 
-    @After
+    @AfterEach
     void cleanUp() {
         secretKeyRingFile.delete()
     }
@@ -87,7 +87,7 @@ class PgpTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     void performanceTest() {
         File perfFile = new File("${System.getProperty("user.home")}/Documents/customer/pfchangs/src/2012/PFC1000_XLodEEDed_20210207_1512.txt")
         LoadStatistic stat = from([file: perfFile, filename: perfFile.name, stream: new FileOpenable(perfFile)])

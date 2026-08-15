@@ -3,6 +3,7 @@ package gratum.source
 import gratum.etl.Pipeline
 import gratum.etl.RejectionCategory
 import groovy.json.JsonSlurper
+import groovy.xml.XmlSlurper
 import groovy.transform.CompileStatic
 import okhttp3.Credentials
 import okhttp3.HttpUrl

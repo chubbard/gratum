@@ -1,14 +1,17 @@
 package gratum.source
 
 import gratum.etl.LoadStatistic
-import org.junit.Test
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+
+import java.util.concurrent.TimeUnit
 
 import static gratum.source.OkHttpSource.*
-import static junit.framework.TestCase.assertNotNull
 
 class OkHttpSourceTest {
 
-    @Test(timeout = 10_000L)
+    @Test
+    @Timeout(value = 20, unit = TimeUnit.SECONDS)
     void testOkHttpSource() {
 
         String message = null
@@ -31,12 +34,12 @@ class OkHttpSourceTest {
             }.addStep("assert astros in space") { row ->
                 actualCount++
                 // assert that we received the data we expected, but we can't really test anything because this will change over time
-                assertNotNull( row.name )
-                assertNotNull( row.craft )
+                assert row.name != null
+                assert row.craft != null
                 return row
             }.go()
 
-        assertNotNull( "Message should be non-null if we called the service", message )
+        assert message != null : "Message should be non-null if we called the service"
         assert message == "success"
         assert stats.loaded == expectedCount
         // provided someone is in space!
@@ -45,7 +48,8 @@ class OkHttpSourceTest {
         }
     }
 
-    @Test(timeout = 5000L)
+    @Test
+    @Timeout(value = 20, unit = TimeUnit.SECONDS)
     void testOkHttps() {
         LoadStatistic stats = https("https://postman-echo.com/get?color=green&mode=lit")
             .into()
@@ -67,7 +71,8 @@ class OkHttpSourceTest {
         assert stats.rejections == 0
     }
 
-    @Test(timeout = 5000L)
+    @Test
+    @Timeout(value = 20, unit = TimeUnit.SECONDS)
     void testOkHttpXml() {
         LoadStatistic stats = https("https://www.purgomalum.com/service/xml?text=Is+this+a+good+idea+to+use+query+params+or+a+shitty+one%3F") {
             header("Accept", "text/xml")

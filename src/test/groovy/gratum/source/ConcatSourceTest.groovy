@@ -1,11 +1,10 @@
 package gratum.source
 
 import gratum.etl.LoadStatistic
+import org.junit.jupiter.api.Test
 
 import static gratum.source.ConcatSource.*
 import static gratum.source.CollectionSource.*
-
-import org.junit.Test
 
 class ConcatSourceTest {
 

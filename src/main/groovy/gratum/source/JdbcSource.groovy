@@ -17,12 +17,17 @@ import java.sql.ResultSetMetaData
  *      .into()
  *      .go()
  * </pre>
+ *
+ * Each row will include a reference the the ResultSetMetaData under the default column name
+ * _metadata.
  */
 @CompileStatic
 class JdbcSource extends AbstractSource {
 
     Sql db
     GString query
+    String plainQuery
+    Map<String,Object> params
 
     JdbcSource(Sql db) {
         super("jdbc")
@@ -47,20 +52,50 @@ class JdbcSource extends AbstractSource {
         return this
     }
 
+    JdbcSource query(String query) {
+        this.plainQuery = query
+        return this
+    }
+
+    JdbcSource query(String query, Map<String,Object> params) {
+        this.plainQuery = query
+        this.params = params
+        return this
+    }
+
     @Override
     void doStart(Pipeline pipeline) {
         List<String> columns = []
+        ResultSetMetaData metadata
         int line = 1
-        db.eachRow( query, { ResultSetMetaData md ->
-            for( int i = 1; i <= md.columnCount; i++ ) {
-                columns << md.getColumnName(i)
+        if( query ) {
+            db.eachRow( query, { md ->
+                for( int i = 1; i <= md.columnCount; i++ ) {
+                    columns << md.getColumnName(i)
+                }
+                metadata = md
+            } ) {row ->
+                Map<String,Object> result = [:]
+                columns.eachWithIndex { String col, int index ->
+                    result[col] = row[index]
+                }
+                result["_metadata"] = metadata
+                pipeline.process( result, line++ )
             }
-        } ) { GroovyResultSet row ->
-            Map<String,Object> result = [:]
-            columns.eachWithIndex { String col, int index ->
-                result[col] = row[index]
+        } else if( plainQuery && params ) {
+            db.eachRow(plainQuery, params ?: [:], { md ->
+                for( int i = 1; i <= md.columnCount; i++ ) {
+                    columns << md.getColumnName(i)
+                }
+                metadata = md
+            }) { row ->
+                Map<String,Object> result = [:]
+                columns.eachWithIndex { String col, int index ->
+                    result[col] = row[index]
+                }
+                result["_metadata"] = metadata
+                pipeline.process( result, line++ )
             }
-            pipeline.process( result, line )
         }
     }
 }

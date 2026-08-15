@@ -1,19 +1,17 @@
 package gratum.csv;
 
-import junit.framework.TestCase;
-import org.junit.Ignore;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by charlie on 8/16/15.
  */
-public class CSVFileTest extends TestCase {
+public class CSVFileTest {
 
     public void testCsvNoQuotes() throws IOException {
         String src = "name,age,birthDate\n"
@@ -193,7 +191,7 @@ public class CSVFileTest extends TestCase {
     }
 
     public void testWithoutEscaping() throws IOException {
-        Reader reader = new InputStreamReader( CSVFileTest.class.getResourceAsStream("/unescaped.csv") );
+        Reader reader = new InputStreamReader(getResourceAsStream("unescaped.csv"));
         CSVFile csv = new CSVFile(reader, "|");
         csv.setEscaped(false);
         csv.parse(new CSVReader() {
@@ -253,7 +251,7 @@ public class CSVFileTest extends TestCase {
                 @Override
                 public boolean processRow(List<String> header, List<String> row) throws Exception {
                     lines++;
-                    assertTrue("Line contains an \u00e9", row.get(0).contains("\u00e9"));
+                    assertTrue(row.get(0).contains("\u00e9"), "Line does not contain an \u00e9");
                     return false;
                 }
 
@@ -276,7 +274,7 @@ public class CSVFileTest extends TestCase {
                 int n = 1;
                 while( (line = reader.readLine()) != null ) {
                     if( n > 1 ) {
-                        assertTrue("Line contains a \u00e9", line.contains("\u00e9"));
+                        assertTrue(line.contains("\u00e9"), "Line does not contain a \u00e9");
                     }
                     n++;
                 }
@@ -287,7 +285,7 @@ public class CSVFileTest extends TestCase {
     }
 
     public void testLastColumnMissing() throws IOException {
-        CSVFile csv = new CSVFile( new InputStreamReader(getClass().getResourceAsStream("/empty_last_column_test.csv")), "," );
+        CSVFile csv = new CSVFile( new InputStreamReader(getResourceAsStream("empty_last_column_test.csv")), "," );
         csv.parse(new CSVReader() {
             int line = 1;
             @Override
@@ -297,7 +295,7 @@ public class CSVFileTest extends TestCase {
 
             @Override
             public boolean processRow(List<String> header, List<String> row) throws Exception {
-                assertEquals( "line " + line, header.size(), row.size() );
+                assertEquals(header.size(), row.size(),  "line " + line);
                 line++;
                 return false;
             }
@@ -305,7 +303,7 @@ public class CSVFileTest extends TestCase {
     }
 
     public void testUnescapedCsvTailingSeparator() throws IOException {
-        CSVFile csv = new CSVFile( new InputStreamReader(getClass().getResourceAsStream("/empty_last_column_test.csv")), "," );
+        CSVFile csv = new CSVFile( new InputStreamReader(getResourceAsStream("empty_last_column_test.csv")), "," );
         csv.setEscaped(false);
         csv.parse(new CSVReader() {
             int line = 1;
@@ -316,11 +314,63 @@ public class CSVFileTest extends TestCase {
 
             @Override
             public boolean processRow(List<String> header, List<String> row) throws Exception {
-                assertEquals( "line " + line, header.size(), row.size() );
+                assertEquals(header.size(), row.size(),  "line " + line);
                 line++;
                 return false;
             }
         });
+    }
+
+    @NotNull
+    private static InputStream getResourceAsStream(String name) {
+        return Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(name));
+    }
+
+    public void testMultilineRows() throws IOException {
+        CSVFile csv = new CSVFile(text(
+                "personId,comment",
+                "1,\"This is a multi-line comment.\nIt could be something more\n,but we decided to just test\nhaving multiple lines to parse.\"",
+                "2,\"This is not multi-line comment.  We needed at least one that didn't have extra lines.\\n But we did try escaping a newline just to test combining our methods.\"",
+                "3, \"This is not multi-line without escaping.  We needed just one.\"",
+                "4,\"This is a multi-line without escaping, but contains a \\r at the end like windows.\r\\nDoes this parse ok?\""
+        ), ",");
+
+        csv.parse(new CSVReader() {
+            int lineNumber = 0;
+
+            @Override
+            public void processHeaders(List<String> header) throws Exception {
+                assertTrue( header.contains("personId"), "Assert personId is present" );
+                assertTrue( header.contains("comment"), "Assert comment is present" );
+            }
+
+            @Override
+            public boolean processRow(List<String> header, List<String> row) throws Exception {
+                String personId = row.get(0);
+                String comment = row.get(1);
+
+                assertTrue(personId != null && !personId.isEmpty(), "Assert personId is present");
+                assertTrue(comment != null && !comment.isEmpty(), "Assert comment is present");
+                if( lineNumber == 0 ) {
+                    assertTrue(comment.contains("This is a multi-line comment."), "Assert that '" + comment + "' contains 1st line");
+                    assertTrue(comment.contains("It could be something more"), "Assert that '" + comment + "' contains 2nd line");
+                    assertTrue(comment.contains(",but we decided to just test"), "Assert that '" + comment + "' comment contains 3rd line");
+                    assertTrue(comment.contains("having multiple lines to parse."), "Assert that '" + comment + "' comment contains 3rd line");
+                } else if( lineNumber == 1 ) {
+                    assertTrue(comment.contains("This is not multi-line comment.  We needed at least one that didn't have extra lines.\n But we did try escaping a newline just to test combining our methods."), "Assert that '" + comment + "' contains the whole line");
+                } else if( lineNumber == 2 ) {
+                    assertTrue(comment.contains("This is not multi-line without escaping.  We needed just one."), "Assert that '" + comment + "' contains the whole line");
+                }else if( lineNumber == 3 ) {
+                    assertTrue(comment.contains("This is a multi-line without escaping, but contains a \\r at the end like windows.\n\nDoes this parse ok?"), "Assert that '" + comment + "' contains the whole line with \\r");
+                }
+                lineNumber++;
+                return false;
+            }
+        });
+    }
+
+    private Reader text(String... txt) {
+        return new StringReader(String.join("\n", txt));
     }
 
     private File writeTestUnicodeFile() throws IOException {
@@ -340,4 +390,5 @@ public class CSVFileTest extends TestCase {
         }
         return tmp;
     }
+
 }

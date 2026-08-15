@@ -1,16 +1,16 @@
 package gratum.source
 
 import gratum.etl.LoadStatistic
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 
 class FileSystemSourceTest {
 
     File dir
     File csvFile1, csvFile2, textFile1, textFile2
 
-    @Before
+    @BeforeEach
     void setUp() {
         dir = File.createTempDir()
 
@@ -26,7 +26,7 @@ class FileSystemSourceTest {
         textFile2 = File.createTempFile("gratum", ".txt", subdir2)
     }
 
-    @After
+    @AfterEach
     void cleanUp() {
         dir.deleteDir()
     }

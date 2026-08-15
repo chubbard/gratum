@@ -20,7 +20,7 @@ public class PullCsvIterator implements Iterator<List<String>> {
     @Override
     public boolean hasNext() {
         try {
-            nextRow = csv.readNext(lineNumberReader);
+            nextRow = csv.readNextEscaped(lineNumberReader);
             lines++;
             return nextRow != null;
         } catch (IOException e) {
@@ -32,7 +32,7 @@ public class PullCsvIterator implements Iterator<List<String>> {
     public List<String> next() {
         try {
             if( nextRow == null ) {
-                nextRow = csv.readNext(lineNumberReader);
+                nextRow = csv.readNextEscaped(lineNumberReader);
                 lines++;
             }
             List<String> r = nextRow;

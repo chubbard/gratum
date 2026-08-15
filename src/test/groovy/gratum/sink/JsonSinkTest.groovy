@@ -2,7 +2,7 @@ package gratum.sink
 
 import gratum.etl.LoadStatistic
 import gratum.source.CollectionSource
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 
 class JsonSinkTest {
