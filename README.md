@@ -706,3 +706,17 @@ passed into the Pipeline.  These are the Sources you can use to provide data.
 [ssh](https://chubbard.github.io/gratum/groovydoc/gratum/source/SshSource.html)
 
 [archived](https://chubbard.github.io/gratum/groovydoc/gratum/source/ArchivedSource.html)
+
+## Sinks
+
+Having places to send the data that is being processed is important.  Bit of an understatement, as it's the entire point
+of establishing a Pipeline.  Sinks collect the data being processed.
+
+[CsvSink](https://chubbard.github.io/gratum/groovydoc/gratum/sink/CsvSink.html)
+
+[JsonSink](https://chubbard.github.io/gratum/groovydoc/gratum/sink/JsonSink.html)
+
+[JdbcSink](https://chubbard.github.io/gratum/groovydoc/gratum/sink/JdbcSink.html)
+
+[XlsxSink](https://chubbard.github.io/gratum/groovydoc/gratum/sink/XlsxSink.html)
+
