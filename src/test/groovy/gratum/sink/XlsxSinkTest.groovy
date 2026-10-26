@@ -42,7 +42,7 @@ class XlsxSinkTest {
                 count: 1,
                 cost:33.99,
                 purchasedOn: LocalDate.of(2022, 1, 11)
-        ]).save(new XlsxSink( output ) )
+        ]).toSink(new XlsxSink( output ) )
         .go()
 
         assert stat.loaded == 4
