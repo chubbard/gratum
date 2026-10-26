@@ -203,6 +203,7 @@ class XlsxSource extends AbstractSource {
         Pipeline pipeline
         Map current
         int currentRow = 0
+        int currentColumn = 0
 
         XslxSheetHandler(Pipeline pipeline) {
             this.pipeline = pipeline
@@ -230,12 +231,13 @@ class XlsxSource extends AbstractSource {
             } else if( headerClosure ) {
                 headerClosure.call( headers )
             }
+            currentColumn = 0
         }
 
         @Override
         void cell(String cellReference, String formattedValue, XSSFComment comment) {
             if( currentRow != headerRow ) {
-                CellAddress cellRef = new CellAddress( cellReference)
+                CellAddress cellRef = cellReference ? new CellAddress( cellReference) : new CellAddress(currentRow, currentColumn)
                 current[ headers[cellRef.getColumn()] ] = formattedValue
                 if( current.size() - 1 < cellRef.getColumn() ) {
                     // we encountered a skip, add missing cols
@@ -246,6 +248,7 @@ class XlsxSource extends AbstractSource {
             } else {
                 headers.add( formattedValue )
             }
+            currentColumn++
         }
     }
 
