@@ -20,9 +20,13 @@ class JdbcSink implements Sink {
     JdbcBatchHelper batchHelper
     int loaded = 0
 
-    static JdbcSink batch(Sql sql, String tableName, List<String> columns, int batchSize = 1000) {
-        return new JdbcSink( batchHelper: new JdbcBatchHelper(sql, tableName, columns, batchSize))
+    static JdbcSink batchInsert(Sql sql, String tableName, List<String> columns, int batchSize = 1000) {
+        return new JdbcSink( batchHelper: new JdbcBatchHelper(sql, tableName, columns, batchSize) )
     }
+
+//    static JdbcSink batchUpdate(Sql sql, String tableName, List<String> columns, int batchSize = 1000) {
+//        return new JdbcSink( batchHelper: new JdbcBatchHelper(sql, tableName, columns, batchSize) )
+//    }
 
     @Override
     String getName() {

@@ -469,7 +469,7 @@ class PipelineTest {
                         pipeline.inject { row ->
                             return [row]
                         }
-                        .save(new Sink() {
+                        .toSink(new Sink() {
                             @Override
                             String getName() {
                                 return "collection"

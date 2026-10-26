@@ -38,7 +38,7 @@ class JdbcSinkTest {
                 .asInt("Pclass")
                 .asInt("SibSp")
                 .asInt("Parch")
-                .save( JdbcSink.batch( sql, "Passengers", [
+                .toSink( JdbcSink.batchInsert( sql, "Passengers", [
                         "PassengerId",
                         "Pclass",
                         "Name",

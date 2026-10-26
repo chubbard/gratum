@@ -403,7 +403,93 @@ name of the pipeline.
 
 It's much easier to use the existing operation methods that are included in the Pipeline.  For example,
 we used an `addStep` to add a step that filtered out rows.  This is so common there is already an operation
-that does this for you called `filter`.  There are plenty of existing methods to perform common operations.
+that does this for you called `filter`.  There are plenty of existing methods to perform common operations like
+[column manipulation](#column-manipulation), [data types](#data-types), and [filtering](#filtering).
+
+## Sinks
+
+[Sinks](#sinks-1) are used to consume the results of a Pipeline.  If Sources are used to put data into a Pipeline,
+then Sinks are used to consume the results of a Pipeline.  There are multiple types of Sinks, but they all use the
+same methods to attach to the Pipeline.  All Sinks implement the `Sink` interface.
+
+To attach a sink to a Pipeline, you use the `toSink` method.  For example:
+
+```groovy
+from([
+    [name: "Robinsons", size: 4],
+    [name: "Smiths", size: 3],
+    [name: "Hammonds", size: 2]
+])
+.toSink( new JsonSink( new File("families.json") , ["", [""]]) )
+.go()
+```
+
+## Branching
+
+At times, you may have Pipelines that need multiple destinations.  This is where branching comes into play.
+A branch is another pipeline sourced from an existing pipeline.  Anything coming down the parent pipeline
+is copied to the branch.  The branch will see the same rows the parent sees at the point of the branch.
+Here is an example:
+
+```groovy
+from([
+    [name: "Chuck"],
+    [name: "Rob"],
+    [name: "The Dark Head Kid"]
+])
+.branch("Branch Print") { pipeline ->
+    pipeline.addStep("Print Branch") { row ->
+        println("Branch ${row['name']}")
+        return row
+    }
+}
+.addStep("Print Parent") { row ->
+    println("Parent ${row['name']}")
+    return row
+}
+.go()
+```
+Which will result in the following:
+
+```
+Branch Chuck
+Parent Chuck
+Branch Rob
+Parent Rob
+Branch The Dark Head Kid
+Parent The Dark Head Kid
+```
+
+Each row was seen by the branch pipeline, and each row was seen by the parent pipeline.  The branch
+is not affected by changes made to the parent after the branch, and changes made to the branch do not
+affect the parent.  **Bear in mind that rows are shallow copies of the data contained.  Making modifications
+to nested structures COULD affect the parent or branch pipelines.**
+
+One way in which the parent pipeline can affect the branch is in upstream steps.  This is steps that precede 
+the branch.  That means that the branch takes copies from the point where the branch occurs so a `filter`
+step before the branch means only the rows that pass that filter step will be passed to the branch.
+
+Rejections that occur on the branch pipeline are **not** propagated back to the parent pipeline's rejection
+pipeline.  If you want to handle rejections within a branch you can register it's own rejection handler.
+By default rejections will be lost or ignored.  The rows will be rejected from branch pipeline, but they
+won't be passed to a rejection pipeline by default.  They will effectively be dropped.  This also applies
+to stats gathered about the branch as well.  The branch results won't be reflectedin the `LoadStatistics`.
+This may change in the future.
+
+Finally, any results produced from the branch are NOT passed back to the parent pipeline.  A branch is a 
+terminal leaf in the pipeline graph.  If any output is to be created from it you will need to use a
+`toSink` call to capture the results of that pipeline.
+
+A classic example of using branching is to store things into separate tables in the database from
+one stream.  For example:
+
+```groovy
+from([
+])
+.branch("Store to Person") { branch ->
+    branch.toSink( JdbcSink.insertSql() )
+}
+```
 
 ## Concurrency
 
@@ -441,7 +527,7 @@ for each worker.  This way each worker receives the same instructions, but also 
 within this closure as belonging to that worker thread (this is important later).
 
 The `collect` operator defines the pipeline used to gather results from the worker's pipelines.  This runs on a single 
-thread, but it is not the same as the original thread.  All rows that were outputted from each worker's pipeline will
+thread, but it is different from the original thread.  All rows outputted from each worker's pipeline will
 be passed to the collect pipeline for further processing.  Using the `collect` operator is optional.
 
 Finally, the `connect` operator returns the closure used to configure the original pipeline and set up the spread-collect 

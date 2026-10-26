@@ -908,7 +908,7 @@ public class Pipeline {
      * @return A Pipeline that returns a row for the csv file.
      */
     public Pipeline save(String filename, String separator = ",", List<String> columns = null ) {
-        return this.save( new CsvSink(filename, separator, columns) )
+        return this.toSink( new CsvSink(filename, separator, columns) )
     }
 
     /**
@@ -921,7 +921,7 @@ public class Pipeline {
      * @return A Pipeline that returns a row for the csv file.
      */
     public Pipeline save(File csvFile, String separator = ",", List<String> columns = null) {
-        return this.save( new CsvSink(csvFile, separator, columns) )
+        return this.toSink( new CsvSink(csvFile, separator, columns) )
     }
 
     /**
@@ -931,7 +931,7 @@ public class Pipeline {
      * @param sink the concrete Sink instance to save data to.
      * @return The resulting {@link gratum.etl.Pipeline}.
      */
-    public Pipeline save(Sink<Map<String,Object>> sink ) {
+    public Pipeline toSink(Sink<Map<String,Object>> sink ) {
         sink.attach( this )
 
         Pipeline next = new Pipeline( sink.name, this ).source(new ChainedSource(this))
@@ -945,6 +945,19 @@ public class Pipeline {
     }
 
     /**
+     * Write the rows to a provided {@link gratum.sink.Sink}.  It returns the
+     * {@link gratum.etl.Pipeline} that returns the results of the given sink.
+     *
+     * @param sink the concrete Sink instance to save data to.
+     * @return The resulting {@link gratum.etl.Pipeline}.
+     * @deprecated Use the sink method so it doesn't confuse with the helper method @link{#save(File,String,List<String>)}.
+     */
+    public Pipeline save(Sink<Map<String,Object>> sink ) {
+        logger.warn("Use of save(Sink) is deprecated.  Use toSink() method as a direct replacement.")
+        toSink( sink )
+    }
+
+    /**
      * Write out the rows produced to JSON file.
      * @param filename the filename to save the JSON into.
      * @param columns Optional list of columns to use clip out certain columns you want to include in the output.  If left
@@ -952,7 +965,7 @@ public class Pipeline {
      * @return A Pipeline unmodified.
      */
     public Pipeline json(String filename, List<String> columns = null) {
-        return save( new JsonSink( new File(filename), columns) )
+        return toSink( new JsonSink( new File(filename), columns) )
     }
 
     /**
@@ -963,7 +976,7 @@ public class Pipeline {
      * @return A Pipeline unmodified.
      */
     public Pipeline jsonl(String filename, List<String> columns = null) {
-        return save( new JsonSink( new File(filename), columns).jsonObjectPerLine(true) )
+        return toSink( new JsonSink( new File(filename), columns).jsonObjectPerLine(true) )
     }
 
     /**
@@ -974,7 +987,7 @@ public class Pipeline {
      * @return A Pipeline unmodified.
      */
     public Pipeline jsonl(File file, List<String> columns = null) {
-        return save( new JsonSink( file, columns).jsonObjectPerLine(true) )
+        return toSink( new JsonSink( file, columns).jsonObjectPerLine(true) )
     }
 
     /**
@@ -1080,16 +1093,17 @@ public class Pipeline {
     /**
      * Only allows rows that are unique per the given column.
      *
-     * @param column The column name to use for checking uniqueness
+     * @param columns The column names to use for checking uniqueness
      * @return A Pipeline that only contains the unique rows for the given column
      */
-    Pipeline unique(String column) {
+    Pipeline unique(String... columns) {
         Set<Object> unique = [:] as HashSet
-        addStep("unique(${column})") { row ->
-            if( unique.contains(row[column]) ) {
+        addStep("unique(${columns})") { row ->
+            CharSequence uniqueValue = columns.collect { column  -> row[column] }.join(" ")
+            if( unique.contains(uniqueValue) ) {
                 return reject(row, "Non-unique row returned", RejectionCategory.IGNORE_ROW)
             }
-            unique.add( row[column] )
+            unique.add( uniqueValue )
             return row
         }
         return this
@@ -1187,7 +1201,7 @@ public class Pipeline {
      */
     public Pipeline defaultsBy( Map<String,String> defaults ) {
         this.addStep("defaultsBy for ${defaults.keySet()}") { row ->
-            defaults?.each { String destColumn, String srcColumn ->
+            defaults?.each { destColumn, srcColumn ->
                 if( !row[destColumn] ) row[destColumn] = row[srcColumn]
             }
             return row

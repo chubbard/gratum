@@ -4,6 +4,10 @@ import gratum.etl.GratumFixture
 import gratum.etl.LoadStatistic
 import org.junit.jupiter.api.Test
 
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
+
 class XlsxSourceTest {
 
     @Test
@@ -105,5 +109,73 @@ class XlsxSourceTest {
         } finally {
             encryptedFile.delete()
         }
+    }
+
+    @Test
+    void testParsingMissingCellAddressFileTypes() {
+        GratumFixture.withResource("players.xlsx") { stream ->
+            File stripped = stripCellRefs( stream )
+            println XlsxSource.xlsx(stripped, "Sheet 1")
+                    .into()
+                    .addStep("testParsingMissingCellAddressFileTypes") { row ->
+                        def columns = [
+                                "ID",
+                                "name",
+                                "color",
+                                "score",
+                                "gender",
+                                "birth_date"
+                        ]
+                        columns.each { col ->
+                            assert row.containsKey(col)
+                            assert row[col]
+                        }
+                        return row
+                    }
+                    .go()
+        }
+    }
+
+    private File stripCellRefs(InputStream stream) {
+        File output = File.createTempFile("stripped", ".xlsx")
+        ZipInputStream zis = new ZipInputStream( stream )
+        new ZipOutputStream( new FileOutputStream(output) ).withStream { zos ->
+            ZipEntry entry
+            // Iterate through every file inside the .xlsx package
+            while ((entry = zis.getNextEntry()) != null) {
+                // Prepare a new entry in the destination zip file
+                zos.putNextEntry(new ZipEntry(entry.getName()))
+
+                if (entry.getName().startsWith("xl/worksheets/sheet")) {
+                    // Read the specific XML worksheet into memory
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(zis, "UTF-8"))
+                    StringBuilder xmlBuilder = new StringBuilder()
+                    String line
+                    while ((line = reader.readLine()) != null) {
+                        xmlBuilder.append(line).append("\n")
+                    }
+
+                    String xmlContent = xmlBuilder.toString()
+                    // Strip cell references: r="A1"
+                    xmlContent = xmlContent.replaceAll("\\s+r=\"[A-Z0-9]+\"", "")
+                    // Strip row references: r="1"
+                    xmlContent = xmlContent.replaceAll("<row\\s+r=\"\\d+\"", "<row")
+
+                    // Write the scrubbed XML to the new package
+                    byte[] bytes = xmlContent.getBytes("UTF-8")
+                    zos.write(bytes, 0, bytes.length)
+                } else {
+                    // For all other structural files, just pass the raw bytes straight through
+                    byte[] buffer = new byte[4096]
+                    int len
+                    while ((len = zis.read(buffer)) > 0) {
+                        zos.write(buffer, 0, len)
+                    }
+                }
+                zos.closeEntry()
+                zis.closeEntry()
+            }
+        }
+        return output
     }
 }

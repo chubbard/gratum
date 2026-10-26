@@ -25,13 +25,13 @@ class JdbcBatchHelper implements Closeable, AutoCloseable {
     }
 
     private void initStatement() {
-        this.sql = generateSql()
+        this.sql = generateInsertSql()
         this.connection = db.createConnection()
         this.connection.setAutoCommit(false)
         statement = this.connection.prepareStatement( sql )
     }
 
-    private String generateSql() {
+    private String generateInsertSql() {
         return "insert into ${tableName} (${columns.join(',')}) values (${ columns.collect {String x -> '?'}.join(",")})"
     }
 
